@@ -1,22 +1,26 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../routes/app_routes.dart';
 
 class SplashController extends GetxController {
   final progress = 0.obs;
+  Timer? _loadingTimer;
+  Completer<void>? _delayCompleter;
+  bool _isClosed = false;
 
   String get loadingMessage {
     if (progress.value < 30) {
       return 'Initialisation...';
     }
     if (progress.value < 60) {
-      return 'Chargement des données...';
+      return 'Chargement des donnees...';
     }
     if (progress.value < 85) {
-      return 'Préparation de votre espace...';
+      return 'Preparation de votre espace...';
     }
-    return 'Presque prêt...';
+    return 'Presque pret...';
   }
 
   @override
@@ -38,23 +42,48 @@ class SplashController extends GetxController {
     ];
 
     for (final step in steps) {
-      await Future<void>.delayed(Duration(milliseconds: step.$2));
+      await _delay(Duration(milliseconds: step.$2));
+      if (_isClosed) {
+        return;
+      }
       for (int i = progress.value; i <= step.$1; i++) {
         progress.value = i;
-        await Future<void>.delayed(const Duration(milliseconds: 18));
+        await _delay(const Duration(milliseconds: 18));
+        if (_isClosed) {
+          return;
+        }
       }
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-
-    if (token != null && token.isNotEmpty) {
-      Get.offAllNamed(AppRoutes.home);
+    await _delay(const Duration(milliseconds: 600));
+    if (_isClosed) {
       return;
     }
+    Get.offAllNamed(
+      AppRoutes.landing,
+    );
+  }
 
-    Get.offAllNamed(AppRoutes.landing);
+  Future<void> _delay(Duration duration) {
+    _loadingTimer?.cancel();
+    final completer = Completer<void>();
+    _delayCompleter = completer;
+    _loadingTimer = Timer(duration, () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+    return completer.future;
+  }
+
+  @override
+  void onClose() {
+    _isClosed = true;
+    _loadingTimer?.cancel();
+    final completer = _delayCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+    super.onClose();
   }
 }

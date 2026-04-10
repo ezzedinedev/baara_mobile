@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/core/theme/app_colors.dart';
@@ -7,6 +7,7 @@ import '../../../../widgets/gradient_button.dart';
 import '../../../../widgets/google_logo_asset.dart';
 import '../../../../widgets/labeled_input.dart';
 import '../../../../widgets/opportune_logo.dart';
+import '../../../../routes/app_routes.dart';
 import 'candidate_login_controller.dart';
 
 class CandidateLoginScreen extends GetView<CandidateLoginController> {
@@ -48,7 +49,8 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 26),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
                     child: IntrinsicHeight(
                       child: Form(
                         key: controller.formKey,
@@ -118,10 +120,12 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.error.withValues(alpha: 0.07),
+                                    color:
+                                        AppColors.error.withValues(alpha: 0.07),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: AppColors.error.withValues(alpha: 0.2),
+                                      color: AppColors.error
+                                          .withValues(alpha: 0.2),
                                     ),
                                   ),
                                   child: Row(
@@ -159,11 +163,13 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                 Expanded(
                                   child: Container(
                                     height: 1,
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.35),
+                                    color: AppColors.outlineVariant
+                                        .withValues(alpha: 0.35),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14),
                                   child: Text(
                                     'OU CONTINUER AVEC',
                                     style: AppTextStyles.labelMd.copyWith(
@@ -175,7 +181,8 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                 Expanded(
                                   child: Container(
                                     height: 1,
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.35),
+                                    color: AppColors.outlineVariant
+                                        .withValues(alpha: 0.35),
                                   ),
                                 ),
                               ],
@@ -207,7 +214,8 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                             ),
                             const Spacer(),
                             Padding(
-                              padding: const EdgeInsets.only(top: 26, bottom: 28),
+                              padding:
+                                  const EdgeInsets.only(top: 26, bottom: 28),
                               child: Center(
                                 child: Wrap(
                                   alignment: WrapAlignment.center,
@@ -217,7 +225,8 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                       style: AppTextStyles.bodyMd,
                                     ),
                                     GestureDetector(
-                                      onTap: () {},
+                                      onTap: () => Get.toNamed(
+                                          AppRoutes.registerProfile),
                                       child: Text(
                                         'S\'inscrire',
                                         style: AppTextStyles.titleMd.copyWith(

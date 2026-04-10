@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../app/core/theme/app_colors.dart';
 import '../../../../app/core/theme/app_text_styles.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../../widgets/gradient_button.dart';
 import '../../../../widgets/google_logo_asset.dart';
 import 'recruiter_login_controller.dart';
@@ -208,7 +209,8 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
                         Expanded(
                           child: Container(
                             height: 1,
-                            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                            color:
+                                AppColors.outlineVariant.withValues(alpha: 0.3),
                           ),
                         ),
                         Padding(
@@ -223,7 +225,8 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
                         Expanded(
                           child: Container(
                             height: 1,
-                            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                            color:
+                                AppColors.outlineVariant.withValues(alpha: 0.3),
                           ),
                         ),
                       ],
@@ -238,7 +241,8 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
                           color: AppColors.surfaceLow,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.20),
+                            color: AppColors.outlineVariant
+                                .withValues(alpha: 0.20),
                           ),
                         ),
                         child: Row(
@@ -266,10 +270,14 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
                             'Vous n\'avez pas de compte ? ',
                             style: AppTextStyles.bodyMd,
                           ),
-                          Text(
-                            'S\'inscrire',
-                            style: AppTextStyles.titleMd.copyWith(
-                              color: AppColors.hintColor,
+                          GestureDetector(
+                            onTap: () => Get.toNamed(AppRoutes.registerProfile),
+                            child: Text(
+                              'S\'inscrire',
+                              style: AppTextStyles.titleMd.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],

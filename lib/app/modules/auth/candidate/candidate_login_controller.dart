@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../app/core/constants/api_constants.dart';
+import '../../../../app/core/security/auth_token_store.dart';
 import '../../../../app/core/utils/validators.dart';
 import '../../../../app/data/providers/api_provider.dart';
 import '../../../../routes/app_routes.dart';
@@ -11,10 +10,10 @@ import '../../../../routes/app_routes.dart';
 class CandidateLoginController extends GetxController {
   CandidateLoginController()
       : _apiProvider = Get.find<ApiProvider>(),
-        _secureStorage = const FlutterSecureStorage();
+        _tokenStore = const AuthTokenStore();
 
   final ApiProvider _apiProvider;
-  final FlutterSecureStorage _secureStorage;
+  final AuthTokenStore _tokenStore;
 
   final emailCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
@@ -45,25 +44,36 @@ class CandidateLoginController extends GetxController {
         {
           'email': emailCtrl.text.trim(),
           'password': passwordCtrl.text,
-          'device_name': 'flutter-android',
+          'device_name': ApiConstants.authDeviceName,
           'user_type': 'candidate',
         },
       );
 
-      if (data['statusCode'] == 200 && data['success'] == true) {
+      final token = _extractToken(data);
+      if (data['statusCode'] == 200 &&
+          data['success'] == true &&
+          token != null) {
         await _persistSession(
-          token: (data['data'] as Map<String, dynamic>)['token'] as String,
+          token: token,
           userType: 'candidate',
         );
         Get.offAllNamed(AppRoutes.home);
         return;
       }
 
-      errorMsg.value =
-          data['message'] as String? ?? 'Identifiants incorrects.';
-    } on Exception {
-      errorMsg.value = 'Erreur de connexion. Vérifiez votre réseau.';
+      errorMsg.value = _extractApiMessage(
+        data,
+        fallback: 'Identifiants incorrects.',
+      );
+    } on Exception catch (error) {
+      final message = error.toString();
+      if (message.contains('Impossible de joindre l\'API')) {
+        errorMsg.value = 'Connexion au service impossible pour le moment.';
+      } else {
+        errorMsg.value = 'Erreur de connexion. Verifiez votre reseau.';
+      }
     } finally {
+      passwordCtrl.clear();
       isLoading.value = false;
     }
   }
@@ -78,22 +88,33 @@ class CandidateLoginController extends GetxController {
         {
           'phone': phone,
           'pin': pin,
-          'device_name': 'flutter-android',
+          'device_name': ApiConstants.authDeviceName,
         },
       );
 
-      if (data['statusCode'] == 200 && data['success'] == true) {
+      final token = _extractToken(data);
+      if (data['statusCode'] == 200 &&
+          data['success'] == true &&
+          token != null) {
         await _persistSession(
-          token: (data['data'] as Map<String, dynamic>)['token'] as String,
+          token: token,
           userType: 'candidate',
         );
         Get.offAllNamed(AppRoutes.home);
         return;
       }
 
-      errorMsg.value = data['message'] as String? ?? 'Erreur de connexion.';
-    } on Exception {
-      errorMsg.value = 'Erreur réseau. Réessayez.';
+      errorMsg.value = _extractApiMessage(
+        data,
+        fallback: 'Erreur de connexion.',
+      );
+    } on Exception catch (error) {
+      final message = error.toString();
+      if (message.contains('Impossible de joindre l\'API')) {
+        errorMsg.value = 'Connexion au service impossible pour le moment.';
+      } else {
+        errorMsg.value = 'Erreur reseau. Reessayez.';
+      }
     } finally {
       isLoading.value = false;
     }
@@ -102,7 +123,7 @@ class CandidateLoginController extends GetxController {
   Future<void> loginWithGoogle() async {
     Get.snackbar(
       'Connexion Google',
-      'Connexion Google en cours d\'intégration.',
+      'Connexion Google en cours d\'integration.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
@@ -110,15 +131,52 @@ class CandidateLoginController extends GetxController {
   String? validateEmail(String? value) => Validators.email(value);
 
   String? validatePassword(String? value) =>
-      Validators.password(value, minLength: 4);
+      Validators.password(value, minLength: 8);
 
   Future<void> _persistSession({
     required String token,
     required String userType,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
-    await prefs.setString('user_type', userType);
-    await _secureStorage.write(key: 'auth_token', value: token);
+    await _tokenStore.saveSession(token: token, userType: userType);
+  }
+
+  String? _extractToken(Map<String, dynamic> data) {
+    final payload = data['data'];
+    if (payload is Map<String, dynamic>) {
+      final token = payload['token'];
+      if (token is String && token.trim().isNotEmpty) {
+        return token;
+      }
+    }
+
+    final token = data['token'];
+    if (token is String && token.trim().isNotEmpty) {
+      return token;
+    }
+    return null;
+  }
+
+  String _extractApiMessage(
+    Map<String, dynamic> data, {
+    required String fallback,
+  }) {
+    final message = data['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
+    }
+
+    final errors = data['errors'];
+    if (errors is Map<String, dynamic>) {
+      for (final value in errors.values) {
+        if (value is List && value.isNotEmpty) {
+          return value.first.toString();
+        }
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+    }
+
+    return fallback;
   }
 }

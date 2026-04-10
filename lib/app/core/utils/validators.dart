@@ -15,19 +15,28 @@ class Validators {
     }
 
     final email = value!.trim();
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-    if (!emailRegex.hasMatch(email)) {
+    final emailRegex = RegExp(
+      r"^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Z0-9-]+\.)+[A-Z]{2,63}$",
+      caseSensitive: false,
+    );
+    if (email.length > 254 ||
+        email.contains('..') ||
+        !emailRegex.hasMatch(email)) {
       return 'Adresse e-mail invalide';
     }
     return null;
   }
 
-  static String? password(String? value, {int minLength = 4}) {
+  static String? password(String? value, {int minLength = 8}) {
     if (value == null || value.isEmpty) {
       return 'Le mot de passe est obligatoire';
     }
     if (value.length < minLength) {
-      return 'Minimum $minLength caractères';
+      return 'Minimum $minLength caracteres';
+    }
+    if (!RegExp(r'[A-Za-z]').hasMatch(value) ||
+        !RegExp(r'\d').hasMatch(value)) {
+      return 'Ajoutez au moins une lettre et un chiffre';
     }
     return null;
   }

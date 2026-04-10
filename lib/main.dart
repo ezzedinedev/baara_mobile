@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'app/core/security/auth_token_store.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/data/providers/api_provider.dart';
 import 'routes/app_pages.dart';
@@ -21,6 +22,7 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  Get.put(const AuthTokenStore(), permanent: true);
   Get.put(ApiProvider(), permanent: true);
 
   runApp(const OpportuneBFApp());

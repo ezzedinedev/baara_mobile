@@ -61,6 +61,18 @@ class AppColors {
     stops: [0.0, 0.55, 1.0],
   );
 
+  static const LinearGradient landingHeroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primary, primaryMedium, primaryLight],
+  );
+
+  static const LinearGradient landingCtaGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [primaryMedium, primary],
+  );
+
   static List<BoxShadow> get ambientShadow => [
         BoxShadow(
           color: primaryDark.withValues(alpha: 0.07),
