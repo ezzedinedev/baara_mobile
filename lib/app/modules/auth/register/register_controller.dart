@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/security/auth_token_store.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/providers/api_provider.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../../widgets/widgets.dart';
 
 class RegisterCountryOption {
   const RegisterCountryOption({
@@ -22,12 +22,9 @@ class RegisterCountryOption {
 }
 
 class RegisterController extends GetxController {
-  RegisterController()
-      : _apiProvider = Get.find<ApiProvider>(),
-        _tokenStore = const AuthTokenStore();
+  RegisterController() : _apiProvider = Get.find<ApiProvider>();
 
   final ApiProvider _apiProvider;
-  final AuthTokenStore _tokenStore;
 
   final currentStep = 1.obs;
   final isLoading = false.obs;
@@ -297,17 +294,19 @@ class RegisterController extends GetxController {
     isLoading.value = true;
 
     try {
+      // NB : le backend (`AuthApiController@register`) ne valide pas `name`,
+      // `country` ni `candidate_profile_type` — on les retire du payload pour
+      // éviter de transporter du bruit. `candidate_profile_type` et `country`
+      // devraient être persistés via un PUT /profile post-login si on veut les
+      // conserver côté serveur.
       final payload = <String, dynamic>{
-        'name': '${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}',
         'first_name': firstNameCtrl.text.trim(),
         'last_name': lastNameCtrl.text.trim(),
         'email': emailCtrl.text.trim(),
         'phone': phoneCtrl.text.trim(),
-        'country': countryCtrl.text.trim(),
         'password': passwordCtrl.text,
         'password_confirmation': confirmPasswordCtrl.text,
         'user_type': 'candidate',
-        'candidate_profile_type': registrationProfile.value,
         'device_name': ApiConstants.authDeviceName,
       };
 
@@ -315,25 +314,10 @@ class RegisterController extends GetxController {
 
       if ((data['statusCode'] == 200 || data['statusCode'] == 201) &&
           data['success'] == true) {
-        final responseData = data['data'];
-        String? token;
-
-        if (responseData is Map<String, dynamic>) {
-          token = responseData['token'] as String?;
-        }
-        token ??= data['token'] as String?;
-
-        if (token != null && token.isNotEmpty) {
-          await _persistSession(token: token);
-          Get.offAllNamed(AppRoutes.home);
-          return;
-        }
-
         Get.offAllNamed(AppRoutes.candidateLogin);
-        Get.snackbar(
-          'Inscription',
-          'Compte cree. Connectez-vous pour continuer.',
-          snackPosition: SnackPosition.BOTTOM,
+        AppToast.success(
+          'Inscription reussie',
+          'Votre compte a ete cree. Connectez-vous pour continuer.',
         );
         return;
       }
@@ -498,10 +482,6 @@ class RegisterController extends GetxController {
       }
     }
     return false;
-  }
-
-  Future<void> _persistSession({required String token}) async {
-    await _tokenStore.saveSession(token: token, userType: 'candidate');
   }
 
   bool _hydrateRegistrationProfile() {

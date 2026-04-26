@@ -20,15 +20,75 @@ class ConversationModel {
   final String type; // 'recruiter', 'company', 'system'
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
+    // Backend Laravel : id, employer_profile_id, candidate_profile_id,
+    // last_message_at, unread_employer, unread_candidate, latestMessage{...},
+    // candidate{user{...}}, employer{...}.
+    final latest = json['latestMessage'] ?? json['latest_message'];
+    final lastMsgText = latest is Map
+        ? (latest['content'] ??
+                latest['message'] ??
+                latest['text'] ??
+                '')
+            .toString()
+        : (json['last_message'] ?? json['preview'] ?? '').toString();
+
+    final employer = json['employer'];
+    final candidate = json['candidate'];
+    final candidateUser =
+        candidate is Map ? candidate['user'] : null;
+
+    String resolvedTitle = '';
+    String resolvedType = json['type']?.toString() ?? '';
+
+    // L'app candidat affiche le recruteur en face — privilegier l'employeur.
+    if (employer is Map) {
+      resolvedTitle = (employer['company_name'] ??
+              employer['name'] ??
+              employer['display_name'] ??
+              '')
+          .toString();
+      if (resolvedType.isEmpty) resolvedType = 'recruiter';
+    }
+    if (resolvedTitle.isEmpty && candidateUser is Map) {
+      final first = (candidateUser['first_name'] ?? '').toString().trim();
+      final last = (candidateUser['last_name'] ?? '').toString().trim();
+      resolvedTitle = '$first $last'.trim();
+      if (resolvedTitle.isEmpty) {
+        resolvedTitle = (candidateUser['name'] ?? '').toString();
+      }
+    }
+    if (resolvedTitle.isEmpty) {
+      resolvedTitle = (json['title'] ??
+              json['company_name'] ??
+              json['name'] ??
+              'Conversation')
+          .toString();
+    }
+    if (resolvedType.isEmpty) resolvedType = 'company';
+
+    final unread = json['unread_candidate'] ??
+        json['unread_count'] ??
+        json['unread_employer'] ??
+        json['unread'] ??
+        0;
+
+    final time = json['last_message_at'] ??
+        json['last_message_time'] ??
+        (latest is Map ? latest['sent_at'] : null) ??
+        json['updated_at'];
+
     return ConversationModel(
       id: json['id']?.toString() ?? '',
-      title: json['title'] ?? json['company_name'] ?? json['name'] ?? '',
-      lastMessage: json['last_message'] ?? json['preview'] ?? '',
-      lastMessageTime: _parseTime(json['last_message_time'] ?? json['updated_at']),
-      unreadCount: json['unread_count'] ?? json['unread'] ?? 0,
+      title: resolvedTitle,
+      lastMessage: lastMsgText,
+      lastMessageTime: _parseTime(time),
+      unreadCount: unread is num ? unread.toInt() : 0,
       isOnline: json['is_online'] ?? json['online'] ?? false,
-      avatar: json['avatar'] ?? json['logo'],
-      type: json['type'] ?? 'company',
+      avatar: (employer is Map ? employer['logo_url'] : null) ??
+          (candidateUser is Map ? candidateUser['avatar_url'] : null) ??
+          json['avatar'] ??
+          json['logo'],
+      type: resolvedType,
     );
   }
 
@@ -71,18 +131,37 @@ class MessageModel {
   final List<MessageAttachment>? attachments;
 
   factory MessageModel.fromJson(Map<String, dynamic> json, {bool isMine = false}) {
+    // Backend Laravel : content, message_type, sent_at, is_read, read_at,
+    // attachment_url, file_name, file_size, sender_id, sender{user...}.
+    final attachmentUrl = json['attachment_url']?.toString();
+    final attachments = <MessageAttachment>[];
+    if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
+      attachments.add(MessageAttachment(
+        id: json['id']?.toString() ?? '',
+        name: json['file_name']?.toString() ?? 'piece-jointe',
+        url: attachmentUrl,
+        type: (json['message_type']?.toString() ?? 'file') == 'image'
+            ? 'image'
+            : 'file',
+        size: (json['file_size'] is num)
+            ? (json['file_size'] as num).toInt()
+            : 0,
+      ));
+    } else if (json['attachments'] is List) {
+      attachments.addAll((json['attachments'] as List)
+          .map((e) => MessageAttachment.fromJson(e)));
+    }
+
     return MessageModel(
       id: json['id']?.toString() ?? '',
-      text: json['text'] ?? json['message'] ?? '',
+      text: (json['content'] ?? json['text'] ?? json['message'] ?? '').toString(),
       sentAt: _parseTime(json['sent_at'] ?? json['created_at']),
       isMine: isMine,
-      status: json['status'] ?? 'sent',
-      type: json['type'] ?? 'text',
-      attachments: json['attachments'] != null
-          ? (json['attachments'] as List)
-              .map((e) => MessageAttachment.fromJson(e))
-              .toList()
-          : null,
+      status: (json['is_read'] == true)
+          ? 'read'
+          : (json['status']?.toString() ?? 'sent'),
+      type: (json['message_type'] ?? json['type'] ?? 'text').toString(),
+      attachments: attachments.isEmpty ? null : attachments,
     );
   }
 

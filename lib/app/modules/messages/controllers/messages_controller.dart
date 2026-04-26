@@ -35,7 +35,6 @@ class MessagesController extends GetxController {
   void onInit() {
     super.onInit();
     loadConversations();
-    loadUnreadCount();
   }
 
   Future<void> loadConversations({bool refresh = false}) async {
@@ -61,6 +60,7 @@ class MessagesController extends GetxController {
 
       hasMoreConversations.value = result.hasNextPage;
       totalConversations.value = result.total;
+      recomputeUnreadCount();
     } catch (e) {
       errorMessage.value = _friendlyError(e);
     } finally {
@@ -148,12 +148,11 @@ class MessagesController extends GetxController {
     }
   }
 
-  Future<bool> sendMessage(String text,
-      {List<Map<String, dynamic>>? attachments}) async {
+  Future<bool> sendMessage(String text) async {
     if (activeConversationId.value == null) {
       return false;
     }
-    if (text.trim().isEmpty && (attachments == null || attachments.isEmpty)) {
+    if (text.trim().isEmpty) {
       return false;
     }
 
@@ -163,7 +162,6 @@ class MessagesController extends GetxController {
       final message = await _repository.sendMessage(
         activeConversationId.value!,
         text.trim(),
-        attachments: attachments,
       );
 
       activeMessages.add(message);
@@ -177,12 +175,11 @@ class MessagesController extends GetxController {
     }
   }
 
-  Future<void> loadUnreadCount() async {
-    try {
-      unreadCount.value = await _repository.getUnreadCount();
-    } catch (e) {
-      // Silent fail
-    }
+  /// Backend ne fournit pas d'endpoint dedie : on additionne le compteur
+  /// non-lu de chaque conversation deja chargee.
+  void recomputeUnreadCount() {
+    unreadCount.value =
+        conversations.fold<int>(0, (sum, c) => sum + c.unreadCount);
   }
 
   void openConversation(ConversationModel conversation) {
@@ -196,20 +193,6 @@ class MessagesController extends GetxController {
     activeMessages.clear();
     currentMessagesPage.value = 1;
     hasMoreMessages.value = false;
-  }
-
-  Future<void> deleteConversation(String conversationId) async {
-    try {
-      final success = await _repository.deleteConversation(conversationId);
-      if (success) {
-        conversations.removeWhere((c) => c.id == conversationId);
-        if (activeConversationId.value == conversationId) {
-          closeConversation();
-        }
-      }
-    } catch (e) {
-      errorMessage.value = 'Erreur lors de la suppression.';
-    }
   }
 
   void _updateUnreadCount(String conversationId, int count) {
@@ -226,6 +209,7 @@ class MessagesController extends GetxController {
         type: conversations[index].type,
       );
       conversations[index] = updated;
+      recomputeUnreadCount();
     }
   }
 
@@ -249,10 +233,7 @@ class MessagesController extends GetxController {
 
   @override
   Future<void> refresh() async {
-    await Future.wait([
-      loadConversations(refresh: true),
-      loadUnreadCount(),
-    ]);
+    await loadConversations(refresh: true);
   }
 
   String _friendlyError(Object error) {

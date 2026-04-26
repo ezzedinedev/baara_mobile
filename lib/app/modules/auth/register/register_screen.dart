@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/haptics.dart';
 import '../../../../routes/app_routes.dart';
-import '../../../../widgets/gradient_button.dart';
-import '../../../../widgets/register/country_dropdown.dart';
-import '../../../../widgets/register/register_badges.dart';
-import '../../../../widgets/register/step_input.dart';
+import '../../../../widgets/widgets.dart';
 import 'register_controller.dart';
 
+/// Inscription — wizard 3 étapes : (1) prénom/nom, (2) email/pays/téléphone,
+/// (3) mot de passe + CGU. Logique préservée via [RegisterController].
+/// Visuel : hero wavy + formulaire épuré (AuthTextField underline) + CTA pill.
 class RegisterScreen extends GetView<RegisterController> {
   const RegisterScreen({super.key});
 
@@ -20,207 +22,246 @@ class RegisterScreen extends GetView<RegisterController> {
       onPopInvokedWithResult: (_, __) => controller.onBack(),
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(22, 12, 22, 26),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              GestureDetector(
-                onTap: controller.onBack,
-                child: Obx(
-                  () => Row(
-                    children: [
-                      const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 18,
-                        color: AppColors.bodyColor,
+        resizeToAvoidBottomInset: true,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              WavyAuthHeader(
+                height: 220,
+                showLeading: true,
+                onLeadingTap: controller.onBack,
+                foregroundIcon: Icons.person_add_alt_1_rounded,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(26, 10, 26, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "S'inscrire",
+                      style: AppTextStyles.displayMd.copyWith(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        controller.backLabel,
-                        style: AppTextStyles.bodySm.copyWith(
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 48,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _ProgressHeader(controller: controller),
+                    const SizedBox(height: 18),
+                    Obx(
+                      () => Text(
+                        controller.stepTitle,
+                        style: AppTextStyles.headlineLg.copyWith(fontSize: 22),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Obx(
+                      () => Text(
+                        controller.stepSubtitle,
+                        style: AppTextStyles.bodyMd.copyWith(
                           color: AppColors.bodyColor,
-                          fontWeight: FontWeight.w500,
+                          height: 1.4,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Etape ${controller.currentStep.value} sur 3',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.bodyColor,
-                        letterSpacing: 0.4,
-                        fontSize: 11,
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(
+                      () => _ProfilePill(
+                        label: controller.registrationProfileLabel,
                       ),
                     ),
-                    Text(
-                      '${controller.progressPercent}%',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.bodyColor,
-                        letterSpacing: 0.2,
-                        fontSize: 11,
+                    const SizedBox(height: 22),
+                    Obx(
+                      () => AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: _StepForm(
+                          key: ValueKey<int>(controller.currentStep.value),
+                          step: controller.currentStep.value,
+                          controller: controller,
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Obx(
-                () => ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 5,
-                    value: controller.progressValue,
-                    backgroundColor: AppColors.surfaceHighest,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Obx(
-                () => Text(
-                  controller.stepTitle,
-                  style: AppTextStyles.displayMd.copyWith(
-                    fontSize: 40,
-                    height: 1.02,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Obx(
-                () => Text(
-                  controller.stepSubtitle,
-                  style: AppTextStyles.bodyLg.copyWith(
-                    color: AppColors.bodyColor,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Obx(
-                () => Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLow,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.26),
-                    ),
-                  ),
-                  child: Text(
-                    'Profil: ${controller.registrationProfileLabel}',
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.bodyColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              Obx(
-                () => AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  child: _StepForm(
-                    key: ValueKey<int>(controller.currentStep.value),
-                    step: controller.currentStep.value,
-                    controller: controller,
-                  ),
-                ),
-              ),
-              Obx(() {
-                if (controller.errorMsg.value.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.24),
+                    Obx(() {
+                      if (controller.errorMsg.value.isEmpty) {
+                        return const SizedBox(height: 20);
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 14, bottom: 6),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.24),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: AppColors.error,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  controller.errorMsg.value,
+                                  style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    Obx(
+                      () => AuthCtaButton(
+                        label: controller.actionLabel,
+                        isLoading: controller.isLoading.value,
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : controller.onContinue,
                       ),
                     ),
-                    child: Text(
-                      controller.errorMsg.value,
-                      style: AppTextStyles.bodySm.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 16),
-              Obx(
-                () => GradientButton(
-                  label: controller.actionLabel,
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : controller.onContinue,
-                  isLoading: controller.isLoading.value,
-                  textColor: AppColors.onPrimary,
-                  gradient: AppColors.primaryGradient,
-                  height: 54,
-                  borderRadius: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      'Vous avez deja un compte ? ',
-                      style: AppTextStyles.bodySm.copyWith(
-                        color: AppColors.bodyColor,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Get.offNamed(AppRoutes.candidateLogin),
-                      child: Text(
-                        'Se connecter',
-                        style: AppTextStyles.titleMd.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(height: 18),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          AppHaptics.tap();
+                          Get.offNamed(AppRoutes.candidateLogin);
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.bodyColor,
+                            ),
+                            children: [
+                              const TextSpan(text: 'Vous avez déjà un compte ? '),
+                              TextSpan(
+                                text: 'Se connecter',
+                                style: AppTextStyles.titleMd.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-              Container(
-                width: double.infinity,
-                height: 1,
-                color: AppColors.outlineVariant.withValues(alpha: 0.24),
-              ),
-              const SizedBox(height: 14),
-                const RegisterBadges(),
-              ],
-            ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProgressHeader extends StatelessWidget {
+  const _ProgressHeader({required this.controller});
+  final RegisterController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Étape ${controller.currentStep.value} sur 3',
+                style: AppTextStyles.labelMd.copyWith(
+                  color: AppColors.bodyColor,
+                  letterSpacing: 0.4,
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                '${controller.progressPercent}%',
+                style: AppTextStyles.labelMd.copyWith(
+                  color: AppColors.primary,
+                  letterSpacing: 0.2,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: LinearProgressIndicator(
+              minHeight: 5,
+              value: controller.progressValue,
+              backgroundColor: AppColors.surfaceHighest,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfilePill extends StatelessWidget {
+  const _ProfilePill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceIconSoft,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.verified_user_outlined,
+            color: AppColors.primary,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Profil : $label',
+            style: AppTextStyles.labelSm.copyWith(
+              color: AppColors.primary,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -244,15 +285,15 @@ class _StepForm extends StatelessWidget {
           key: controller.stepOneFormKey,
           child: Column(
             children: [
-              RegisterStepInput(
-                label: 'Prenom',
+              AuthTextField(
+                label: 'Prénom',
                 hint: 'Daniel',
                 icon: Icons.person_outline_rounded,
                 controller: controller.firstNameCtrl,
                 validator: controller.validateFirstName,
               ),
-              const SizedBox(height: 14),
-              RegisterStepInput(
+              const SizedBox(height: 18),
+              AuthTextField(
                 label: 'Nom de famille',
                 hint: 'Nanga',
                 icon: Icons.person_outline_rounded,
@@ -267,23 +308,23 @@ class _StepForm extends StatelessWidget {
           key: controller.stepTwoFormKey,
           child: Column(
             children: [
-              RegisterStepInput(
+              AuthTextField(
                 label: 'Adresse email',
                 hint: 'daniel@exemple.com',
                 icon: Icons.mail_outline_rounded,
-                keyboardType: TextInputType.emailAddress,
                 controller: controller.emailCtrl,
+                keyboardType: TextInputType.emailAddress,
                 validator: controller.validateEmail,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
               RegisterCountryDropdown(controller: controller),
-              const SizedBox(height: 14),
-              RegisterStepInput(
-                label: 'Numero de telephone',
+              const SizedBox(height: 18),
+              AuthTextField(
+                label: 'Numéro de téléphone',
                 hint: '+226 XX XX XX XX',
                 icon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
                 controller: controller.phoneCtrl,
+                keyboardType: TextInputType.phone,
                 validator: controller.validatePhone,
               ),
             ],
@@ -296,14 +337,17 @@ class _StepForm extends StatelessWidget {
           child: Column(
             children: [
               Obx(
-                () => RegisterStepInput(
+                () => AuthTextField(
                   label: 'Mot de passe',
                   hint: '********',
                   icon: Icons.lock_outline_rounded,
                   controller: controller.passwordCtrl,
-                  validator: controller.validatePassword,
                   obscureText: controller.obscurePassword.value,
-                  suffixIcon: IconButton(
+                  validator: controller.validatePassword,
+                  helper:
+                      'Minimum 8 caractères avec lettres et chiffres.',
+                  suffix: IconButton(
+                    tooltip: controller.obscurePassword.value ? 'Afficher le mot de passe' : 'Masquer le mot de passe',
                     icon: Icon(
                       controller.obscurePassword.value
                           ? Icons.visibility_outlined
@@ -313,20 +357,19 @@ class _StepForm extends StatelessWidget {
                     ),
                     onPressed: controller.togglePasswordVisibility,
                   ),
-                  helper:
-                      'Minimum 8 caracteres avec lettres et chiffres.',
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
               Obx(
-                () => RegisterStepInput(
+                () => AuthTextField(
                   label: 'Confirmer le mot de passe',
                   hint: '********',
                   icon: Icons.lock_outline_rounded,
                   controller: controller.confirmPasswordCtrl,
-                  validator: controller.validatePasswordConfirmation,
                   obscureText: controller.obscureConfirmPassword.value,
-                  suffixIcon: IconButton(
+                  validator: controller.validatePasswordConfirmation,
+                  suffix: IconButton(
+                    tooltip: controller.obscureConfirmPassword.value ? 'Afficher le mot de passe' : 'Masquer le mot de passe',
                     icon: Icon(
                       controller.obscureConfirmPassword.value
                           ? Icons.visibility_outlined
@@ -338,10 +381,13 @@ class _StepForm extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Obx(
                 () => GestureDetector(
-                  onTap: controller.toggleTerms,
+                  onTap: () {
+                    AppHaptics.tap();
+                    controller.toggleTerms();
+                  },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     width: double.infinity,
@@ -350,7 +396,7 @@ class _StepForm extends StatelessWidget {
                       color: controller.acceptedTerms.value
                           ? AppColors.surfaceSelected
                           : AppColors.surfaceLow,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: controller.acceptedTerms.value
                             ? AppColors.primary
@@ -361,8 +407,8 @@ class _StepForm extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 20,
-                          height: 20,
+                          width: 22,
+                          height: 22,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: controller.acceptedTerms.value
@@ -382,17 +428,18 @@ class _StepForm extends StatelessWidget {
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 9),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: RichText(
                             text: TextSpan(
                               style: AppTextStyles.bodySm.copyWith(
                                 color: AppColors.bodyColor,
+                                height: 1.35,
                               ),
                               children: [
-                                const TextSpan(text: 'J\'accepte les '),
+                                const TextSpan(text: "J'accepte les "),
                                 TextSpan(
-                                  text: 'conditions generales d\'utilisation',
+                                  text: "conditions générales d'utilisation",
                                   style: AppTextStyles.bodySm.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w700,
@@ -400,7 +447,7 @@ class _StepForm extends StatelessWidget {
                                 ),
                                 const TextSpan(text: ' et la '),
                                 TextSpan(
-                                  text: 'politique de confidentialite',
+                                  text: 'politique de confidentialité',
                                   style: AppTextStyles.bodySm.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w700,

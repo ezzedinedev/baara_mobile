@@ -24,8 +24,9 @@ class MessagesRepository {
     int page = 1,
     int perPage = 50,
   }) async {
+    // Backend : GET /api/v1/messages/{conversation}
     final response = await _apiProvider.getJson(
-      '${ApiConstants.conversations}/$conversationId/messages?page=$page&per_page=$perPage',
+      '${ApiConstants.conversations}/$conversationId?page=$page&per_page=$perPage',
     );
 
     return _parseMessagesResponse(response);
@@ -33,56 +34,27 @@ class MessagesRepository {
 
   Future<MessageModel> sendMessage(
     String conversationId,
-    String text, {
-    List<Map<String, dynamic>>? attachments,
-  }) async {
+    String text,
+  ) async {
+    // Backend : POST /api/v1/messages/{conversation}/send avec champ "content".
     final response = await _apiProvider.postJson(
-      '${ApiConstants.conversations}/$conversationId/messages',
-      {
-        'message': text,
-        if (attachments != null) 'attachments': attachments,
-      },
+      '${ApiConstants.conversations}/$conversationId/send',
+      {'content': text},
     );
 
     if (response['success'] == true && response['data'] != null) {
       return MessageModel.fromJson(response['data'], isMine: true);
     }
-    throw Exception('Failed to send message');
+    throw Exception(
+      response['message']?.toString() ?? 'Echec de l\'envoi du message.',
+    );
   }
 
   Future<bool> markAsRead(String conversationId) async {
+    // Backend : POST /api/v1/messages/{conversation}/read
     final response = await _apiProvider.postJson(
       '${ApiConstants.conversations}/$conversationId/read',
       {},
-    );
-    return response['success'] == true;
-  }
-
-  Future<bool> deleteConversation(String conversationId) async {
-    final response = await _apiProvider.deleteJson(
-      '${ApiConstants.conversations}/$conversationId',
-    );
-    return response['success'] == true;
-  }
-
-  Future<int> getUnreadCount() async {
-    final response = await _apiProvider
-        .getJson('${ApiConstants.conversations}/unread-count');
-    return response['unread_count'] ?? response['count'] ?? 0;
-  }
-
-  Future<bool> startConversation({
-    required String recipientId,
-    required String recipientType,
-    String? initialMessage,
-  }) async {
-    final response = await _apiProvider.postJson(
-      ApiConstants.conversations,
-      {
-        'recipient_id': recipientId,
-        'recipient_type': recipientType,
-        if (initialMessage != null) 'message': initialMessage,
-      },
     );
     return response['success'] == true;
   }

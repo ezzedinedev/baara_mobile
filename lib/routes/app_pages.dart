@@ -7,20 +7,39 @@ import '../app/modules/auth/recruiter/recruiter_login_binding.dart';
 import '../app/modules/auth/recruiter/recruiter_login_screen.dart';
 import '../app/modules/auth/register_profile/register_profile_binding.dart';
 import '../app/modules/auth/register_profile/register_profile_screen.dart';
+import '../app/modules/auth/otp/otp_verification_controller.dart';
+import '../app/modules/auth/otp/otp_verification_screen.dart';
 import '../app/modules/auth/register/register_binding.dart';
 import '../app/modules/auth/register/register_screen.dart';
+import '../app/modules/errors/error_404_screen.dart';
 import '../app/modules/home/home_binding.dart';
 import '../app/modules/home/home_screen.dart';
 import '../app/modules/landing/landing_binding.dart';
 import '../app/modules/landing/landing_screen.dart';
+import '../app/modules/notifications/notifications_screen.dart';
 import '../app/modules/profile_selection/profile_selection_binding.dart';
 import '../app/modules/profile_selection/profile_selection_screen.dart';
 import '../app/modules/splash/splash_binding.dart';
 import '../app/modules/splash/splash_screen.dart';
 import '../app/modules/offers/bindings/offers_binding.dart';
+import '../app/modules/offers/screens/my_applications_screen.dart';
+import '../app/modules/offers/screens/offers_screen.dart';
 import '../app/modules/trainings/bindings/trainings_binding.dart';
+import '../app/modules/trainings/screens/trainings_screen.dart';
 import '../app/modules/messages/bindings/messages_binding.dart';
+import '../app/modules/messages/screens/messages_screen.dart';
 import '../app/modules/profile/bindings/profile_binding.dart';
+import '../app/modules/profile/controllers/cv_builder_controller.dart';
+import '../app/modules/profile/screens/cv_assistant_chat_screen.dart';
+import '../app/modules/profile/screens/cv_builder_landing_screen.dart';
+import '../app/modules/profile/screens/cv_import_screen.dart';
+import '../app/modules/profile/screens/cv_manual_editor_screen.dart';
+import '../app/modules/profile/screens/cv_preview_screen.dart';
+import '../app/modules/profile/screens/cv_screen.dart';
+import '../app/modules/profile/screens/portfolio_edit_screen.dart';
+import '../app/modules/profile/screens/portfolio_screen.dart';
+import '../app/modules/profile/screens/profile_edit_screen.dart';
+import '../app/modules/profile/screens/profile_screen.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -84,6 +103,14 @@ class AppPages {
       curve: Curves.easeOutQuart,
     ),
     GetPage(
+      name: AppRoutes.otpVerification,
+      page: () => const OtpVerificationScreen(),
+      binding: OtpVerificationBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    ),
+    GetPage(
       name: AppRoutes.home,
       page: () => const HomeScreen(),
       binding: HomeBinding(),
@@ -91,49 +118,55 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.offers,
-      page: () => const SizedBox(),
+      page: () => const OffersScreen(),
       binding: OffersBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.offerDetail,
-      page: () => const SizedBox(),
+      page: () => const OffersScreen(),
+      binding: OffersBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.myApplications,
+      page: () => const MyApplicationsScreen(),
       binding: OffersBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.trainings,
-      page: () => const SizedBox(),
+      page: () => const TrainingsScreen(),
       binding: TrainingsBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.trainingDetail,
-      page: () => const SizedBox(),
+      page: () => const TrainingsScreen(),
       binding: TrainingsBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.messages,
-      page: () => const SizedBox(),
+      page: () => const MessagesScreen(),
       binding: MessagesBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.conversation,
-      page: () => const SizedBox(),
+      page: () => const MessagesScreen(),
       binding: MessagesBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.profile,
-      page: () => const SizedBox(),
+      page: () => const ProfileScreen(),
       binding: ProfileBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.profileEdit,
-      page: () => const SizedBox(),
+      page: () => const ProfileEditScreen(),
       binding: ProfileBinding(),
       transition: Transition.rightToLeft,
     ),
@@ -144,8 +177,57 @@ class AppPages {
       transition: Transition.rightToLeft,
     ),
     GetPage(
+      name: AppRoutes.profileCv,
+      page: () => const CvScreen(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileCvBuilder,
+      page: () => const CvBuilderLandingScreen(),
+      binding: CvBuilderBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileCvAssistant,
+      page: () => const CvAssistantChatScreen(),
+      binding: CvBuilderBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileCvManual,
+      page: () => const CvManualEditorScreen(),
+      binding: CvBuilderBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileCvImport,
+      page: () => const CvImportScreen(),
+      binding: CvBuilderBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileCvPreview,
+      page: () => const CvPreviewScreen(),
+      binding: CvBuilderBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profilePortfolio,
+      page: () => const PortfolioScreen(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profilePortfolioEdit,
+      page: () => const PortfolioEditScreen(),
+      binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
       name: AppRoutes.notifications,
-      page: () => const SizedBox(),
+      page: () => const NotificationsScreen(),
+      binding: HomeBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -153,6 +235,11 @@ class AppPages {
       page: () => const SizedBox(),
       binding: ProfileBinding(),
       transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.error404,
+      page: () => const Error404Screen(),
+      transition: Transition.fadeIn,
     ),
   ];
 }

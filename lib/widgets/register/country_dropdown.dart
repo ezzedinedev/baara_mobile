@@ -41,7 +41,7 @@ class RegisterCountryDropdown extends StatelessWidget {
             decoration: InputDecoration(
               filled: true,
               fillColor: AppColors.surfaceLow,
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.public_rounded,
                 size: 19,
                 color: AppColors.hintColor,
@@ -68,7 +68,7 @@ class RegisterCountryDropdown extends StatelessWidget {
                 ),
               ),
             ),
-            icon: const Icon(
+            icon: Icon(
               Icons.keyboard_arrow_down_rounded,
               color: AppColors.hintColor,
             ),

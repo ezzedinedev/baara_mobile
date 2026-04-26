@@ -12,7 +12,6 @@ class TrainingsController extends GetxController {
   late final TrainingRepository _repository;
 
   final trainings = <TrainingModel>[].obs;
-  final featuredTrainings = <TrainingModel>[].obs;
   final enrolledTrainings = <TrainingModel>[].obs;
   final isLoading = false.obs;
   final isLoadingMore = false.obs;
@@ -31,7 +30,6 @@ class TrainingsController extends GetxController {
   void onInit() {
     super.onInit();
     loadTrainings();
-    loadFeaturedTrainings();
   }
 
   Future<void> loadTrainings({bool refresh = false}) async {
@@ -88,15 +86,6 @@ class TrainingsController extends GetxController {
     }
   }
 
-  Future<void> loadFeaturedTrainings() async {
-    try {
-      final result = await _repository.getFeaturedTrainings();
-      featuredTrainings.value = result;
-    } catch (e) {
-      // Silent fail
-    }
-  }
-
   Future<void> loadEnrolledTrainings({bool refresh = false}) async {
     if (refresh) {
       currentPage.value = 1;
@@ -131,22 +120,6 @@ class TrainingsController extends GetxController {
   void clearFilter() {
     filter.value = null;
     loadTrainings(refresh: true);
-  }
-
-  Future<bool> bookmarkTraining(String trainingId) async {
-    try {
-      return await _repository.bookmarkTraining(trainingId);
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<bool> unbookmarkTraining(String trainingId) async {
-    try {
-      return await _repository.unbookmarkTraining(trainingId);
-    } catch (e) {
-      return false;
-    }
   }
 
   Future<bool> enrollToTraining(String trainingId) async {

@@ -108,40 +108,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<bool> deleteCv(String cvId) async {
-    try {
-      final success = await _cvRepo.deleteCv(cvId);
-      if (success) {
-        cvs.removeWhere((c) => c.id == cvId);
-      }
-      return success;
-    } catch (e) {
-      errorMessage.value = 'Erreur lors de la suppression du CV.';
-      return false;
-    }
-  }
-
-  Future<bool> setDefaultCv(String cvId) async {
-    try {
-      final success = await _cvRepo.setDefaultCv(cvId);
-      if (success) {
-        cvs.value = cvs
-            .map((c) => CvModel(
-                  id: c.id,
-                  fileName: c.fileName,
-                  fileUrl: c.fileUrl,
-                  fileSize: c.fileSize,
-                  uploadedAt: c.uploadedAt,
-                  isDefault: c.id == cvId,
-                ))
-            .toList();
-      }
-      return success;
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<void> loadPortfolio() async {
     isLoadingPortfolio.value = true;
 
@@ -181,35 +147,27 @@ class ProfileController extends GetxController {
   }
 
   Future<bool> deleteProject(String projectId) async {
+    // Optimistic update : on retire de la liste immédiatement pour un retour
+    // instantané, puis rollback si le serveur refuse.
+    final removedIndex =
+        portfolioProjects.indexWhere((p) => p.id == projectId);
+    if (removedIndex == -1) {
+      return false;
+    }
+    final removedProject = portfolioProjects[removedIndex];
+    portfolioProjects.removeAt(removedIndex);
+
     try {
       final success = await _portfolioRepo.deleteProject(projectId);
-      if (success) {
-        portfolioProjects.removeWhere((p) => p.id == projectId);
+      if (!success) {
+        // Rollback : remettre le projet à sa position d'origine.
+        portfolioProjects.insert(removedIndex, removedProject);
+        errorMessage.value = 'Suppression refusée par le serveur.';
       }
       return success;
     } catch (e) {
+      portfolioProjects.insert(removedIndex, removedProject);
       errorMessage.value = 'Erreur lors de la suppression du projet.';
-      return false;
-    }
-  }
-
-  Future<bool> uploadProjectImages(
-      String projectId, List<Uint8List> images, List<String> names) async {
-    try {
-      final files = List.generate(
-        images.length,
-        (i) => api.ApiMultipartFile(
-            field: 'images', bytes: images[i], filename: names[i]),
-      );
-      final project =
-          await _portfolioRepo.uploadProjectImages(projectId, files);
-      final index = portfolioProjects.indexWhere((p) => p.id == projectId);
-      if (index != -1) {
-        portfolioProjects[index] = project;
-      }
-      return true;
-    } catch (e) {
-      errorMessage.value = 'Erreur lors de l\'upload des images.';
       return false;
     }
   }
@@ -222,12 +180,10 @@ class ProfileController extends GetxController {
     } catch (e) {
       settings.value = const SettingsModel(
         notificationsEnabled: true,
-        emailNotifications: true,
-        smsNotifications: false,
-        pushNotifications: true,
+        smsEnabled: false,
         language: 'fr',
         theme: 'light',
-        isPrivateProfile: false,
+        density: 'normal',
       );
     } finally {
       isLoadingSettings.value = false;
@@ -240,32 +196,6 @@ class ProfileController extends GetxController {
       return true;
     } catch (e) {
       errorMessage.value = 'Erreur lors de la mise a jour des parametres.';
-      return false;
-    }
-  }
-
-  Future<bool> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-    required String newPasswordConfirmation,
-  }) async {
-    try {
-      return await _settingsRepo.updatePassword(
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-        newPasswordConfirmation: newPasswordConfirmation,
-      );
-    } catch (e) {
-      errorMessage.value = 'Erreur lors de la mise a jour du mot de passe.';
-      return false;
-    }
-  }
-
-  Future<bool> deleteAccount() async {
-    try {
-      return await _profileRepo.deleteAccount();
-    } catch (e) {
-      errorMessage.value = 'Erreur lors de la suppression du compte.';
       return false;
     }
   }

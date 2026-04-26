@@ -280,46 +280,49 @@ class PortfolioProjectModel {
   }
 }
 
+/// Aligne sur `PUT /api/v1/profile/preferences` (cf. ProfileApiController).
+/// Backend supporte aussi des sous-cles `offer_updates`, `application_updates`,
+/// `match_alerts`, `message_alerts`, `team_activity`, `training_updates`,
+/// `weekly_report`. Ce modele expose les principales — etendre si besoin.
 class SettingsModel {
   const SettingsModel({
     required this.notificationsEnabled,
-    required this.emailNotifications,
-    required this.smsNotifications,
-    required this.pushNotifications,
+    required this.smsEnabled,
     required this.language,
     required this.theme,
-    required this.isPrivateProfile,
+    required this.density,
   });
 
   final bool notificationsEnabled;
-  final bool emailNotifications;
-  final bool smsNotifications;
-  final bool pushNotifications;
+  final bool smsEnabled;
   final String language;
   final String theme;
-  final bool isPrivateProfile;
+  final String density;
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) {
+    final notifications = json['notifications'];
+    final notifMap =
+        notifications is Map<String, dynamic> ? notifications : null;
     return SettingsModel(
-      notificationsEnabled: json['notifications_enabled'] ?? true,
-      emailNotifications: json['email_notifications'] ?? true,
-      smsNotifications: json['sms_notifications'] ?? false,
-      pushNotifications: json['push_notifications'] ?? true,
-      language: json['language'] ?? 'fr',
-      theme: json['theme'] ?? 'light',
-      isPrivateProfile: json['is_private_profile'] ?? false,
+      notificationsEnabled: notifMap != null
+          ? (notifMap['enabled'] as bool? ?? true)
+          : (json['notifications_enabled'] as bool? ?? true),
+      smsEnabled: notifMap != null
+          ? (notifMap['sms_enabled'] as bool? ?? false)
+          : (json['sms_enabled'] as bool? ?? false),
+      language: json['language']?.toString() ?? 'fr',
+      theme: json['theme']?.toString() ?? 'light',
+      density: json['density']?.toString() ?? 'normal',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'notifications_enabled': notificationsEnabled,
-      'email_notifications': emailNotifications,
-      'sms_notifications': smsNotifications,
-      'push_notifications': pushNotifications,
+      'sms_enabled': smsEnabled,
       'language': language,
       'theme': theme,
-      'is_private_profile': isPrivateProfile,
+      'density': density,
     };
   }
 }

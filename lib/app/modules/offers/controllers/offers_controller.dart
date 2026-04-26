@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
 
 import '../../../data/providers/api_provider.dart';
-import '../repositories/offer_repository.dart';
+import '../models/application_model.dart';
 import '../models/offer_model.dart';
+import '../repositories/offer_repository.dart';
 
 class OffersController extends GetxController {
   OffersController({ApiProvider? apiProvider}) {
@@ -25,6 +26,12 @@ class OffersController extends GetxController {
 
   final filter = Rxn<OfferFilter>();
   final selectedOffer = Rxn<OfferModel>();
+
+  /// Cache local des offres auxquelles l'utilisateur vient de postuler.
+  /// Alimenté optimistement et confirmé/rollback selon la réponse backend.
+  final appliedOfferIds = <String>{}.obs;
+  final isApplyingToOfferId = RxnString();
+  final lastApplication = Rxn<ApplicationModel>();
 
   static const int perPage = 20;
 
@@ -145,38 +152,122 @@ class OffersController extends GetxController {
   }
 
   Future<bool> saveOffer(String offerId) async {
+    final index = offers.indexWhere((o) => o.id == offerId);
+    if (index == -1 || savedOffers.any((o) => o.id == offerId)) {
+      return false;
+    }
+    final offer = offers[index];
+    savedOffers.add(offer);
+
     try {
       final success = await _repository.saveOffer(offerId);
-      if (success) {
-        final index = offers.indexWhere((o) => o.id == offerId);
-        if (index != -1) {
-          savedOffers.add(offers[index]);
-        }
+      if (!success) {
+        savedOffers.removeWhere((o) => o.id == offerId);
       }
       return success;
-    } catch (e) {
+    } catch (_) {
+      savedOffers.removeWhere((o) => o.id == offerId);
       return false;
     }
   }
 
   Future<bool> unsaveOffer(String offerId) async {
+    final removedIndex = savedOffers.indexWhere((o) => o.id == offerId);
+    if (removedIndex == -1) {
+      return false;
+    }
+    final previous = savedOffers[removedIndex];
+    savedOffers.removeAt(removedIndex);
+
     try {
       final success = await _repository.unsaveOffer(offerId);
-      if (success) {
-        savedOffers.removeWhere((o) => o.id == offerId);
+      if (!success) {
+        savedOffers.insert(removedIndex, previous);
       }
       return success;
-    } catch (e) {
+    } catch (_) {
+      savedOffers.insert(removedIndex, previous);
       return false;
     }
   }
 
-  Future<bool> applyToOffer(String offerId,
-      {Map<String, dynamic>? data}) async {
+  /// Postule à une offre. Miroir du flux Laravel :
+  /// - l'UI appelle cette méthode avec l'id de l'offre + les réponses de screening
+  ///   éventuelles (questions posées par l'employeur)
+  /// - en cas de succès, l'offre est marquée comme postulée localement
+  /// - en cas d'échec, le résultat porte la raison typée + un message friendly FR
+  ///
+  /// L'UI doit examiner `result.reason` pour router vers la bonne action
+  /// (ex: `noCv` → diriger vers l'écran de CV, `alreadyApplied` → snackbar info).
+  Future<ApplyResult> applyToOffer(
+    String offerId, {
+    Map<String, dynamic>? screeningAnswers,
+  }) async {
+    if (isApplyingToOfferId.value == offerId) {
+      return ApplyResult.failure(
+        ApplyFailureReason.unknown,
+        'Candidature en cours, merci de patienter.',
+      );
+    }
+    if (appliedOfferIds.contains(offerId)) {
+      return ApplyResult.failure(
+        ApplyFailureReason.alreadyApplied,
+        'Vous avez déjà postulé à cette offre.',
+      );
+    }
+
+    isApplyingToOfferId.value = offerId;
+    appliedOfferIds.add(offerId);
+
     try {
-      return await _repository.applyToOffer(offerId, data: data);
+      final application = await _repository.applyToOffer(
+        offerId,
+        screeningAnswers: screeningAnswers,
+      );
+      lastApplication.value = application;
+      return ApplyResult.success(application);
+    } on ApplyException catch (e) {
+      if (e.reason != ApplyFailureReason.alreadyApplied) {
+        appliedOfferIds.remove(offerId);
+      }
+      return ApplyResult.failure(e.reason, e.message);
+    } catch (_) {
+      appliedOfferIds.remove(offerId);
+      return ApplyResult.failure(
+        ApplyFailureReason.network,
+        'Connexion impossible. Vérifiez votre réseau.',
+      );
+    } finally {
+      isApplyingToOfferId.value = null;
+    }
+  }
+
+  bool hasAppliedToOffer(String offerId) => appliedOfferIds.contains(offerId);
+
+  /// Liste des candidatures du candidat connecte depuis le backend
+  /// (`GET /api/v1/applications`). Synchronise aussi `appliedOfferIds`
+  /// pour que les cards des offres deja postulees affichent l'etat correct.
+  final myApplications = <ApplicationModel>[].obs;
+  final isLoadingApplications = false.obs;
+  final applicationsError = ''.obs;
+
+  Future<void> loadMyApplications({String? statusFilter}) async {
+    if (isLoadingApplications.value) return;
+    isLoadingApplications.value = true;
+    applicationsError.value = '';
+    try {
+      final list = await _repository.getMyApplications(
+        page: 1,
+        perPage: 50,
+        status: statusFilter,
+      );
+      myApplications.assignAll(list);
+      // Sync local : les offres deja candidatees sont marquees applied.
+      appliedOfferIds.addAll(list.map((a) => a.offerId));
     } catch (e) {
-      return false;
+      applicationsError.value = _friendlyError(e);
+    } finally {
+      isLoadingApplications.value = false;
     }
   }
 

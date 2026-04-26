@@ -86,14 +86,46 @@ class ApiProvider {
     http.Client? client,
     List<ApiInterceptor>? interceptors,
     RetryPolicy? retryPolicy,
+    Future<String?> Function()? tokenProvider,
+    Future<String?> Function()? tokenRefresher,
+    void Function()? onAuthFailed,
   })  : _client = client ?? http.Client(),
         _interceptors = interceptors ?? [LoggingInterceptor()],
-        _retryPolicy = retryPolicy ?? const RetryPolicy();
+        _retryPolicy = retryPolicy ?? const RetryPolicy(),
+        _tokenProvider = tokenProvider,
+        _tokenRefresher = tokenRefresher,
+        _onAuthFailed = onAuthFailed;
 
   final http.Client _client;
   final List<ApiInterceptor> _interceptors;
   final RetryPolicy _retryPolicy;
+  Future<String?> Function()? _tokenProvider;
+  /// Callback appelé sur 401 pour tenter un refresh de token.
+  /// Doit retourner le nouveau token (ou null si échec → déconnexion).
+  final Future<String?> Function()? _tokenRefresher;
+  /// Callback appelé quand le refresh échoue : laisser le shell logger
+  /// l'utilisateur out + router vers landing.
+  final void Function()? _onAuthFailed;
+  /// Lock pour éviter plusieurs refresh concurrents (toutes les requêtes
+  /// 401 simultanées attendent le même refresh).
+  Future<String?>? _ongoingRefresh;
   String? _lastWorkingBaseUrl;
+
+  void setTokenProvider(Future<String?> Function()? provider) {
+    _tokenProvider = provider;
+  }
+
+  Future<Map<String, String>> _withAuth(Map<String, String> headers) async {
+    final hasAuth = headers.keys.any((k) => k.toLowerCase() == 'authorization');
+    if (hasAuth || _tokenProvider == null) return headers;
+    try {
+      final token = await _tokenProvider!.call();
+      if (token == null || token.trim().isEmpty) return headers;
+      return {...headers, 'Authorization': 'Bearer $token'};
+    } catch (_) {
+      return headers;
+    }
+  }
 
   void addInterceptor(ApiInterceptor interceptor) {
     _interceptors.add(interceptor);
@@ -196,10 +228,10 @@ class ApiProvider {
         final uri = _buildUri(baseUrl, endpoint);
         final request = http.MultipartRequest(method, uri);
 
-        final mergedHeaders = {
+        final mergedHeaders = await _withAuth({
           'Accept': 'application/json',
           ...?headers,
-        };
+        });
         request.headers.addAll(mergedHeaders);
 
         if (fields != null) {
@@ -265,6 +297,7 @@ class ApiProvider {
     required String endpoint,
     required Map<String, String> headers,
     Map<String, dynamic>? body,
+    bool afterRefresh = false,
   }) async {
     final candidateBaseUrls = _orderedBaseUrls();
     Exception? lastError;
@@ -278,7 +311,8 @@ class ApiProvider {
         try {
           final uri = _buildUri(baseUrl, endpoint);
           final request = http.Request(method, uri);
-          request.headers.addAll(headers);
+          final authedHeaders = await _withAuth(headers);
+          request.headers.addAll(authedHeaders);
 
           if (body != null) {
             request.body = jsonEncode(body);
@@ -295,6 +329,28 @@ class ApiProvider {
               .timeout(ApiConstants.receiveTimeout);
 
           _notifyResponse(response);
+
+          // 401 = token expiré ou invalide. Si on a un refresher et qu'on
+          // n'a pas déjà tenté → un seul refresh + retry. Sinon on rend la
+          // 401 au caller (qui peut router vers login).
+          if (response.statusCode == 401 &&
+              !afterRefresh &&
+              _tokenRefresher != null &&
+              _isAuthenticatedEndpoint(endpoint)) {
+            final refreshed = await _refreshTokenOnce();
+            if (refreshed != null && refreshed.isNotEmpty) {
+              return _sendJsonRequest(
+                method: method,
+                endpoint: endpoint,
+                headers: headers,
+                body: body,
+                afterRefresh: true,
+              );
+            }
+            // Refresh échoué : on prévient le shell pour déconnecter,
+            // puis on retourne quand même la 401 au caller.
+            _onAuthFailed?.call();
+          }
 
           if (_retryPolicy.shouldRetry(response.statusCode, retryAttempt)) {
             await Future.delayed(_retryPolicy.getDelay(retryAttempt));
@@ -332,6 +388,40 @@ class ApiProvider {
     return e is TimeoutException ||
         e.toString().contains('SocketException') ||
         e.toString().contains('HandshakeException');
+  }
+
+  /// Retourne true si l'endpoint est censé être appelé avec un Bearer.
+  /// Inutile de tenter un refresh sur les endpoints publics (login, register,
+  /// otp, offers public, etc.) — un 401 dessus signale autre chose.
+  bool _isAuthenticatedEndpoint(String endpoint) {
+    final e = endpoint.toLowerCase();
+    if (e.contains('/auth/login') ||
+        e.contains('/auth/register') ||
+        e.contains('/auth/otp') ||
+        e.contains('/auth/refresh')) {
+      return false;
+    }
+    // Le reste qui passe par /api/v1/ est généralement protégé.
+    return true;
+  }
+
+  /// Lance UN SEUL refresh à la fois ; les requêtes 401 simultanées
+  /// attendent le même résultat (évite N appels concurrents à /auth/refresh).
+  Future<String?> _refreshTokenOnce() {
+    final ongoing = _ongoingRefresh;
+    if (ongoing != null) return ongoing;
+
+    final task = () async {
+      try {
+        return await _tokenRefresher!.call();
+      } catch (_) {
+        return null;
+      } finally {
+        _ongoingRefresh = null;
+      }
+    }();
+    _ongoingRefresh = task;
+    return task;
   }
 
   List<String> _orderedBaseUrls() {

@@ -1,12 +1,17 @@
 import '../../../data/providers/api_provider.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/security/auth_token_store.dart';
 import '../models/training_model.dart';
 
 class TrainingRepository {
-  const TrainingRepository({required ApiProvider apiProvider})
-      : _apiProvider = apiProvider;
+  const TrainingRepository({
+    required ApiProvider apiProvider,
+    AuthTokenStore tokenStore = const AuthTokenStore(),
+  })  : _apiProvider = apiProvider,
+        _tokenStore = tokenStore;
 
   final ApiProvider _apiProvider;
+  final AuthTokenStore _tokenStore;
 
   Future<PaginatedTrainingResult> getTrainings({
     int page = 1,
@@ -35,47 +40,32 @@ class TrainingRepository {
     return null;
   }
 
-  Future<List<TrainingModel>> getFeaturedTrainings() async {
-    final response =
-        await _apiProvider.getJson('${ApiConstants.trainings}/featured');
-    return _parseListResponse(response);
-  }
-
   Future<List<TrainingModel>> getEnrolledTrainings(
       {int page = 1, int perPage = 20}) async {
+    final token = await _tokenStore.readToken();
     final response = await _apiProvider.getJson(
       '${ApiConstants.trainings}/enrolled?page=$page&per_page=$perPage',
+      headers: ApiConstants.authHeadersWithoutContentType(token),
     );
     return _parseListResponse(response);
-  }
-
-  Future<bool> bookmarkTraining(String trainingId) async {
-    final response = await _apiProvider.postJson(
-      '${ApiConstants.trainings}/$trainingId/bookmark',
-      {},
-    );
-    return response['success'] == true;
-  }
-
-  Future<bool> unbookmarkTraining(String trainingId) async {
-    final response = await _apiProvider.deleteJson(
-      '${ApiConstants.trainings}/$trainingId/bookmark',
-    );
-    return response['success'] == true;
   }
 
   Future<bool> enrollToTraining(String trainingId) async {
+    final token = await _tokenStore.readToken();
     final response = await _apiProvider.postJson(
       '${ApiConstants.trainings}/$trainingId/enroll',
       {},
+      headers: ApiConstants.authHeaders(token),
     );
     return response['success'] == true;
   }
 
   Future<bool> completeModule(String trainingId, String moduleId) async {
+    final token = await _tokenStore.readToken();
     final response = await _apiProvider.postJson(
-      '${ApiConstants.trainings}/$trainingId/modules/$moduleId/complete',
-      {},
+      '${ApiConstants.trainings}/$trainingId/progress',
+      {'module_id': moduleId},
+      headers: ApiConstants.authHeaders(token),
     );
     return response['success'] == true;
   }

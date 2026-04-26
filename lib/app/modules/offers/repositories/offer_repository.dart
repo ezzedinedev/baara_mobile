@@ -1,5 +1,6 @@
 import '../../../data/providers/api_provider.dart';
 import '../../../core/constants/api_constants.dart';
+import '../models/application_model.dart';
 import '../models/offer_model.dart';
 
 class OfferRepository {
@@ -61,13 +62,118 @@ class OfferRepository {
     return response['success'] == true;
   }
 
-  Future<bool> applyToOffer(String offerId,
-      {Map<String, dynamic>? data}) async {
+  /// Crée une candidature via `POST /api/v1/applications`, en miroir exact
+  /// du flux Laravel (`ApplicationApiController@store`).
+  ///
+  /// Le serveur impose : compte candidat, offre active, deadline non passée,
+  /// CV présent (builder ou uploadé), pas de candidature existante (UNIQUE
+  /// `offer_id` + `candidate_id`). Chaque violation lève une [ApplyException]
+  /// typée pour que l'UI choisisse le message approprié.
+  Future<ApplicationModel> applyToOffer(
+    String offerId, {
+    Map<String, dynamic>? screeningAnswers,
+  }) async {
+    final payload = <String, dynamic>{
+      'offer_id': offerId,
+      if (screeningAnswers != null) 'screening_answers': screeningAnswers,
+    };
+
     final response = await _apiProvider.postJson(
-      '${ApiConstants.offers}/$offerId/apply',
-      data ?? {},
+      ApiConstants.applications,
+      payload,
     );
-    return response['success'] == true;
+
+    final statusCode = response['statusCode'] as int?;
+    final success = response['success'] == true;
+    final message = _extractMessage(response);
+
+    if (success && (statusCode == 201 || statusCode == 200)) {
+      final data = response['data'];
+      if (data is Map<String, dynamic>) {
+        return ApplicationModel.fromJson(data);
+      }
+      throw const ApplyException(
+        ApplyFailureReason.unknown,
+        'Réponse inattendue du serveur.',
+      );
+    }
+
+    throw ApplyException(_mapFailureReason(statusCode, message), message);
+  }
+
+  /// Liste les candidatures de l'utilisateur connecté.
+  Future<List<ApplicationModel>> getMyApplications({
+    int page = 1,
+    int perPage = 20,
+    String? status,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'page': page,
+      'per_page': perPage,
+      if (status != null) 'status': status,
+    };
+    final response = await _apiProvider.getJson(
+      '${ApiConstants.applications}${_buildQuery(queryParams)}',
+    );
+    final data = response['data'];
+    final list = data is List
+        ? data
+        : (data is Map && data['data'] is List ? data['data'] as List : null);
+    if (list == null) return <ApplicationModel>[];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ApplicationModel.fromJson)
+        .toList();
+  }
+
+  String _extractMessage(Map<String, dynamic> response) {
+    final raw = response['message']?.toString();
+    if (raw != null && raw.trim().isNotEmpty) return raw;
+    final errors = response['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      if (first is List && first.isNotEmpty) return first.first.toString();
+      return first.toString();
+    }
+    return 'Erreur lors de l\'envoi de la candidature.';
+  }
+
+  ApplyFailureReason _mapFailureReason(int? statusCode, String message) {
+    switch (statusCode) {
+      case 401:
+        return ApplyFailureReason.unauthorized;
+      case 403:
+        return ApplyFailureReason.notCandidate;
+      case 400:
+        return ApplyFailureReason.invalidOffer;
+    }
+
+    if (statusCode == 422) {
+      final lc = message.toLowerCase();
+      if (lc.contains('deja postule') ||
+          lc.contains('déjà postulé') ||
+          lc.contains('already applied')) {
+        return ApplyFailureReason.alreadyApplied;
+      }
+      if (lc.contains('deadline') ||
+          lc.contains('expir') ||
+          lc.contains('cloture') ||
+          lc.contains('clôtur') ||
+          lc.contains('passé')) {
+        return ApplyFailureReason.deadlinePassed;
+      }
+      if (lc.contains('cv') || lc.contains('curriculum')) {
+        return ApplyFailureReason.noCv;
+      }
+      if (lc.contains('active') ||
+          lc.contains('publi') ||
+          lc.contains('fermée') ||
+          lc.contains('fermee')) {
+        return ApplyFailureReason.offerNotActive;
+      }
+    }
+
+    return ApplyFailureReason.unknown;
   }
 
   Future<List<SectorModel>> getSectors() async {

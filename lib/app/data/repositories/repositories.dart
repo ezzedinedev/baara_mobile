@@ -26,41 +26,38 @@ class AuthRepository {
   Future<Map<String, dynamic>> loginWithPhone({
     required String phone,
     required String pin,
+    required String userType,
   }) {
     return _apiProvider.postJson(
       ApiConstants.loginPhone,
       {
         'phone': phone,
         'pin': pin,
+        'user_type': userType,
         'device_name': ApiConstants.authDeviceName,
       },
     );
   }
-
+ 
   Future<Map<String, dynamic>> register({
     required String firstName,
     required String lastName,
     required String email,
     required String phone,
-    required String country,
     required String password,
     required String passwordConfirmation,
     required String userType,
-    required String candidateProfileType,
   }) {
     return _apiProvider.postJson(
       ApiConstants.register,
       {
-        'name': '$firstName $lastName',
         'first_name': firstName,
         'last_name': lastName,
         'email': email,
         'phone': phone,
-        'country': country,
         'password': password,
         'password_confirmation': passwordConfirmation,
         'user_type': userType,
-        'candidate_profile_type': candidateProfileType,
         'device_name': ApiConstants.authDeviceName,
       },
     );
@@ -86,14 +83,16 @@ class OfferRepository {
     int perPage = 20,
     String? sector,
     String? contractType,
-    String? location,
+    String? city,
+    String? region,
   }) {
     final queryParams = <String, dynamic>{
       'page': page,
       'per_page': perPage,
       if (sector != null) 'sector': sector,
       if (contractType != null) 'contract_type': contractType,
-      if (location != null) 'location': location,
+      if (city != null) 'city': city,
+      if (region != null) 'region': region,
     };
     return _apiProvider.getJson(
       '${ApiConstants.offers}?${_encodeParams(queryParams)}',
@@ -156,19 +155,4 @@ class ProfileRepository {
     return _apiProvider.putJson(ApiConstants.profile, data);
   }
 
-  Future<Map<String, dynamic>> uploadAvatar(String filePath) {
-    return _apiProvider.sendMultipart(
-      ApiConstants.profileAvatar,
-      method: 'POST',
-      fields: {'avatar': filePath},
-    );
-  }
-
-  Future<Map<String, dynamic>> uploadCv(String filePath) {
-    return _apiProvider.sendMultipart(
-      ApiConstants.profileCvUpload,
-      method: 'POST',
-      fields: {'cv': filePath},
-    );
-  }
 }

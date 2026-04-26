@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../../widgets/opportune_logo.dart';
+import '../../../widgets/widgets.dart';
 import 'splash_controller.dart';
 
 class SplashScreen extends GetView<SplashController> {
@@ -18,7 +18,7 @@ class SplashScreen extends GetView<SplashController> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(gradient: AppColors.splashBackground),
           ),
           Positioned(
@@ -87,20 +87,15 @@ class SplashScreen extends GetView<SplashController> {
                   ],
                 ),
                 const SizedBox(height: 38),
-                const OpportuneLogo(
-                  iconSize: 0,
+                AuthHeader(
+                  logoSize: 0,
                   fontSize: 36,
-                  showIcon: false,
-                  centerAlign: true,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Votre carrière commence ici',
-                  style: AppTextStyles.bodyMd.copyWith(
+                  title: 'Votre carrière commence ici',
+                  titleStyle: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.hintColor,
                     letterSpacing: 0.3,
                   ),
-                  textAlign: TextAlign.center,
+                  center: true,
                 ),
                 const Spacer(),
                 Padding(
@@ -142,7 +137,7 @@ class SplashScreen extends GetView<SplashController> {
                                     duration: const Duration(milliseconds: 200),
                                     curve: Curves.easeOut,
                                     widthFactor: pct / 100,
-                                    child: const DecoratedBox(
+                                    child: DecoratedBox(
                                       decoration: BoxDecoration(
                                         gradient: AppColors.primaryGradient,
                                       ),

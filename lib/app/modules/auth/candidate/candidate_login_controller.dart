@@ -3,17 +3,20 @@ import 'package:get/get.dart';
 
 import '../../../../app/core/constants/api_constants.dart';
 import '../../../../app/core/security/auth_token_store.dart';
+import '../../../../app/core/security/google_auth_service.dart';
 import '../../../../app/core/utils/validators.dart';
 import '../../../../app/data/providers/api_provider.dart';
 import '../../../../routes/app_routes.dart';
 
 class CandidateLoginController extends GetxController {
-  CandidateLoginController()
+  CandidateLoginController({GoogleAuthService? googleAuthService})
       : _apiProvider = Get.find<ApiProvider>(),
-        _tokenStore = const AuthTokenStore();
+        _tokenStore = const AuthTokenStore(),
+        _googleAuth = googleAuthService ?? GoogleAuthService();
 
   final ApiProvider _apiProvider;
   final AuthTokenStore _tokenStore;
+  final GoogleAuthService _googleAuth;
 
   final emailCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
@@ -88,6 +91,7 @@ class CandidateLoginController extends GetxController {
         {
           'phone': phone,
           'pin': pin,
+          'user_type': 'candidate',
           'device_name': ApiConstants.authDeviceName,
         },
       );
@@ -121,11 +125,58 @@ class CandidateLoginController extends GetxController {
   }
 
   Future<void> loginWithGoogle() async {
-    Get.snackbar(
-      'Connexion Google',
-      'Connexion Google en cours d\'integration.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+    if (isLoading.value) return;
+    isLoading.value = true;
+    errorMsg.value = '';
+
+    try {
+      final googleResult = await _googleAuth.signIn();
+
+      if (googleResult.cancelled) {
+        return;
+      }
+      if (!googleResult.isSuccess) {
+        errorMsg.value =
+            googleResult.error ?? 'Connexion Google indisponible.';
+        return;
+      }
+
+      final data = await _apiProvider.postJson(
+        ApiConstants.loginGoogle,
+        {
+          'id_token': googleResult.idToken,
+          'user_type': 'candidate',
+          'device_name': ApiConstants.authDeviceName,
+          if (googleResult.email != null) 'email': googleResult.email,
+        },
+      );
+
+      final token = _extractToken(data);
+      if (data['statusCode'] == 200 &&
+          data['success'] == true &&
+          token != null) {
+        await _persistSession(token: token, userType: 'candidate');
+        Get.offAllNamed(AppRoutes.home);
+        return;
+      }
+
+      errorMsg.value = _extractApiMessage(
+        data,
+        fallback: 'Connexion Google refusée par le serveur.',
+      );
+      // On nettoie la session Google côté device pour permettre un re-login propre.
+      await _googleAuth.signOut();
+    } on Exception catch (error) {
+      final message = error.toString();
+      if (message.contains('Impossible de joindre l\'API')) {
+        errorMsg.value = 'Connexion au service impossible pour le moment.';
+      } else {
+        errorMsg.value = 'Erreur de connexion Google. Réessayez.';
+      }
+      await _googleAuth.signOut();
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   String? validateEmail(String? value) => Validators.email(value);

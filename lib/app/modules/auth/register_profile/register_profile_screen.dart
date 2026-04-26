@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../../widgets/gradient_button.dart';
-import '../../../../widgets/opportune_logo.dart';
+import '../../../core/utils/haptics.dart';
+import '../../../../widgets/widgets.dart';
 import 'register_profile_controller.dart';
 
+/// Étape 2 : choix du type de candidat (étudiant / professionnel / entreprise).
+/// Logique préservée via [RegisterProfileController].
 class RegisterProfileScreen extends GetView<RegisterProfileController> {
   const RegisterProfileScreen({super.key});
 
@@ -14,151 +17,144 @@ class RegisterProfileScreen extends GetView<RegisterProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 14, 22, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: controller.goBack,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.arrow_back_rounded,
-                            size: 18,
-                            color: AppColors.bodyColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Retour',
-                            style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.bodyColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+      body: Column(
+        children: [
+          WavyAuthHeader(
+            height: 220,
+            showLeading: true,
+            onLeadingTap: controller.goBack,
+            foregroundIcon: Icons.person_add_alt_1_rounded,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(26, 6, 26, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quel type de compte ?',
+                    style: AppTextStyles.displayMd.copyWith(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 48,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Choisissez votre profil avant de continuer l'inscription.",
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.bodyColor,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Obx(
+                    () => _ProfileCard(
+                      icon: Icons.school_rounded,
+                      title: 'Je suis étudiant',
+                      subtitle:
+                          "Je cherche un stage, une alternance ou un emploi.",
+                      selected: controller.selected.value ==
+                          RegisterProfileType.student,
+                      onTap: () {
+                        AppHaptics.tap();
+                        controller.select(RegisterProfileType.student);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Obx(
+                    () => _ProfileCard(
+                      icon: Icons.work_outline_rounded,
+                      title: 'Je suis professionnel',
+                      subtitle:
+                          'Je veux évoluer ou trouver de nouvelles opportunités.',
+                      selected: controller.selected.value ==
+                          RegisterProfileType.professional,
+                      onTap: () {
+                        AppHaptics.tap();
+                        controller.select(RegisterProfileType.professional);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Obx(
+                    () => _ProfileCard(
+                      icon: Icons.domain_rounded,
+                      title: 'Je représente une entreprise',
+                      subtitle:
+                          "Ce profil complète l'inscription sur le formulaire web.",
+                      selected: controller.selected.value ==
+                          RegisterProfileType.company,
+                      showWebBadge: true,
+                      onTap: () {
+                        AppHaptics.tap();
+                        controller.select(RegisterProfileType.company);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceIconSoft,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color:
+                            AppColors.primary.withValues(alpha: 0.18),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const OpportuneLogo(
-                      iconSize: 16,
-                      fontSize: 18,
-                    ),
-                    const SizedBox(height: 28),
-                    Text(
-                      'Quel type de compte voulez-vous creer ?',
-                      style: AppTextStyles.displayMd.copyWith(
-                        fontSize: 34,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Choisissez votre profil avant de continuer l\'inscription.',
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.bodyColor,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    Obx(
-                      () => _ProfileCard(
-                        icon: Icons.school_rounded,
-                        title: 'Je suis etudiant',
-                        subtitle:
-                            'Je cherche un stage, une alternance ou un emploi.',
-                        selected: controller.selected.value ==
-                            RegisterProfileType.student,
-                        onTap: () =>
-                            controller.select(RegisterProfileType.student),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Obx(
-                      () => _ProfileCard(
-                        icon: Icons.work_outline_rounded,
-                        title: 'Je suis professionnel',
-                        subtitle:
-                            'Je veux evoluer ou trouver de nouvelles opportunites.',
-                        selected: controller.selected.value ==
-                            RegisterProfileType.professional,
-                        onTap: () =>
-                            controller.select(RegisterProfileType.professional),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Obx(
-                      () => _ProfileCard(
-                        icon: Icons.domain_rounded,
-                        title: 'Je represente une entreprise',
-                        subtitle:
-                            'Ce profil complete l\'inscription sur le formulaire web.',
-                        selected: controller.selected.value ==
-                            RegisterProfileType.company,
-                        showWebBadge: true,
-                        onTap: () =>
-                            controller.select(RegisterProfileType.company),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLow,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color:
-                              AppColors.outlineVariant.withValues(alpha: 0.24),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: AppColors.primary,
                         ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Le profil Entreprise ouvre votre inscription sur la plateforme web.',
-                              style: AppTextStyles.bodySm.copyWith(
-                                color: AppColors.bodyColor,
-                                height: 1.45,
-                              ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "Le profil Entreprise ouvre votre inscription sur la plateforme web.",
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.titleColor,
+                              height: 1.45,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 22),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(26, 6, 26, 22),
               child: Obx(
-                () => GradientButton(
+                () => AuthCtaButton(
                   label: controller.actionLabel,
+                  isLoading: controller.isOpeningWeb.value,
                   onPressed:
                       controller.canContinue ? controller.onContinue : null,
-                  isLoading: controller.isOpeningWeb.value,
-                  textColor: AppColors.onPrimary,
-                  height: 56,
-                  borderRadius: 14,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -192,7 +188,7 @@ class _ProfileCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected ? AppColors.surfaceSelected : AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: selected
                 ? AppColors.primary
@@ -210,7 +206,7 @@ class _ProfileCard extends StatelessWidget {
                 color: selected
                     ? AppColors.primaryLight.withValues(alpha: 0.18)
                     : AppColors.surfaceIconSoft,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Icon(
                 icon,

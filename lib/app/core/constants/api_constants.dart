@@ -93,30 +93,37 @@ class ApiConstants {
 
   static const String loginPhone = '/auth/login/phone';
   static const String loginEmail = '/auth/login/email';
-  static const String loginGoogle = '/auth/google';
+  static const String loginGoogle = '/auth/login/google';
   static const String register = '/auth/register';
   static const String otpVerify = '/auth/otp/verify';
   static const String otpResend = '/auth/otp/resend';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
-  static const String logoutAll = '/auth/logout-all';
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';
   static const String profilePreferences = '/profile/preferences';
   static const String profileCv = '/profile/cv';
-  static const String profileCvUpload = '/profile/cv/upload';
   static const String profilePortfolio = '/profile/portfolio';
+  static const String profileCvBuilder = '/profile/cv-builder';
+  static const String profileCvBuilderPreview = '/profile/cv-builder/preview';
+  static const String profileCvBuilderDownload = '/profile/cv-builder/download';
+  // Import CV : analyze (parse PDF→fields stateless) + apply (persist).
+  // L'endpoint legacy `/profile/cv/upload` n'existe pas côté backend.
+  static const String profileCvImportAnalyze =
+      '/profile/cv-builder/import/analyze';
+  static const String profileCvImportApply =
+      '/profile/cv-builder/import/apply';
 
   static const String offers = '/offers';
   static const String offersFeatured = '/offers/featured/list';
   static const String offersSaved = '/offers/saved/list';
+  static const String applications = '/applications';
   static const String trainings = '/trainings';
   static const String sectors = '/offers/sectors/list';
-  static const String publicStats = '/stats/public';
 
-  static const String conversations = '/conversations';
+  // Backend Laravel monte la messagerie sous /messages (cf. MessageApiController).
+  static const String conversations = '/messages';
   static const String notifications = '/notifications';
-  static const String settings = '/settings';
 
   // Formulaire web Laravel pour l'inscription entreprise.
   // Emulateur Android -> 10.0.2.2 redirige vers le localhost PC.

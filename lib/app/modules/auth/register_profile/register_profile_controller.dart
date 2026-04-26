@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../../widgets/widgets.dart';
 
 enum RegisterProfileType { student, professional, company }
 
@@ -48,10 +49,9 @@ class RegisterProfileController extends GetxController {
 
     if (uri == null) {
       isOpeningWeb.value = false;
-      Get.snackbar(
+      AppToast.error(
         'Inscription entreprise',
         'Le lien du formulaire web est invalide.',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -74,17 +74,15 @@ class RegisterProfileController extends GetxController {
         mode: LaunchMode.externalApplication,
       );
       if (!openedExternal) {
-        Get.snackbar(
+        AppToast.error(
           'Inscription entreprise',
           'Impossible d\'ouvrir le formulaire web. Lien: ${ApiConstants.companyRegisterWebUrl}',
-          snackPosition: SnackPosition.BOTTOM,
         );
       }
     } on Exception {
-      Get.snackbar(
+      AppToast.error(
         'Inscription entreprise',
         'Ouverture web impossible. Lien: ${ApiConstants.companyRegisterWebUrl}',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isOpeningWeb.value = false;

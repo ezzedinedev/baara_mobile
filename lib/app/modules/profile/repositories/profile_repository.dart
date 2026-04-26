@@ -40,13 +40,13 @@ class ProfileRepository {
     throw Exception('Failed to upload avatar');
   }
 
-  Future<bool> deleteAccount() async {
-    final response =
-        await _apiProvider.deleteJson('${ApiConstants.profile}/delete');
-    return response['success'] == true;
-  }
 }
 
+/// TODO refonte CV : le backend ne gere PAS un multi-CV. Il y a un seul
+/// `UserCv` par utilisateur (cf. CvBuilderApiController). Les actions
+/// `deleteCv` / `setDefaultCv` n'ont donc pas d'equivalent serveur — elles
+/// retourneront 404. L'ecran cv_screen est a reconstruire autour du modele
+/// CV unique + flow import (analyze → apply).
 class CvRepository {
   const CvRepository({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
@@ -58,30 +58,22 @@ class CvRepository {
     return _parseListResponse(response);
   }
 
+  /// Lance l'analyse stateless d'un PDF de CV via /profile/cv-builder/import/analyze.
+  /// Le backend renvoie `{filename, chars, extracted_preview, extracted_text, analysis}`
+  /// — donc ce mapping `CvModel.fromJson` est best-effort et incomplet
+  /// jusqu'a ce que le module soit reconstruit autour du flow analyze→apply.
   Future<CvModel> uploadCv(String fileName, Uint8List bytes) async {
     final response = await _apiProvider.sendMultipart(
-      ApiConstants.profileCvUpload,
+      ApiConstants.profileCvImportAnalyze,
       method: 'POST',
-      files: [ApiMultipartFile(field: 'cv', bytes: bytes, filename: fileName)],
+      files: [
+        ApiMultipartFile(field: 'cv_file', bytes: bytes, filename: fileName),
+      ],
     );
     if (response['success'] == true && response['data'] != null) {
       return CvModel.fromJson(response['data']);
     }
-    throw Exception('Failed to upload CV');
-  }
-
-  Future<bool> deleteCv(String cvId) async {
-    final response =
-        await _apiProvider.deleteJson('${ApiConstants.profileCv}/$cvId');
-    return response['success'] == true;
-  }
-
-  Future<bool> setDefaultCv(String cvId) async {
-    final response = await _apiProvider.postJson(
-      '${ApiConstants.profileCv}/$cvId/set-default',
-      {},
-    );
-    return response['success'] == true;
+    throw Exception('Failed to analyze CV');
   }
 
   List<CvModel> _parseListResponse(Map<String, dynamic> response) {
@@ -134,21 +126,6 @@ class PortfolioRepository {
     return response['success'] == true;
   }
 
-  Future<PortfolioProjectModel> uploadProjectImages(
-    String projectId,
-    List<ApiMultipartFile> images,
-  ) async {
-    final response = await _apiProvider.sendMultipart(
-      '${ApiConstants.profilePortfolio}/$projectId/images',
-      method: 'POST',
-      files: images,
-    );
-    if (response['success'] == true && response['data'] != null) {
-      return PortfolioProjectModel.fromJson(response['data']);
-    }
-    throw Exception('Failed to upload images');
-  }
-
   List<PortfolioProjectModel> _parseListResponse(
       Map<String, dynamic> response) {
     final data = response['data'];
@@ -159,6 +136,12 @@ class PortfolioRepository {
   }
 }
 
+/// Backend : il n'y a pas d'endpoint `/settings` dedie. Les preferences
+/// utilisateur sont sous `PUT /profile/preferences` ; la lecture se fait via
+/// `GET /profile` (les preferences sont incluses dans la reponse).
+///
+/// Le changement de mot de passe n'a pas d'endpoint API V1 — a ajouter cote
+/// Laravel si on veut l'exposer. La methode `updatePassword` a ete retiree.
 class SettingsRepository {
   const SettingsRepository({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
@@ -166,45 +149,35 @@ class SettingsRepository {
   final ApiProvider _apiProvider;
 
   Future<SettingsModel> getSettings() async {
-    final response = await _apiProvider.getJson(ApiConstants.settings);
+    final response = await _apiProvider.getJson(ApiConstants.profile);
     if (response['success'] == true && response['data'] != null) {
-      return SettingsModel.fromJson(response['data']);
+      final data = response['data'];
+      final prefs = data is Map ? data['preferences'] : null;
+      if (prefs is Map<String, dynamic>) {
+        return SettingsModel.fromJson(prefs);
+      }
     }
     return const SettingsModel(
       notificationsEnabled: true,
-      emailNotifications: true,
-      smsNotifications: false,
-      pushNotifications: true,
+      smsEnabled: false,
       language: 'fr',
       theme: 'light',
-      isPrivateProfile: false,
+      density: 'normal',
     );
   }
 
   Future<SettingsModel> updateSettings(SettingsModel settings) async {
     final response = await _apiProvider.putJson(
-      ApiConstants.settings,
+      ApiConstants.profilePreferences,
       settings.toJson(),
     );
     if (response['success'] == true && response['data'] != null) {
-      return SettingsModel.fromJson(response['data']);
+      final data = response['data'];
+      final prefs = data is Map ? data['preferences'] : null;
+      if (prefs is Map<String, dynamic>) {
+        return SettingsModel.fromJson(prefs);
+      }
     }
-    throw Exception('Failed to update settings');
-  }
-
-  Future<bool> updatePassword({
-    required String currentPassword,
-    required String newPassword,
-    required String newPasswordConfirmation,
-  }) async {
-    final response = await _apiProvider.postJson(
-      '${ApiConstants.settings}/password',
-      {
-        'current_password': currentPassword,
-        'new_password': newPassword,
-        'new_password_confirmation': newPasswordConfirmation,
-      },
-    );
-    return response['success'] == true;
+    throw Exception('Failed to update preferences');
   }
 }

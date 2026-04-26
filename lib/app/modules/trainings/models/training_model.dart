@@ -1,3 +1,5 @@
+import '../../../core/utils/asset_url.dart';
+
 class TrainingModel {
   const TrainingModel({
     required this.id,
@@ -26,6 +28,7 @@ class TrainingModel {
     required this.contactLabel,
     required this.isBookmarked,
     required this.isEnrolled,
+    this.coverUrl = '',
   });
 
   final String id;
@@ -54,6 +57,7 @@ class TrainingModel {
   final String contactLabel;
   final bool isBookmarked;
   final bool isEnrolled;
+  final String coverUrl;
 
   factory TrainingModel.fromJson(Map<String, dynamic> json) {
     return TrainingModel(
@@ -83,7 +87,22 @@ class TrainingModel {
       contactLabel: _formatContact(json['contact']),
       isBookmarked: json['is_bookmarked'] ?? false,
       isEnrolled: json['is_enrolled'] ?? false,
+      coverUrl: _resolveCoverUrl(json),
     );
+  }
+
+  static String _resolveCoverUrl(Map<String, dynamic> json) {
+    final raw = (json['image_path'] ??
+            json['image_url'] ??
+            json['cover_url'] ??
+            json['cover'] ??
+            json['banner_url'] ??
+            json['thumbnail_url'] ??
+            '')
+        .toString();
+    // Le backend stocke le chemin relatif (ex: `formations/abc.jpg`) ; il
+    // faut le prefixer du host + `/storage/` pour obtenir une URL servable.
+    return resolveAssetUrl(raw);
   }
 
   static String _resolveProviderName(dynamic provider) {
