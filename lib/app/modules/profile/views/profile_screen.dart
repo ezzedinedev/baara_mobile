@@ -284,15 +284,11 @@ class _ProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BrandCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
+      radius: 18,
+      borderColor: AppColors.outlineVariant.withValues(alpha: 0.2),
+      shadow: BrandCardShadow.none,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

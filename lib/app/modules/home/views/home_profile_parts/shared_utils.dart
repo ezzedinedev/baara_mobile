@@ -1,42 +1,5 @@
 ﻿part of '../home_profile_tab.dart';
 
-// ignore: unused_element
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.actionLabel,
-    required this.onTap,
-  });
-
-  final String title;
-  final String actionLabel;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: AppTextStyles.headlineMd.copyWith(fontSize: 20),
-          ),
-        ),
-        GestureDetector(
-          onTap: onTap,
-          child: Text(
-            actionLabel,
-            style: AppTextStyles.bodySm.copyWith(
-              color: onTap == null ? AppColors.hintColor : AppColors.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _InlineLoader extends StatelessWidget {
   const _InlineLoader({required this.label});
 

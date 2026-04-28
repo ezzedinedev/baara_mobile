@@ -117,21 +117,18 @@ class _OfferDetailContent extends StatelessWidget {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Container(
-                width: double.infinity,
+              child: BrandCard(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  borderRadius: AppRadius.lg,
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Text(
-                  offer.description,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.bodyColor,
-                    height: 1.55,
+                borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+                shadow: BrandCardShadow.none,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    offer.description,
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.bodyColor,
+                      height: 1.55,
+                    ),
                   ),
                 ),
               ),
@@ -514,15 +511,11 @@ class _MetaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BrandCard(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: AppRadius.md,
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
-        ),
-      ),
+      radius: 14,
+      borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+      shadow: BrandCardShadow.none,
       child: Row(
         children: [
           Container(

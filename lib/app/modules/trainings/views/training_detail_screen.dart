@@ -104,21 +104,18 @@ class _TrainingDetailContent extends StatelessWidget {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Container(
-                width: double.infinity,
+              child: BrandCard(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  borderRadius: AppRadius.lg,
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Text(
-                  training.description,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.bodyColor,
-                    height: 1.55,
+                borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+                shadow: BrandCardShadow.none,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    training.description,
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.bodyColor,
+                      height: 1.55,
+                    ),
                   ),
                 ),
               ),
@@ -639,15 +636,11 @@ class _MetaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BrandCard(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: AppRadius.md,
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
-        ),
-      ),
+      radius: 14,
+      borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+      shadow: BrandCardShadow.none,
       child: Row(
         children: [
           Container(
@@ -742,19 +735,15 @@ class _BulletList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: AppRadius.lg,
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(items.length, (i) {
+      child: BrandCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+        shadow: BrandCardShadow.none,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(items.length, (i) {
           return Padding(
             padding: EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 10),
             child: Row(
@@ -778,6 +767,7 @@ class _BulletList extends StatelessWidget {
             ),
           );
         }),
+        ),
       ),
     );
   }
@@ -951,23 +941,20 @@ class _InfoStrip extends StatelessWidget {
 
     if (rows.isEmpty) return const SizedBox.shrink();
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: AppRadius.lg,
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+      child: BrandCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+        shadow: BrandCardShadow.none,
+        child: Column(
+          children: List.generate(rows.length, (i) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: i == rows.length - 1 ? 0 : 10),
+              child: rows[i],
+            );
+          }),
         ),
-      ),
-      child: Column(
-        children: List.generate(rows.length, (i) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: i == rows.length - 1 ? 0 : 10),
-            child: rows[i],
-          );
-        }),
       ),
     );
   }

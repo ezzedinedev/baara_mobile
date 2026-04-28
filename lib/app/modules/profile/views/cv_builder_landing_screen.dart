@@ -277,20 +277,13 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // PressScale englobe le tap : scale-down 0.97 + haptic. InkWell garde le
-    // ripple sur la surface pour le feedback visuel sur la zone cliquee.
+    // PressScale englobe le tap : scale-down 0.97 + haptic.
     return PressScale(
       onTap: onTap,
-      child: Container(
+      child: BrandCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.2),
-          ),
-          boxShadow: AppColors.lightShadow,
-        ),
+        radius: 18,
+        borderColor: AppColors.outlineVariant.withValues(alpha: 0.2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -29,7 +29,7 @@ class _AccueilTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionHeader(
+                  SectionHeader(
                     title: 'home.section_offers'.tr,
                     actionLabel: 'home.section_offers_action'.tr,
                     onAction: () => controller.changeTab(2),
@@ -42,7 +42,7 @@ class _AccueilTab extends StatelessWidget {
                     compact: false,
                   ),
                   const SizedBox(height: 24),
-                  _SectionHeader(
+                  SectionHeader(
                     title: 'home.section_trainings'.tr,
                     actionLabel: 'home.section_trainings_action'.tr,
                     onAction: () => controller.changeTab(3),

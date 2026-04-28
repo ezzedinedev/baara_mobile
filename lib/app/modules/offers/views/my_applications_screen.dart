@@ -333,16 +333,8 @@ class _ApplicationTile extends StatelessWidget {
     final hasOffer = application.offer != null;
     final offer = application.offer;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
-        ),
-        boxShadow: AppColors.lightShadow,
-      ),
+    return BrandCard(
+      borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
