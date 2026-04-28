@@ -5,8 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
-import '../../home/home_controller.dart';
-import '../../home/home_profile_manager.dart';
+import '../../home/controllers/home_controller.dart';
+import '../../home/controllers/home_profile_manager.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});

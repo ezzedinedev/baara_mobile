@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
-import 'app/modules/errors/error_404_screen.dart';
+import 'app/modules/errors/views/error_404_screen.dart';
 import 'app/translations/app_translations.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';

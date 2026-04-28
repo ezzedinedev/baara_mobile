@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
-import '../../../modules/auth/register/register_controller.dart';
+import '../../../modules/auth/controllers/register_controller.dart';
 
 class RegisterCountryDropdown extends StatelessWidget {
   const RegisterCountryDropdown({
