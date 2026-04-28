@@ -21,10 +21,14 @@ import '../app/modules/profile_selection/bindings/profile_selection_binding.dart
 import '../app/modules/profile_selection/views/profile_selection_screen.dart';
 import '../app/modules/splash/bindings/splash_binding.dart';
 import '../app/modules/splash/views/splash_screen.dart';
+import '../app/modules/offers/bindings/offer_detail_binding.dart';
 import '../app/modules/offers/bindings/offers_binding.dart';
 import '../app/modules/offers/views/my_applications_screen.dart';
+import '../app/modules/offers/views/offer_detail_screen.dart';
 import '../app/modules/offers/views/offers_screen.dart';
+import '../app/modules/trainings/bindings/training_detail_binding.dart';
 import '../app/modules/trainings/bindings/trainings_binding.dart';
+import '../app/modules/trainings/views/training_detail_screen.dart';
 import '../app/modules/trainings/views/trainings_screen.dart';
 import '../app/modules/messages/bindings/messages_binding.dart';
 import '../app/modules/messages/views/messages_screen.dart';
@@ -124,8 +128,8 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.offerDetail,
-      page: () => const OffersScreen(),
-      binding: OffersBinding(),
+      page: () => const OfferDetailScreen(),
+      binding: OfferDetailBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -142,8 +146,8 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.trainingDetail,
-      page: () => const TrainingsScreen(),
-      binding: TrainingsBinding(),
+      page: () => const TrainingDetailScreen(),
+      binding: TrainingDetailBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(

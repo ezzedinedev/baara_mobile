@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
+import '../../../../routes/app_routes.dart';
 import '../controllers/trainings_controller.dart';
 import '../data/models/training_model.dart';
 
@@ -180,7 +181,10 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
                           training: training,
                           onTap: () {
                             AppHaptics.tap();
-                            // TODO: naviguer vers le détail
+                            Get.toNamed(
+                              AppRoutes.trainingDetail
+                                  .replaceFirst(':id', training.id),
+                            );
                           },
                         ),
                       ),
