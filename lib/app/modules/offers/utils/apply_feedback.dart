@@ -150,7 +150,9 @@ Future<void> _showNoCvDialog(BuildContext context) async {
           onPressed: () {
             AppHaptics.tap();
             Navigator.of(dialogContext).maybePop();
-            Get.toNamed(AppRoutes.profileCv);
+            // Route vers la landing CV builder (choix Assistant IA /
+            // Manuel / Import) plutôt que vers la liste de CV vide.
+            Get.toNamed(AppRoutes.profileCvBuilder);
           },
         ),
       ],

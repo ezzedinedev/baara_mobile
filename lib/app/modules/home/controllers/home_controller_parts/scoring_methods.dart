@@ -183,18 +183,14 @@ extension HomeControllerScoring on HomeController {
           }
         }
 
-        // Snackbar visible immédiatement — la notif reste pour l'historique,
-        // mais l'utilisateur a besoin du feedback en direct après son swipe.
-        Get.snackbar(
-          title,
-          body,
-          backgroundColor: AppColors.errorSoft,
-          colorText: AppColors.errorStrong,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 14,
-          duration: const Duration(seconds: 4),
-        );
+        // Toast premium (icone, slide-in du haut) au lieu d'un snackbar
+        // generique. Variante warning pour les cas "deja postule" / "offre
+        // indisponible", error pour les autres echecs.
+        if (reasonAlreadyApplied || reasonOfferGone) {
+          AppToast.warning(title, body);
+        } else {
+          AppToast.error(title, body);
+        }
         return;
       }
 
@@ -228,15 +224,9 @@ extension HomeControllerScoring on HomeController {
           offer: offer,
           score: serverScore,
         );
-        Get.snackbar(
+        AppToast.success(
           'Candidature envoyée',
           '${offer.company} - ${offer.title}',
-          backgroundColor: AppColors.successSoft,
-          colorText: AppColors.primary,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 14,
-          duration: const Duration(seconds: 3),
         );
       }
     } on Exception catch (e) {
@@ -251,16 +241,7 @@ extension HomeControllerScoring on HomeController {
         category: 'Offre',
         icon: Icons.cloud_off_outlined,
       );
-      Get.snackbar(
-        'Candidature non envoyée',
-        msg,
-        backgroundColor: AppColors.errorSoft,
-        colorText: AppColors.errorStrong,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 14,
-        duration: const Duration(seconds: 4),
-      );
+      AppToast.error('Candidature non envoyée', msg);
     }
   }
 
