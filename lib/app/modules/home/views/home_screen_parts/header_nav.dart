@@ -165,16 +165,21 @@ class _NotificationBell extends StatelessWidget {
 
 /// Bottom nav avec effet pill-expand : l'item actif gagne un fond `onPrimary`
 /// avec son label visible, les autres ne montrent que l'icone et se compactent.
+///
+/// `badgeCounts` : map index → nombre. Si > 0, un mini badge rouge s'affiche
+/// en haut-droite de l'icone (typiquement pour notifier les messages non lus).
 class _HomeBottomNav extends StatelessWidget {
   const _HomeBottomNav({
     required this.items,
     required this.currentIndex,
     required this.onTap,
+    this.badgeCounts = const {},
   });
 
   final List<HomeNavItem> items;
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final Map<int, int> badgeCounts;
 
   @override
   Widget build(BuildContext context) {
@@ -233,12 +238,12 @@ class _HomeBottomNav extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          items[index].icon,
-                          size: 22,
+                        _NavIconWithBadge(
+                          icon: items[index].icon,
                           color: selected
                               ? AppColors.primaryDark
                               : AppColors.onPrimary,
+                          badgeCount: badgeCounts[index] ?? 0,
                         ),
                         AnimatedSize(
                           duration: const Duration(milliseconds: 220),
@@ -268,6 +273,68 @@ class _HomeBottomNav extends StatelessWidget {
           );
         }),
       ),
+    );
+  }
+}
+
+/// Icone de la bottom nav, avec un mini badge rouge en haut-droite si
+/// `badgeCount > 0` (ex: messages non lus). Le badge porte un border
+/// `onPrimary` 1.5px pour se decoller du fond pill clair quand l'item
+/// est selectionne ou du fond gradient quand il est inactif.
+class _NavIconWithBadge extends StatelessWidget {
+  const _NavIconWithBadge({
+    required this.icon,
+    required this.color,
+    required this.badgeCount,
+  });
+
+  final IconData icon;
+  final Color color;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon, size: 22, color: color),
+        if (badgeCount > 0)
+          Positioned(
+            top: -4,
+            right: -6,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: AppColors.onPrimary,
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.error.withValues(alpha: 0.40),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  badgeCount > 99 ? '99+' : '$badgeCount',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 9.5,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

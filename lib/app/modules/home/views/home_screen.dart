@@ -62,14 +62,22 @@ class HomeScreen extends GetView<HomeController> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
               child: Obx(
-                () => _HomeBottomNav(
-                  items: controller.navItems,
-                  currentIndex: controller.currentTabIndex.value,
-                  onTap: (index) {
-                    AppHaptics.tap();
-                    controller.changeTab(index);
-                  },
-                ),
+                () {
+                  // Les Obx aval (unreadCounters) declenchent le rebuild du
+                  // bottom nav quand un nouveau message arrive ou qu'une
+                  // conversation est ouverte/lue.
+                  final unreadMsg = controller.unreadMessagesTotal;
+                  return _HomeBottomNav(
+                    items: controller.navItems,
+                    currentIndex: controller.currentTabIndex.value,
+                    // Index 1 = nav.messages dans navItems.
+                    badgeCounts: {if (unreadMsg > 0) 1: unreadMsg},
+                    onTap: (index) {
+                      AppHaptics.tap();
+                      controller.changeTab(index);
+                    },
+                  );
+                },
               ),
             ),
           ),

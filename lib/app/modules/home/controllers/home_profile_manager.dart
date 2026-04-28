@@ -11,7 +11,6 @@ import 'package:printing/printing.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../translations/app_translations.dart';
 import '../../../core/services/auth_token_store.dart';
-import '../../../core/theme/app_theme_controller.dart';
 import '../../../core/utils/asset_url.dart';
 import '../../../core/network/api_provider.dart';
 import '../data/models/home_profile_models.dart';

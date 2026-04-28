@@ -227,6 +227,13 @@ extension HomeControllerMessaging on HomeController {
     return unreadCounters[conversationId] ?? 0;
   }
 
+  /// Total des messages non lus toutes conversations confondues. Utilise
+  /// pour le badge rouge sur l'icone Messages de la bottom nav.
+  int get unreadMessagesTotal {
+    if (unreadCounters.isEmpty) return 0;
+    return unreadCounters.values.fold<int>(0, (acc, n) => acc + n);
+  }
+
   int get unreadNotificationsCount =>
       notifications.where((notification) => !notification.isRead).length;
 
