@@ -6,7 +6,7 @@ import 'package:printing/printing.dart';
 
 import '../../../core/services/auth_token_store.dart';
 import '../../../core/network/api_provider.dart';
-import '../repositories/cv_builder_repository.dart';
+import '../data/repositories/cv_builder_repository.dart';
 
 /// Rôle des messages dans l'historique assistant.
 enum CvChatRole { user, assistant }

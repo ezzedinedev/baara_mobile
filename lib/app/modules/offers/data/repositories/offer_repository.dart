@@ -1,5 +1,5 @@
-import '../../../core/network/api_provider.dart';
-import '../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_provider.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../models/application_model.dart';
 import '../models/offer_model.dart';
 

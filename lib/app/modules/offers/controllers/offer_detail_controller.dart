@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
-import '../models/offer_model.dart';
-import '../repositories/offer_repository.dart';
+import '../data/models/offer_model.dart';
+import '../data/repositories/offer_repository.dart';
 
 /// Controller dedie au detail d'une offre.
 /// Lit l'identifiant via `Get.parameters['id']` et charge l'offre via

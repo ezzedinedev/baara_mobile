@@ -1,4 +1,4 @@
-import '../../../core/utils/asset_url.dart';
+import '../../../../core/utils/asset_url.dart';
 
 class TrainingModel {
   const TrainingModel({

@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart' as api;
-import '../repositories/profile_repository.dart';
-import '../models/profile_model.dart';
+import '../data/repositories/profile_repository.dart';
+import '../data/models/profile_model.dart';
 
 class ProfileController extends GetxController {
   ProfileController({api.ApiProvider? apiProvider}) {

@@ -10,7 +10,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/profile_controller.dart';
-import '../models/profile_model.dart';
+import '../data/models/profile_model.dart';
 
 /// Écran CV candidat — permet de lister, importer (PDF/DOCX), supprimer les CV
 /// et définir le CV par défaut qui sera envoyé automatiquement au recruteur

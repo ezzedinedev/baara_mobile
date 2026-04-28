@@ -9,7 +9,7 @@ import '../../../core/utils/haptics.dart';
 import '../../../core/utils/relative_time.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/offers_controller.dart';
-import '../models/offer_model.dart';
+import '../data/models/offer_model.dart';
 import '../utils/apply_feedback.dart';
 
 class OffersScreen extends StatefulWidget {

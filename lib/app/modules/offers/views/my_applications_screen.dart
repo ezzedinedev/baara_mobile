@@ -8,7 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/offers_controller.dart';
-import '../models/application_model.dart';
+import '../data/models/application_model.dart';
 
 /// Vue "Mes candidatures" — liste des candidatures envoyees par le candidat.
 /// Source : `GET /api/v1/applications` via [OffersController.loadMyApplications].

@@ -8,7 +8,7 @@ import '../../../core/theme/app_theme_controller.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/messages_controller.dart';
-import '../models/message_model.dart';
+import '../data/models/message_model.dart';
 
 enum _MessagesFilter { all, unread, recruiters }
 

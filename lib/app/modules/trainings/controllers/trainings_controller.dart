@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
-import '../repositories/training_repository.dart';
-import '../models/training_model.dart';
+import '../data/repositories/training_repository.dart';
+import '../data/models/training_model.dart';
 
 class TrainingsController extends GetxController {
   TrainingsController({ApiProvider? apiProvider}) {

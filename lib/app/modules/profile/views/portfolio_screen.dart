@@ -9,7 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../controllers/profile_controller.dart';
-import '../models/profile_model.dart';
+import '../data/models/profile_model.dart';
 
 /// Liste du portfolio du candidat — projets, réalisations, travaux.
 /// S'appuie entièrement sur [ProfileController] qui expose déjà l'API backend.

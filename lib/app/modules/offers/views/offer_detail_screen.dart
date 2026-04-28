@@ -11,7 +11,7 @@ import '../../../core/utils/relative_time.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/offer_detail_controller.dart';
 import '../controllers/offers_controller.dart';
-import '../models/offer_model.dart';
+import '../data/models/offer_model.dart';
 import '../utils/apply_feedback.dart';
 
 /// Detail d'une offre — hero (logo entreprise / gradient fallback) + back button,

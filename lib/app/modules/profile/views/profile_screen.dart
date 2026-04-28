@@ -9,7 +9,7 @@ import '../../../core/utils/haptics.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/profile_controller.dart';
-import '../models/profile_model.dart';
+import '../data/models/profile_model.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});

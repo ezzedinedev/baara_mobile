@@ -8,7 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/training_detail_controller.dart';
-import '../models/training_model.dart';
+import '../data/models/training_model.dart';
 
 /// Detail d'une formation — hero (cover image / fallback gradient
 /// violet-cyan), metadonnees, description, modules, objectifs, prerequis,

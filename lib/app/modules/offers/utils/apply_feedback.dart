@@ -6,7 +6,7 @@ import '../../../core/widgets/widgets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
-import '../models/application_model.dart';
+import '../data/models/application_model.dart';
 
 /// Affiche le bon retour utilisateur pour chaque issue d'une candidature.
 /// Appelé après `OffersController.applyToOffer(...)` depuis n'importe quel écran.

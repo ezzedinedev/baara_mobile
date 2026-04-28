@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import '../../../core/network/api_provider.dart';
-import '../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_provider.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../models/profile_model.dart';
 
 class ProfileRepository {

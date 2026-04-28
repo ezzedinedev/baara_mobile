@@ -6,7 +6,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/profile_controller.dart';
-import '../models/profile_model.dart';
+import '../data/models/profile_model.dart';
 
 /// Formulaire création/édition d'un projet portfolio.
 /// Si un [PortfolioProjectModel] est passé en `Get.arguments`, l'écran est en mode édition.

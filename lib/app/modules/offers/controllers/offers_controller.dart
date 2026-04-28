@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
-import '../models/application_model.dart';
-import '../models/offer_model.dart';
-import '../repositories/offer_repository.dart';
+import '../data/models/application_model.dart';
+import '../data/models/offer_model.dart';
+import '../data/repositories/offer_repository.dart';
 
 class OffersController extends GetxController {
   OffersController({ApiProvider? apiProvider}) {

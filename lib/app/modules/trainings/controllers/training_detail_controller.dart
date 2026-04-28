@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
-import '../models/training_model.dart';
-import '../repositories/training_repository.dart';
+import '../data/models/training_model.dart';
+import '../data/repositories/training_repository.dart';
 
 /// Controller dedie au detail d'une formation. Lit l'identifiant via
 /// `Get.parameters['id']` et charge la formation via

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
-import '../repositories/messages_repository.dart';
-import '../models/message_model.dart';
+import '../data/repositories/messages_repository.dart';
+import '../data/models/message_model.dart';
 
 class MessagesController extends GetxController {
   MessagesController({ApiProvider? apiProvider}) {

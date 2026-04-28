@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_provider.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_provider.dart';
 
 /// Repository CV Builder structuré — miroir de l'API `/api/v1/profile/cv-builder/*`.
 ///
