@@ -97,6 +97,8 @@ class ApiConstants {
   static const String register = '/auth/register';
   static const String otpVerify = '/auth/otp/verify';
   static const String otpResend = '/auth/otp/resend';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
   static const String profile = '/profile';

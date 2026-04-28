@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../app/modules/auth/bindings/candidate_login_binding.dart';
+import '../app/modules/auth/controllers/forgot_password_controller.dart';
 import '../app/modules/auth/views/candidate_login_screen.dart';
+import '../app/modules/auth/views/forgot_password_reset_screen.dart';
+import '../app/modules/auth/views/forgot_password_screen.dart';
 import '../app/modules/auth/bindings/recruiter_login_binding.dart';
 import '../app/modules/auth/views/recruiter_login_screen.dart';
 import '../app/modules/auth/bindings/register_profile_binding.dart';
@@ -110,6 +113,22 @@ class AppPages {
       name: AppRoutes.otpVerification,
       page: () => const OtpVerificationScreen(),
       binding: OtpVerificationBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    ),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordScreen(),
+      binding: ForgotPasswordBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    ),
+    GetPage(
+      name: AppRoutes.forgotPasswordReset,
+      page: () => const ForgotPasswordResetScreen(),
+      binding: ForgotPasswordBinding(),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,

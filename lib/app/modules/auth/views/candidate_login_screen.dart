@@ -78,7 +78,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                       child: GestureDetector(
                         onTap: () {
                           AppHaptics.tap();
-                          // TODO: route mot de passe oublié
+                          Get.toNamed(AppRoutes.forgotPassword);
                         },
                         child: Text(
                           'Mot de passe oublié ?',
