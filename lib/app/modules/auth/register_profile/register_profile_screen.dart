@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import 'register_profile_controller.dart';
 
 /// Étape 2 : choix du type de candidat (étudiant / professionnel / entreprise).

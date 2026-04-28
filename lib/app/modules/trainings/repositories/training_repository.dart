@@ -1,6 +1,6 @@
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../core/security/auth_token_store.dart';
+import '../../../core/services/auth_token_store.dart';
 import '../models/training_model.dart';
 
 class TrainingRepository {

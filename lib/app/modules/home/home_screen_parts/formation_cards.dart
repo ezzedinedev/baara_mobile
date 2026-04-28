@@ -1,4 +1,4 @@
-﻿part of '../home_screen.dart';
+part of '../home_screen.dart';
 
 
 void _showFormationDetails(
@@ -8,6 +8,10 @@ void _showFormationDetails(
   openFormationDetail(context, Get.find<HomeController>(), formation);
 }
 
+/// Carte formation refondue (avril 2026) : background image plein cadre,
+/// voile gradient pour la lisibilite, badge niveau en haut a gauche, titre
+/// blanc, stats en bas (lecons, duree, %) et barre de progression. Pas de
+/// bouton play : la lecture se fait depuis le detail formation.
 class _FormationDarkCard extends StatelessWidget {
   const _FormationDarkCard({
     required this.formation,
@@ -19,178 +23,133 @@ class _FormationDarkCard extends StatelessWidget {
   final bool compact;
   final VoidCallback? onTap;
 
-  bool get _isFree => formation.priceAmount == 0;
-
   @override
   Widget build(BuildContext context) {
-    const textPrimary = AppColors.onPrimary;
-    final textSecondary = AppColors.onPrimary.withValues(alpha: 0.78);
+    final hasCover = formation.coverUrl.trim().isNotEmpty;
+    final cardHeight = compact ? 224.0 : 280.0;
+    final progress = formation.progressRatio.clamp(0.0, 1.0);
+    final progressPct = formation.progressPercent;
+
+    final lessonsLabel = formation.lessons > 0
+        ? '${formation.lessons} ${formation.lessons > 1 ? "leçons" : "leçon"}'
+        : 'Leçons à venir';
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
       child: Ink(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.primaryDark, AppColors.onDark],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: AppColors.primaryLight.withValues(alpha: 0.14),
-          ),
+          color: AppColors.onDark,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryDark.withValues(alpha: 0.30),
+              color: AppColors.primaryDark.withValues(alpha: 0.22),
               blurRadius: 22,
               offset: const Offset(0, 12),
             ),
           ],
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _FormationMedia(formation: formation, compact: compact),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  compact ? 12 : 14,
-                  compact ? 10 : 12,
-                  compact ? 12 : 14,
-                  compact ? 12 : 14,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (formation.sector.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          formation.sector.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.primaryLight,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      formation.title,
-                      style: AppTextStyles.titleLg.copyWith(
-                        color: textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: compact ? 15 : 17,
-                        height: 1.2,
-                      ),
-                      maxLines: compact ? 1 : 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      formation.providerName,
-                      style: AppTextStyles.bodySm.copyWith(
-                        color: textSecondary,
-                        fontSize: compact ? 11 : 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: compact ? 10 : 12),
-                    Row(
-                      children: [
-                        _DarkStat(
-                          icon: Icons.menu_book_rounded,
-                          label: '${formation.lessons}',
-                          color: AppColors.categoryBlueLight,
-                          compact: compact,
-                        ),
-                        const SizedBox(width: 12),
-                        _DarkStat(
-                          icon: Icons.cast_for_education_rounded,
-                          label: formation.formatLabel,
-                          color: AppColors.primaryLight,
-                          compact: compact,
-                          isText: true,
-                        ),
-                        const Spacer(),
-                        _DarkStat(
-                          icon: Icons.groups_rounded,
-                          label: '${formation.enrolledCount}',
-                          color: AppColors.categoryOrange,
-                          compact: compact,
-                        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: SizedBox(
+            height: cardHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Fond : photo de couverture (Ken Burns subtil) ou pattern
+                // de fallback quand le serveur n'a pas encore d'image.
+                if (hasCover)
+                  KenBurnsImage(
+                    image: CachedNetworkImageProvider(formation.coverUrl),
+                  )
+                else
+                  CustomPaint(painter: _ChartPatternPainter()),
+
+                // Voile gradient : assombrit haut + bas pour que le badge,
+                // le titre, les stats et la progress bar restent lisibles
+                // quelle que soit l'image du serveur.
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.34),
+                        Colors.black.withValues(alpha: 0.10),
+                        Colors.black.withValues(alpha: 0.46),
+                        Colors.black.withValues(alpha: 0.78),
                       ],
+                      stops: const [0.0, 0.32, 0.68, 1.0],
                     ),
-                    SizedBox(height: compact ? 10 : 12),
-                    // Bandeau prix bas (vert si gratuit, accent si payant).
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.fromLTRB(
-                        compact ? 10 : 12,
-                        compact ? 7 : 8,
-                        compact ? 10 : 12,
-                        compact ? 7 : 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isFree
-                            ? AppColors.primaryLight.withValues(alpha: 0.20)
-                            : AppColors.categoryYellow.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        border: Border.all(
-                          color: _isFree
-                              ? AppColors.primaryLight.withValues(alpha: 0.40)
-                              : AppColors.categoryYellow
-                                  .withValues(alpha: 0.40),
+                  ),
+                ),
+
+                Padding(
+                  padding: EdgeInsets.all(compact ? 14 : 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (formation.level.isNotEmpty)
+                        _LevelBadge(text: formation.level),
+                      const SizedBox(height: 14),
+                      Text(
+                        formation.title,
+                        style: AppTextStyles.headlineSm.copyWith(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: compact ? 20 : 24,
+                          height: 1.18,
+                          letterSpacing: -0.2,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: Row(
+                      const Spacer(),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            _isFree
-                                ? Icons.verified_rounded
-                                : Icons.payments_rounded,
-                            size: compact ? 13 : 15,
-                            color: _isFree
-                                ? AppColors.primaryLight
-                                : AppColors.categoryYellow,
+                          _CardStat(
+                            icon: Icons.menu_book_rounded,
+                            label: lessonsLabel,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              formation.priceLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          const Spacer(),
+                          if (formation.durationLabel.isNotEmpty) ...[
+                            _CardStat(
+                              icon: Icons.access_time_rounded,
+                              label: formation.durationLabel,
+                            ),
+                            // Le pourcentage n'apparait qu'a partir du moment
+                            // ou l'utilisateur a vraiment commence la formation
+                            // (au moins une lecon completee). Avant ca, "0 %"
+                            // affiche cote utilisateur fait croire qu'il est
+                            // deja inscrit, ce qui est trompeur — on prefere
+                            // un CTA explicite (Suivre / Commencer).
+                            if (progressPct > 0) const SizedBox(width: 14),
+                          ],
+                          if (progressPct > 0)
+                            Text(
+                              '$progressPct%',
                               style: AppTextStyles.titleMd.copyWith(
-                                color: _isFree
-                                    ? AppColors.primaryLight
-                                    : AppColors.categoryYellow,
+                                color: AppColors.onPrimary,
                                 fontWeight: FontWeight.w800,
-                                fontSize: compact ? 11 : 12,
-                                letterSpacing: 0.2,
+                                fontSize: compact ? 13 : 15,
                               ),
                             ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            size: compact ? 13 : 15,
-                            color: AppColors.onPrimary
-                                .withValues(alpha: 0.85),
-                          ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      if (progressPct > 0)
+                        _ProgressTrack(progress: progress, compact: compact)
+                      else
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: _FormationCta(formation: formation),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -198,36 +157,52 @@ class _FormationDarkCard extends StatelessWidget {
   }
 }
 
-class _DarkStat extends StatelessWidget {
-  const _DarkStat({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.compact,
-    this.isText = false,
-  });
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard.withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: AppTextStyles.labelSm.copyWith(
+          color: AppColors.primaryDark,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _CardStat extends StatelessWidget {
+  const _CardStat({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final Color color;
-  final bool compact;
-  final bool isText;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: compact ? 22 : 26,
-          height: compact ? 22 : 26,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, size: compact ? 12 : 14, color: color),
-        ),
-        const SizedBox(width: 5),
+        Icon(icon, size: 15, color: AppColors.onPrimary),
+        const SizedBox(width: 6),
         Flexible(
           child: Text(
             label,
@@ -235,9 +210,8 @@ class _DarkStat extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onPrimary,
-              fontWeight: isText ? FontWeight.w700 : FontWeight.w800,
-              fontSize: compact ? 10 : 11,
-              letterSpacing: 0.2,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
           ),
         ),
@@ -246,116 +220,118 @@ class _DarkStat extends StatelessWidget {
   }
 }
 
-class _FormationMedia extends StatelessWidget {
-  const _FormationMedia({
-    required this.formation,
-    required this.compact,
-  });
+class _ProgressTrack extends StatelessWidget {
+  const _ProgressTrack({required this.progress, required this.compact});
 
-  final HomeFormationPreview formation;
+  final double progress;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final hasCover = formation.coverUrl.trim().isNotEmpty;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      child: Container(
-        height: compact ? 94 : 122,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.onDark, AppColors.primaryDark],
-          ),
-          border: Border.all(
-            color: AppColors.primaryLight.withValues(alpha: 0.24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Progression',
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.onPrimary.withValues(alpha: 0.86),
+            fontSize: compact ? 10 : 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
           ),
         ),
-        child: Stack(
-          children: [
-            if (hasCover)
-              Positioned.fill(
-                child: KenBurnsImage(
-                  image: CachedNetworkImageProvider(formation.coverUrl),
-                ),
-              )
-            else
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _ChartPatternPainter(),
-                ),
-              ),
-            // Voile gradient concentre dans le bas (stops 0.55+) : laisse
-            // les 2/3 du haut clairs pour que l'image reste lisible, n'assombrit
-            // que la zone des badges en bas.
-            if (hasCover)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: AppColors.imageScrim,
-                      stops: AppColors.imageScrimStops,
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              left: 8,
-              top: 8,
-              child: _FormationBadge(
-                text: formation.level,
-                background: AppColors.surfaceIconSoft.withValues(alpha: 0.95),
-                textColor: AppColors.primaryDark,
-              ),
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: _FormationBadge(
-                text: formation.status,
-                background: AppColors.primary,
-                textColor: AppColors.onPrimary,
-              ),
-            ),
-          ],
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: compact ? 4 : 5,
+            backgroundColor: AppColors.onPrimary.withValues(alpha: 0.22),
+            valueColor: const AlwaysStoppedAnimation(AppColors.onPrimary),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _FormationBadge extends StatelessWidget {
-  const _FormationBadge({
-    required this.text,
-    required this.background,
-    required this.textColor,
-  });
+/// CTA compact affiche en bas de la carte quand l'utilisateur n'a pas encore
+/// commence la formation. "Suivre" si pas inscrit (declenche enrollment),
+/// "Commencer" si inscrit mais 0 lecon completee (ouvre le detail).
+class _FormationCta extends StatelessWidget {
+  const _FormationCta({required this.formation});
 
-  final String text;
-  final Color background;
-  final Color textColor;
+  final HomeFormationPreview formation;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.bodySm.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w700,
-          fontSize: 9,
+    final controller = Get.find<HomeController>();
+
+    return Obx(() {
+      final isEnrolling =
+          controller.enrollingFormationId.value == formation.id;
+      final isEnrolled = formation.isEnrolled;
+      final label = isEnrolled ? 'Commencer' : 'Suivre';
+      final icon = isEnrolled ? Icons.east_rounded : Icons.add_rounded;
+
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(99),
+          onTap: isEnrolling
+              ? null
+              : () {
+                  AppHaptics.tap();
+                  if (isEnrolled) {
+                    _showFormationDetails(context, formation);
+                  } else {
+                    controller.enrollInFormation(formation);
+                  }
+                },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(99),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isEnrolling)
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation(AppColors.primary),
+                    ),
+                  )
+                else
+                  Icon(icon, size: 14, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -417,4 +393,3 @@ class _ChartPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

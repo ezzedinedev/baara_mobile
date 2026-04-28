@@ -8,7 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/asset_url.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/utils/relative_time.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import '../controllers/offer_detail_controller.dart';
 import '../controllers/offers_controller.dart';
 import '../models/offer_model.dart';

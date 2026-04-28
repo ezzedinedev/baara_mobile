@@ -318,46 +318,48 @@ class _SettingsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap == null
-            ? null
-            : () {
-                AppHaptics.tap();
-                onTap!();
-              },
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
+    // PressScale englobe le tap : scale-down 0.97 + haptic. Le Material+InkWell
+    // garde le ripple visuel sur la zone touchee. Le haptic est gere par
+    // PressScale, donc on ne le rappelle pas dans le onTap (sinon double buzz).
+    return PressScale(
+      onTap: onTap,
+      enabled: onTap != null,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 18),
                 ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTextStyles.titleMd.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.titleColor,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.titleMd.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.titleColor,
+                    ),
                   ),
                 ),
-              ),
-              if (trailing != null) trailing!,
-              const SizedBox(width: 4),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.hintColor,
-                size: 20,
-              ),
-            ],
+                if (trailing != null) trailing!,
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.hintColor,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),

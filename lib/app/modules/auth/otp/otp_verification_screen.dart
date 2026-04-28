@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import 'otp_verification_controller.dart';
 
 /// Écran de vérification OTP — 6 chiffres envoyés par email/SMS.

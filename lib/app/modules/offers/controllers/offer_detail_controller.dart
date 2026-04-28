@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 import '../models/offer_model.dart';
 import '../repositories/offer_repository.dart';
 

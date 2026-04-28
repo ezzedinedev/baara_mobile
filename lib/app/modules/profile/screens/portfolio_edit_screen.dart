@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import '../controllers/profile_controller.dart';
 import '../models/profile_model.dart';
 
@@ -83,7 +83,7 @@ class _PortfolioEditFormState extends State<_PortfolioEditForm> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),
           children: [
-            _SectionLabel(text: 'Titre du projet'),
+            const _SectionLabel(text: 'Titre du projet'),
             const SizedBox(height: 8),
             InputField(
               controller: _titleCtrl,
@@ -93,7 +93,7 @@ class _PortfolioEditFormState extends State<_PortfolioEditForm> {
                   (v == null || v.trim().isEmpty) ? 'Titre requis' : null,
             ),
             const SizedBox(height: 20),
-            _SectionLabel(text: 'Description'),
+            const _SectionLabel(text: 'Description'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _descriptionCtrl,
@@ -114,7 +114,7 @@ class _PortfolioEditFormState extends State<_PortfolioEditForm> {
               style: AppTextStyles.bodyMd,
             ),
             const SizedBox(height: 20),
-            _SectionLabel(text: 'Lien externe (optionnel)'),
+            const _SectionLabel(text: 'Lien externe (optionnel)'),
             const SizedBox(height: 8),
             InputField(
               controller: _urlCtrl,
@@ -123,7 +123,7 @@ class _PortfolioEditFormState extends State<_PortfolioEditForm> {
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 20),
-            _SectionLabel(text: 'Tags / technologies (séparés par virgule)'),
+            const _SectionLabel(text: 'Tags / technologies (séparés par virgule)'),
             const SizedBox(height: 8),
             InputField(
               controller: _tagsCtrl,

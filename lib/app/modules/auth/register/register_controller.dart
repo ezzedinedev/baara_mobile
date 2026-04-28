@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/validators.dart';
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 import '../../../../routes/app_routes.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 
 class RegisterCountryOption {
   const RegisterCountryOption({

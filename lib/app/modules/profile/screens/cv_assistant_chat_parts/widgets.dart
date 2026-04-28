@@ -241,30 +241,57 @@ class _SuggestionChips extends StatelessWidget {
     return Obx(() {
       final freeMode = controller.freeEditMode.value;
       final expected = controller.expectedField.value;
+      final isComplete = controller.isComplete.value;
 
-      final List<({String label, String message, IconData icon})> items = [];
+      // Type de chip : on distingue les actions message (qui envoient un texte
+      // au bot) des actions navigation (qui changent d'ecran).
+      final List<({String label, IconData icon, String? message, VoidCallback? onTap})> items = [];
+
       if (freeMode) {
         items.add((
           label: 'Reprendre le parcours',
           message: 'Reprenons les questions guidées.',
           icon: Icons.assistant_rounded,
+          onTap: null,
+        ));
+      } else if (isComplete) {
+        // CV complet : on remplace les chips de progression par les actions
+        // de finalisation. "Voir mon CV" ouvre l'apercu (depuis lequel le PDF
+        // peut etre telecharge).
+        items.add((
+          label: 'Voir mon CV',
+          icon: Icons.visibility_rounded,
+          message: null,
+          onTap: () {
+            AppHaptics.tap();
+            Get.toNamed(AppRoutes.profileCvPreview);
+          },
+        ));
+        items.add((
+          label: 'Améliorer mon CV',
+          message: "Peux-tu me suggérer comment améliorer mon CV ?",
+          icon: Icons.auto_awesome_rounded,
+          onTap: null,
         ));
       } else if (expected != null) {
         items.add((
           label: 'Passer ce champ',
           message: "Je préfère passer ce champ pour le moment.",
           icon: Icons.skip_next_rounded,
+          onTap: null,
         ));
         items.add((
           label: 'Édition libre',
           message: "Je veux modifier librement mon CV.",
           icon: Icons.edit_note_rounded,
+          onTap: null,
         ));
       } else {
         items.add((
           label: 'Améliorer mon CV',
           message: "Peux-tu me suggérer comment améliorer mon CV ?",
           icon: Icons.auto_awesome_rounded,
+          onTap: null,
         ));
       }
 
@@ -286,8 +313,17 @@ class _SuggestionChips extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(999),
                 onTap: () {
+                  // Deux types de chips : action de navigation (onTap fourni)
+                  // ou message envoye au bot (message fourni). Les chips
+                  // navigation gerent leur propre haptic.
+                  if (s.onTap != null) {
+                    s.onTap!();
+                    return;
+                  }
                   AppHaptics.tap();
-                  controller.sendAssistantMessage(s.message);
+                  if (s.message != null) {
+                    controller.sendAssistantMessage(s.message!);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -431,12 +467,12 @@ class _WelcomeState extends State<_Welcome>
             const SizedBox(height: 10),
             _Reveal(
               animation: _staggered(0.55, 0.92),
-              child: _SuggestedBubble('Je m\'appelle Jean Dupont'),
+              child: const _SuggestedBubble('Je m\'appelle Jean Dupont'),
             ),
             const SizedBox(height: 8),
             _Reveal(
               animation: _staggered(0.65, 1.0),
-              child: _SuggestedBubble(
+              child: const _SuggestedBubble(
                 'Je cherche un poste de développeur Flutter',
               ),
             ),
@@ -647,9 +683,9 @@ class _TypingIndicator extends StatelessWidget {
               color: AppColors.outlineVariant.withValues(alpha: 0.2),
             ),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               _TypingDot(delay: 0),
               SizedBox(width: 4),
               _TypingDot(delay: 180),
@@ -732,6 +768,18 @@ class _Composer extends StatefulWidget {
 class _ComposerState extends State<_Composer> {
   final _textCtrl = TextEditingController();
   final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-focus a l'entree du chat : le bot pose une question, l'utilisateur
+    // doit pouvoir repondre directement sans avoir a tapoter le champ. On
+    // attend la fin du premier frame pour que le clavier soit positionne
+    // correctement par rapport au layout final.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
 
   @override
   void dispose() {

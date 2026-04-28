@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/haptics.dart';
 import '../../../routes/app_routes.dart';
-import '../../../widgets/widgets.dart';
+import '../../core/widgets/widgets.dart';
 
 /// Landing page : bienvenue + CTA unique "Commencer" + lien "Se connecter".
 ///

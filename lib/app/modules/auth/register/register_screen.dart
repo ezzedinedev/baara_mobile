@@ -6,7 +6,7 @@ import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../../routes/app_routes.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import 'register_controller.dart';
 
 /// Inscription — wizard 3 étapes : (1) prénom/nom, (2) email/pays/téléphone,

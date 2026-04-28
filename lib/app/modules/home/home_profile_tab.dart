@@ -4,18 +4,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/i18n/app_translations.dart';
+import '../../translations/app_translations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme_controller.dart';
 import '../../core/utils/haptics.dart';
-import '../../data/providers/api_provider.dart';
+import '../../core/network/api_provider.dart';
 import '../../../routes/app_routes.dart';
-import '../../../widgets/widgets.dart';
+import '../../core/widgets/widgets.dart';
 import 'home_controller.dart';
 import 'home_profile_manager.dart';
 import 'home_profile_models.dart';
@@ -96,13 +97,13 @@ class HomeProfileTab extends StatelessWidget {
             _SettingsSection(
               children: [
                 _SettingsItem(
-                  icon: Icons.send_rounded,
+                  icon: IconlyLight.send,
                   iconColor: AppColors.categoryBlue,
                   label: 'Mes candidatures',
                   onTap: () => Get.toNamed(AppRoutes.myApplications),
                 ),
                 _SettingsItem(
-                  icon: Icons.description_outlined,
+                  icon: IconlyLight.document,
                   iconColor: AppColors.primary,
                   label: 'Mon CV',
                   onTap: () {
@@ -110,7 +111,7 @@ class HomeProfileTab extends StatelessWidget {
                   },
                 ),
                 _SettingsItem(
-                  icon: Icons.work_outline_rounded,
+                  icon: IconlyLight.work,
                   iconColor: AppColors.categoryPurple,
                   label: 'Mon portfolio',
                   onTap: () {
@@ -118,7 +119,7 @@ class HomeProfileTab extends StatelessWidget {
                   },
                 ),
                 _SettingsItem(
-                  icon: Icons.notifications_outlined,
+                  icon: IconlyLight.notification,
                   iconColor: AppColors.categoryOrange,
                   label: 'Notifications',
                   trailing: _SettingsTrailingText(
@@ -127,7 +128,7 @@ class HomeProfileTab extends StatelessWidget {
                   onTap: () => _openNotificationsSheet(context, prefs),
                 ),
                 _SettingsItem(
-                  icon: Icons.language_rounded,
+                  icon: IconlyLight.discovery,
                   iconColor: AppColors.categoryCyan,
                   label: 'Langue',
                   trailing: _SettingsTrailingText(
@@ -151,7 +152,7 @@ class HomeProfileTab extends StatelessWidget {
               title: 'Aide & légal',
               children: [
                 _SettingsItem(
-                  icon: Icons.help_outline_rounded,
+                  icon: IconlyLight.info_circle,
                   iconColor: AppColors.categoryPink,
                   label: 'Aide & support',
                   onTap: () => _showInfoSnackbar(
@@ -160,7 +161,7 @@ class HomeProfileTab extends StatelessWidget {
                   ),
                 ),
                 _SettingsItem(
-                  icon: Icons.gavel_rounded,
+                  icon: IconlyLight.paper,
                   iconColor: AppColors.categoryGray,
                   label: 'Conditions générales',
                   onTap: () => _showInfoSnackbar(
@@ -169,7 +170,7 @@ class HomeProfileTab extends StatelessWidget {
                   ),
                 ),
                 _SettingsItem(
-                  icon: Icons.privacy_tip_outlined,
+                  icon: IconlyLight.shield_done,
                   iconColor: AppColors.categoryBlue,
                   label: 'Politique de confidentialité',
                   onTap: () => _showInfoSnackbar(

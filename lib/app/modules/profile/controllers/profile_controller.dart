@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:get/get.dart';
 
-import '../../../data/providers/api_provider.dart' as api;
+import '../../../core/network/api_provider.dart' as api;
 import '../repositories/profile_repository.dart';
 import '../models/profile_model.dart';
 

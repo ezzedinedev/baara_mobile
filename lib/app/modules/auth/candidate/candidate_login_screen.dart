@@ -5,7 +5,7 @@ import '../../../../app/core/theme/app_colors.dart';
 import '../../../../app/core/theme/app_dimens.dart';
 import '../../../../app/core/theme/app_text_styles.dart';
 import '../../../../app/core/utils/haptics.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import '../../../../routes/app_routes.dart';
 import 'candidate_login_controller.dart';
 

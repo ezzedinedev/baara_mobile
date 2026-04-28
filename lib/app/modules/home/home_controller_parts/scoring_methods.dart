@@ -87,19 +87,19 @@ extension HomeControllerScoring on HomeController {
     // 'new_application'. Si score < seuil (config matching.auto_filter_threshold)
     // l'application est creee avec status=rejected — on remonte le retour
     // serveur a l'UI sans pre-filter cote client.
-    pendingMatch.value = HomeOfferMatchResult(
-      offer: swipedOffer,
-      score: swipedScore,
-    );
+    //
+    // L'overlay "C'est un match" n'est PAS affiche de facon optimiste : il
+    // est defini dans _submitSwipeApplication uniquement si le backend a
+    // accepte la candidature. Sinon (CV manquant, deja postule, score trop
+    // bas), on ne ment pas a l'utilisateur.
     unawaited(_submitSwipeApplication(swipedOffer, swipedScore));
   }
 
   /// Postule directement à une offre (sans animation swipe). Utilisé quand
   /// l'utilisateur tape sur "Postuler" depuis la liste verticale ou un
-  /// détail offre — l'overlay match s'affiche quand même via pendingMatch.
+  /// détail offre. L'overlay match n'est affiché qu'après confirmation API.
   Future<void> applyToOfferDirect(HomeOfferPreview offer) async {
     final score = scoreForOffer(offer);
-    pendingMatch.value = HomeOfferMatchResult(offer: offer, score: score);
     await _submitSwipeApplication(offer, score);
   }
 
@@ -141,13 +141,13 @@ extension HomeControllerScoring on HomeController {
                     ? 'Offre indisponible'
                     : 'Candidature non envoyée';
         final body = reasonNoCv
-            ? 'Crée ou importe ton CV avant de postuler à ${offer.company}.'
+            ? 'Ajoutez votre CV pour candidater à cette offre.'
             : reasonAlreadyApplied
-                ? '${offer.company} - ${offer.title} : tu as déjà candidaté.'
+                ? 'Vous avez déjà postulé à ${offer.title}.'
                 : reasonOfferGone
-                    ? '${offer.title} chez ${offer.company} n\'est plus active.'
+                    ? 'Cette offre n\'est plus disponible.'
                     : apiMessage.isEmpty
-                        ? 'Impossible d\'envoyer la candidature pour ${offer.company}.'
+                        ? 'Votre candidature n\'a pas pu être envoyée.'
                         : apiMessage;
 
         _addNotification(
@@ -159,10 +159,32 @@ extension HomeControllerScoring on HomeController {
               : Icons.report_outlined,
         );
 
+        // CV manquant : c'est un blocage actionnable, donc on remplace le
+        // snackbar par un bottom sheet premium (illustration + double CTA).
+        // Plus visible, plus pro, et coherent avec showConfirmSheet utilise
+        // ailleurs (logout, suppression portfolio).
+        if (reasonNoCv) {
+          final ctx = Get.context;
+          if (ctx != null && ctx.mounted) {
+            final goCreate = await showConfirmSheet(
+              context: ctx,
+              icon: Icons.description_outlined,
+              iconColor: AppColors.primary,
+              title: 'CV requis',
+              message:
+                  'Ajoutez votre CV pour postuler aux offres qui vous intéressent. Cela ne prend que quelques minutes.',
+              confirmLabel: 'Créer mon CV',
+              cancelLabel: 'Plus tard',
+            );
+            if (goCreate == true) {
+              Get.toNamed(AppRoutes.profileCvBuilder);
+            }
+            return;
+          }
+        }
+
         // Snackbar visible immédiatement — la notif reste pour l'historique,
         // mais l'utilisateur a besoin du feedback en direct après son swipe.
-        // Si CV manquant, on lui propose d'aller le créer (CTA -> landing CV
-        // builder où il choisit Assistant IA / Manuel / Import).
         Get.snackbar(
           title,
           body,
@@ -171,23 +193,7 @@ extension HomeControllerScoring on HomeController {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16),
           borderRadius: 14,
-          duration: Duration(seconds: reasonNoCv ? 6 : 4),
-          mainButton: reasonNoCv
-              ? TextButton(
-                  onPressed: () {
-                    Get.closeAllSnackbars();
-                    Get.toNamed(AppRoutes.profileCvBuilder);
-                  },
-                  child: Text(
-                    'Créer mon CV',
-                    style: AppTextStyles.titleMd.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
-                )
-              : null,
+          duration: const Duration(seconds: 4),
         );
         return;
       }
@@ -216,6 +222,12 @@ extension HomeControllerScoring on HomeController {
       // Confirme aussi via snackbar pour que le user voie immédiatement que
       // sa candidature est partie (sans devoir aller dans les notifs).
       if (!wasFiltered) {
+        // Overlay "C'est un match" affiche UNIQUEMENT apres confirmation
+        // backend : pas de match si CV manquant ou autre echec.
+        pendingMatch.value = HomeOfferMatchResult(
+          offer: offer,
+          score: serverScore,
+        );
         Get.snackbar(
           'Candidature envoyée',
           '${offer.company} - ${offer.title}',
@@ -228,8 +240,8 @@ extension HomeControllerScoring on HomeController {
         );
       }
     } on Exception catch (e) {
-      // Échec réseau ou parsing : on prévient l'utilisateur au lieu de
-      // laisser l'overlay match suggérer un succès inexistant.
+      // Échec réseau ou parsing : on prévient l'utilisateur via snackbar
+      // (l'overlay match n'est pas affiché tant que l'API n'a pas confirmé).
       final msg = e.toString().contains('Unable to connect')
           ? 'Connexion impossible. Vérifiez votre réseau.'
           : 'Une erreur est survenue. Réessayez.';

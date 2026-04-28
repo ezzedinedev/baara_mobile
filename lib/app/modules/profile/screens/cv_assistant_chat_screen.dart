@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
+import '../../../../routes/app_routes.dart';
 import '../controllers/cv_builder_controller.dart';
 
 part 'cv_assistant_chat_parts/widgets.dart';

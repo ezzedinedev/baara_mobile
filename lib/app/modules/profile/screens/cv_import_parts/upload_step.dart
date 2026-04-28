@@ -105,17 +105,17 @@ class _UploadStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 22),
-          _StepRow(
+          const _StepRow(
             number: 1,
             title: 'Analyse',
             subtitle: 'Score ATS, fautes, sections manquantes',
           ),
-          _StepRow(
+          const _StepRow(
             number: 2,
             title: 'Amélioration',
             subtitle: 'Réécriture par l\'IA, verbes d\'action, chiffrage',
           ),
-          _StepRow(
+          const _StepRow(
             number: 3,
             title: 'Téléchargement',
             subtitle: 'PDF amélioré ou fusion dans ton profil',

@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import '../controllers/cv_builder_controller.dart';
 
 part 'cv_manual_editor_parts/widgets.dart';
@@ -60,7 +60,7 @@ class CvManualEditorScreen extends GetView<CvBuilderController> {
                 child: FadeInAnimation(child: child),
               ),
               children: [
-            _SectionTitle('Identité', icon: Icons.badge_outlined),
+            const _SectionTitle('Identité', icon: Icons.badge_outlined),
             _ScalarField(
               controller: controller,
               field: 'first_name',
@@ -109,7 +109,7 @@ class CvManualEditorScreen extends GetView<CvBuilderController> {
               icon: Icons.flag_circle_outlined,
             ),
             const SizedBox(height: 18),
-            _SectionTitle('Contact', icon: Icons.contact_mail_outlined),
+            const _SectionTitle('Contact', icon: Icons.contact_mail_outlined),
             _ScalarField(
               controller: controller,
               field: 'email',
@@ -141,7 +141,7 @@ class CvManualEditorScreen extends GetView<CvBuilderController> {
               icon: Icons.public_rounded,
             ),
             const SizedBox(height: 18),
-            _SectionTitle('Liens', icon: Icons.link_rounded),
+            const _SectionTitle('Liens', icon: Icons.link_rounded),
             _ScalarField(
               controller: controller,
               field: 'linkedin_url',
@@ -167,7 +167,7 @@ class CvManualEditorScreen extends GetView<CvBuilderController> {
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 18),
-            _SectionTitle('Présentation', icon: Icons.description_outlined),
+            const _SectionTitle('Présentation', icon: Icons.description_outlined),
             _ScalarField(
               controller: controller,
               field: 'bio',
@@ -187,7 +187,7 @@ class CvManualEditorScreen extends GetView<CvBuilderController> {
               hint: 'Ce que tu veux accomplir.',
             ),
             const SizedBox(height: 18),
-            _SectionTitle('Compétences', icon: Icons.star_outline_rounded),
+            const _SectionTitle('Compétences', icon: Icons.star_outline_rounded),
             _TagListField(
               controller: controller,
               field: 'hard_skills',

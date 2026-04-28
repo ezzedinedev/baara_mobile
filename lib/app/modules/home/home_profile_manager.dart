@@ -9,11 +9,11 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../core/constants/api_constants.dart';
-import '../../core/i18n/app_translations.dart';
-import '../../core/security/auth_token_store.dart';
+import '../../translations/app_translations.dart';
+import '../../core/services/auth_token_store.dart';
 import '../../core/theme/app_theme_controller.dart';
 import '../../core/utils/asset_url.dart';
-import '../../data/providers/api_provider.dart';
+import '../../core/network/api_provider.dart';
 import 'home_profile_models.dart';
 
 part 'home_profile_manager_parts/pdf_builders.dart';

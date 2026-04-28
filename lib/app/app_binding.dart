@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
-import 'core/security/auth_token_store.dart';
-import 'data/providers/api_provider.dart';
+import 'core/services/auth_token_store.dart';
+import 'core/network/api_provider.dart';
 
 class AppBinding extends Bindings {
   @override

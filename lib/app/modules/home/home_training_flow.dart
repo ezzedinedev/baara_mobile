@@ -6,8 +6,8 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../../widgets/widgets.dart';
-import '../../core/security/auth_token_store.dart';
+import '../../core/widgets/widgets.dart';
+import '../../core/services/auth_token_store.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'home_controller.dart';

@@ -6,12 +6,12 @@ import 'package:iconly/iconly.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/api_constants.dart';
-import '../../core/security/auth_token_store.dart';
+import '../../core/services/auth_token_store.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/asset_url.dart';
-import '../../data/providers/api_provider.dart';
+import '../../core/network/api_provider.dart';
 import '../../../routes/app_routes.dart';
+import '../../core/widgets/widgets.dart';
 import 'home_profile_manager.dart';
 
 

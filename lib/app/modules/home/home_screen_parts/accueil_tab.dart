@@ -126,36 +126,52 @@ class _AccueilTopBar extends StatelessWidget {
         children: [
           _FlatAvatarButton(controller: controller),
           const SizedBox(width: 12),
+          // Le bloc greeting (Bonjour + nom) est aussi tappable et conduit
+          // au profil — agrandit la zone de tap depuis le simple avatar
+          // 44x44 a toute la moitie gauche du top bar. Plus accessible.
           Expanded(
-            child: Obx(() {
-              final firstName = controller
-                  .profileManager.profile.value.firstName
-                  .trim();
-              final greetingName = firstName.isEmpty
-                  ? 'home.greeting_fallback'.tr
-                  : firstName;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'home.greeting'.tr,
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.bodyColor,
-                    ),
-                  ),
-                  Text(
-                    greetingName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.titleLg.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.titleColor,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              );
-            }),
+            child: InkWell(
+              onTap: () {
+                AppHaptics.tap();
+                controller.goToProfile();
+              },
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 4,
+                ),
+                child: Obx(() {
+                  final firstName = controller
+                      .profileManager.profile.value.firstName
+                      .trim();
+                  final greetingName = firstName.isEmpty
+                      ? 'home.greeting_fallback'.tr
+                      : firstName;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'home.greeting'.tr,
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.bodyColor,
+                        ),
+                      ),
+                      Text(
+                        greetingName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.titleLg.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.titleColor,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
           ),
           const SizedBox(width: 6),
           const _FlatThemeButton(),
@@ -322,40 +338,80 @@ class _FlatAvatarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final profile = controller.profileManager.profile.value;
-      return InkWell(
-        onTap: () {
-          AppHaptics.tap();
-          controller.goToProfile();
-        },
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.30),
-              width: 1.5,
-            ),
-            boxShadow: AppColors.lightShadow,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: profile.hasAvatar
-              ? CachedNetworkImage(
-                  imageUrl: profile.avatarUrl,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => const Icon(
-                    IconlyBold.profile,
-                    size: 22,
-                    color: AppColors.primary,
+      // Wrappe dans un Tooltip pour annoncer la cible : "Mon profil".
+      // En complément, un mini badge chevron en bas-droite signale visuellement
+      // que l'avatar est interactif (sinon il a l'air decoratif).
+      return Tooltip(
+        message: 'Mon profil',
+        child: InkWell(
+          onTap: () {
+            AppHaptics.tap();
+            controller.goToProfile();
+          },
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    shape: BoxShape.circle,
+                    // Border en couleur primaire pour signaler "actif"
+                    // (au lieu d'un outline gris neutre qui semble decoratif).
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.40),
+                      width: 1.5,
+                    ),
+                    boxShadow: AppColors.lightShadow,
                   ),
-                )
-              : const Icon(
-                  IconlyBold.profile,
-                  size: 22,
-                  color: AppColors.primary,
+                  clipBehavior: Clip.antiAlias,
+                  child: profile.hasAvatar
+                      ? CachedNetworkImage(
+                          imageUrl: profile.avatarUrl,
+                          fit: BoxFit.cover,
+                          errorWidget: (_, __, ___) => const Icon(
+                            IconlyBold.profile,
+                            size: 22,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : const Icon(
+                          IconlyBold.profile,
+                          size: 22,
+                          color: AppColors.primary,
+                        ),
                 ),
+                // Mini badge chevron : rond vert primary avec flèche →
+                // signale l'affordance "tape ici pour aller au profil".
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.surfaceCard,
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 8,
+                      color: AppColors.onPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });

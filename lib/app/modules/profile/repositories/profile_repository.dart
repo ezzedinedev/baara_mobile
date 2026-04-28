@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/profile_model.dart';
 
@@ -43,10 +43,7 @@ class ProfileRepository {
 }
 
 /// TODO refonte CV : le backend ne gere PAS un multi-CV. Il y a un seul
-/// `UserCv` par utilisateur (cf. CvBuilderApiController). Les actions
-/// `deleteCv` / `setDefaultCv` n'ont donc pas d'equivalent serveur — elles
-/// retourneront 404. L'ecran cv_screen est a reconstruire autour du modele
-/// CV unique + flow import (analyze → apply).
+
 class CvRepository {
   const CvRepository({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;

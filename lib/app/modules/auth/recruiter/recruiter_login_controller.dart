@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/core/constants/api_constants.dart';
-import '../../../../app/core/security/auth_token_store.dart';
-import '../../../../app/core/security/google_auth_service.dart';
+import '../../../../app/core/services/auth_token_store.dart';
+import '../../../../app/core/services/google_auth_service.dart';
 import '../../../../app/core/utils/validators.dart';
-import '../../../../app/data/providers/api_provider.dart';
+import '../../../../app/core/network/api_provider.dart';
 import '../../../../routes/app_routes.dart';
 
 class RecruiterLoginController extends GetxController {

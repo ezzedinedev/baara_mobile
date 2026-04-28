@@ -1,4 +1,4 @@
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/message_model.dart';
 

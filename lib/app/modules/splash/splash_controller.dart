@@ -76,6 +76,19 @@ class SplashController extends GetxController {
     return completer.future;
   }
 
+  /// Saute la fin du chargement et navigue immediatement vers le landing.
+  /// Declenche par un tap sur le splash (utilisateurs presses) ou par un
+  /// reduce-motion preference systeme.
+  void skip() {
+    if (_isClosed) return;
+    _isClosed = true;
+    _loadingTimer?.cancel();
+    final c = _delayCompleter;
+    if (c != null && !c.isCompleted) c.complete();
+    progress.value = 100;
+    Get.offAllNamed(AppRoutes.landing);
+  }
+
   @override
   void onClose() {
     _isClosed = true;

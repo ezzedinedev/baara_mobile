@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import '../../../core/constants/api_constants.dart';
-import '../../../data/providers/api_provider.dart';
+import '../../../core/network/api_provider.dart';
 
 /// Repository CV Builder structuré — miroir de l'API `/api/v1/profile/cv-builder/*`.
 ///
@@ -71,6 +71,17 @@ class CvBuilderRepository {
         'confirmed_fields': confirmedFields,
         'free_edit_mode': freeEditMode,
       },
+    );
+    return _unwrap(response);
+  }
+
+  /// Marque un template comme "le CV principal" de l'utilisateur côté
+  /// backend. Pilote le filename de download par défaut et la vue
+  /// recruteur. [template] doit être l'un de classic | modern | minimal.
+  Future<Map<String, dynamic>> selectTemplate(String template) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.profileCvBuilderSelectTemplate,
+      {'template': template},
     );
     return _unwrap(response);
   }

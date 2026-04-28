@@ -107,6 +107,8 @@ class ApiConstants {
   static const String profileCvBuilder = '/profile/cv-builder';
   static const String profileCvBuilderPreview = '/profile/cv-builder/preview';
   static const String profileCvBuilderDownload = '/profile/cv-builder/download';
+  static const String profileCvBuilderSelectTemplate =
+      '/profile/cv-builder/select-template';
   // Import CV : analyze (parse PDF→fields stateless) + apply (persist).
   // L'endpoint legacy `/profile/cv/upload` n'existe pas côté backend.
   static const String profileCvImportAnalyze =

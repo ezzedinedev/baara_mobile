@@ -1,5 +1,5 @@
-import '../providers/api_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/network/api_provider.dart';
 
 class AuthRepository {
   const AuthRepository({required ApiProvider apiProvider})

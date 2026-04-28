@@ -10,7 +10,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/app_theme_controller.dart';
 import '../../core/utils/haptics.dart';
 import '../../../routes/app_routes.dart';
-import '../../../widgets/widgets.dart';
+import '../../core/widgets/widgets.dart';
 import 'home_controller.dart';
 import 'home_formation_detail_page.dart';
 import 'home_profile_tab.dart';

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import '../../../../routes/app_routes.dart';
-import '../../../../widgets/widgets.dart';
+import '../../../core/widgets/widgets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/haptics.dart';
@@ -35,7 +36,7 @@ class CvBuilderLandingScreen extends GetView<CvBuilderController> {
               AppHaptics.tap();
               Get.toNamed(AppRoutes.profileCv);
             },
-            icon: const Icon(Icons.description_outlined),
+            icon: const Icon(IconlyLight.document),
           ),
         ],
       ),
@@ -84,7 +85,7 @@ class CvBuilderLandingScreen extends GetView<CvBuilderController> {
                   ),
                   const SizedBox(height: 18),
                   _ModeCard(
-                    icon: Icons.auto_awesome_rounded,
+                    icon: IconlyBold.star,
                     color: AppColors.categoryPurple,
                     title: 'Assistant IA',
                     subtitle:
@@ -97,7 +98,7 @@ class CvBuilderLandingScreen extends GetView<CvBuilderController> {
                   ),
                   const SizedBox(height: 12),
                   _ModeCard(
-                    icon: Icons.edit_note_rounded,
+                    icon: IconlyLight.edit_square,
                     color: AppColors.categoryBlue,
                     title: 'Éditeur manuel',
                     subtitle:
@@ -109,7 +110,7 @@ class CvBuilderLandingScreen extends GetView<CvBuilderController> {
                   ),
                   const SizedBox(height: 12),
                   _ModeCard(
-                    icon: Icons.file_upload_outlined,
+                    icon: IconlyLight.paper_upload,
                     color: AppColors.categoryOrange,
                     title: 'Importer un CV existant',
                     subtitle:
@@ -161,7 +162,7 @@ class _ProgressHero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.description_rounded,
+                    IconlyBold.document,
                     color: AppColors.onPrimary,
                     size: 22,
                   ),
@@ -276,9 +277,10 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    // PressScale englobe le tap : scale-down 0.97 + haptic. InkWell garde le
+    // ripple sur la surface pour le feedback visuel sur la zone cliquee.
+    return PressScale(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -370,7 +372,7 @@ class _PreviewButton extends StatelessWidget {
                 AppHaptics.tap();
                 Get.toNamed(AppRoutes.profileCvPreview);
               },
-        icon: const Icon(Icons.visibility_outlined),
+        icon: const Icon(IconlyLight.show),
         label: Text(
           pct < 20 ? 'Continuez à remplir pour prévisualiser' : 'Prévisualiser mon CV',
         ),
