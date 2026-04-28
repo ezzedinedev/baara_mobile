@@ -7,6 +7,7 @@ class OpportuneLogo extends StatelessWidget {
   const OpportuneLogo({
     super.key,
     this.iconSize = 20,
+    
     this.fontSize = 22,
     this.showIcon = true,
     this.centerAlign = false,

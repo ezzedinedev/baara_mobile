@@ -34,18 +34,15 @@ extension HomeProfileManagerLoaders on HomeProfileManager {
       preferences.value =
           _parsePreferences(_asMap(data['user'])?['preferences']);
 
-      // Synchronise le ThemeController avec la préférence serveur
-      // (sans retoucher SharedPreferences si la valeur est identique).
-      final wantsDark = preferences.value.theme == 'dark';
-      if (Get.isRegistered<AppThemeController>()) {
-        final themeController = Get.find<AppThemeController>();
-        if (themeController.isDarkMode.value != wantsDark) {
-          themeController.setDarkMode(wantsDark);
-        }
-      }
-
       // Synchronise la locale GetX avec la pref utilisateur.
       applyAppLocale(preferences.value.language);
+
+      // NE PAS synchroniser le theme depuis le backend au load — la
+      // pref locale (SharedPreferences) est la source de verite. Le
+      // toggle dans le profil pousse vers backend (cross-device) mais
+      // au demarrage on ne ramene jamais le backend sur le local pour
+      // eviter qu'une valeur serveur erronee force le mode sombre a
+      // chaque entree dans l'app.
     } on Exception catch (error) {
       profileLoadError.value = _friendlyErrorMessage(
         error,
