@@ -128,6 +128,9 @@ class ApiConstants {
   // Backend Laravel monte la messagerie sous /messages (cf. MessageApiController).
   static const String conversations = '/messages';
   static const String notifications = '/notifications';
+  // PUT cet endpoint au boot pour enregistrer/refresh le token FCM du
+  // device courant cote backend (cf. NotificationApiController@updateFcmToken).
+  static const String notificationsFcmToken = '/notifications/fcm-token';
 
   // Formulaire web Laravel pour l'inscription entreprise.
   // Emulateur Android -> 10.0.2.2 redirige vers le localhost PC.
