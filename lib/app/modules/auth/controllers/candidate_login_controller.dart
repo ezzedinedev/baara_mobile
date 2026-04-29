@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../../app/core/constants/api_constants.dart';
 import '../../../../app/core/services/auth_token_store.dart';
+import '../../../../app/core/services/fcm_service.dart';
 import '../../../../app/core/services/google_auth_service.dart';
 import '../../../../app/core/utils/validators.dart';
 import '../../../../app/core/network/api_provider.dart';
@@ -189,6 +190,12 @@ class CandidateLoginController extends GetxController {
     required String userType,
   }) async {
     await _tokenStore.saveSession(token: token, userType: userType);
+    // Re-pousse le token FCM au backend maintenant qu'on est authentifie.
+    // Sans ca, le token cree au boot (avant login) n'a jamais atteint le
+    // serveur car `readToken()` throwait → l'user ne recoit aucun push.
+    if (Get.isRegistered<FcmService>()) {
+      await Get.find<FcmService>().syncTokenToBackend();
+    }
   }
 
   String? _extractToken(Map<String, dynamic> data) {

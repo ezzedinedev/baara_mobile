@@ -136,6 +136,19 @@ class FcmService extends GetxService {
     }
   }
 
+  /// Force la resynchro du token au backend. A appeler depuis le flux de
+  /// login juste apres `saveSession()` — sinon le token enregistre au boot
+  /// (avant login) n'arrive jamais cote serveur (readToken() throw).
+  Future<void> syncTokenToBackend() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null || token.isEmpty) return;
+      await _pushTokenToBackend(token);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[FCM] sync token failed: $e');
+    }
+  }
+
   Future<void> _pushTokenToBackend(String token) async {
     try {
       final auth = await _tokenStore.readToken();
