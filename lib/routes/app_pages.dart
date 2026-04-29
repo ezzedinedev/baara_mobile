@@ -145,16 +145,20 @@ class AppPages {
       binding: OffersBinding(),
       transition: Transition.rightToLeft,
     ),
-    GetPage(
-      name: AppRoutes.offerDetail,
-      page: () => const OfferDetailScreen(),
-      binding: OfferDetailBinding(),
-      transition: Transition.rightToLeft,
-    ),
+    // ⚠️ Ordre important : la route statique `mes-candidatures` doit etre
+    // declaree AVANT la route dynamique `/offres/:id`, sinon GetX considere
+    // "mes-candidatures" comme un id d'offre → on tombe sur OfferDetailScreen
+    // qui affiche "Offre introuvable" (le backend renvoie 404 pour cet id).
     GetPage(
       name: AppRoutes.myApplications,
       page: () => const MyApplicationsScreen(),
       binding: OffersBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.offerDetail,
+      page: () => const OfferDetailScreen(),
+      binding: OfferDetailBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
