@@ -18,71 +18,74 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
+          // Header reduit (220 → 150) pour que le contenu tienne sans
+          // scroll sur les petits ecrans (Tecno KG5j ~720dp visible).
           WavyAuthHeader(
-            height: 220,
+            height: 150,
             showLeading: true,
             onLeadingTap: () => Get.back<void>(),
             foregroundIcon: Icons.account_circle_outlined,
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(26, 6, 26, 0),
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Choisissez votre profil',
                     style: AppTextStyles.displayMd.copyWith(
-                      fontSize: 28,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Container(
-                    width: 48,
+                    width: 42,
                     height: 3,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
-                    'Sélectionnez le profil qui correspond le mieux à votre situation actuelle.',
+                    'Sélectionnez le profil qui correspond à votre situation.',
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.bodyColor,
-                      height: 1.4,
+                      height: 1.35,
+                      fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 14),
                   _ProfileCard(
                     type: ProfileType.jobseeker,
                     icon: Icons.manage_search_rounded,
                     title: 'Je cherche un emploi',
                     subtitle:
-                        "Je suis à la recherche d'un emploi et je veux être recruté.",
+                        "Trouvez un emploi et soyez recruté.",
                     controller: controller,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _ProfileCard(
                     type: ProfileType.student,
                     icon: Icons.school_rounded,
                     title: 'Je suis étudiant',
                     subtitle:
-                        'Je suis étudiant et je cherche un emploi ou un stage.',
+                        'Cherchez un emploi ou un stage.',
                     controller: controller,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _ProfileCard(
                     type: ProfileType.recruiter,
                     icon: Icons.domain_rounded,
                     title: 'Je recrute',
                     subtitle:
-                        'Accédez à notre plateforme web pour des outils de recrutement avancés.',
+                        'Accédez à la plateforme web de recrutement.',
                     controller: controller,
                     showWebBadge: true,
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 14),
                 ],
               ),
             ),
@@ -135,12 +138,12 @@ class _ProfileCard extends StatelessWidget {
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           width: double.infinity,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.surfaceSelected
                 : AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
                   ? AppColors.primary
@@ -150,31 +153,31 @@ class _ProfileCard extends StatelessWidget {
             boxShadow: AppColors.lightShadow,
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryLight.withValues(alpha: 0.18)
                       : AppColors.surfaceIconSoft,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
                   color: isSelected
                       ? AppColors.primary
                       : AppColors.primaryDark,
-                  size: 26,
+                  size: 22,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 2),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -183,6 +186,7 @@ class _ProfileCard extends StatelessWidget {
                             title,
                             style: AppTextStyles.titleLg.copyWith(
                               fontWeight: FontWeight.w700,
+                              fontSize: 15,
                               color: isSelected
                                   ? AppColors.primary
                                   : AppColors.titleColor,
@@ -190,54 +194,54 @@ class _ProfileCard extends StatelessWidget {
                           ),
                         ),
                         if (showWebBadge) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                              horizontal: 6,
+                              vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceHighest,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(5),
                             ),
                             child: Text(
                               'WEB',
                               style: AppTextStyles.labelSm.copyWith(
                                 color: AppColors.bodyColor,
-                                fontSize: 9,
-                                letterSpacing: 1.2,
+                                fontSize: 8.5,
+                                letterSpacing: 1.0,
                               ),
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodySm.copyWith(
                         color: AppColors.bodyColor,
-                        height: 1.5,
+                        height: 1.3,
+                        fontSize: 11.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.outlineVariant,
-                      width: isSelected ? 6.5 : 1.5,
-                    ),
+              const SizedBox(width: 10),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.outlineVariant,
+                    width: isSelected ? 6.0 : 1.5,
                   ),
                 ),
               ),
