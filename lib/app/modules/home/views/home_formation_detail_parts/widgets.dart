@@ -290,7 +290,10 @@ class _TabSwitcher extends StatelessWidget {
       children: [
         Expanded(
           child: _TabButton(
-            label: 'Videos',
+            // 'Videos' etait trop restrictif — un module peut etre une
+            // video, un PDF, un document, une lecon texte. 'Contenu' est
+            // neutre et coherent avec l'absence de lock-in sur le format.
+            label: 'Contenu',
             selected: current == _DetailTab.videos,
             onTap: () => onChanged(_DetailTab.videos),
           ),
