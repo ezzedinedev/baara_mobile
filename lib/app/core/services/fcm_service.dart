@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_routes.dart';
+import '../../modules/home/controllers/home_controller.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
@@ -182,9 +183,35 @@ class FcmService extends GetxService {
   }
 
   void _handleForeground(RemoteMessage message) {
+    final data = message.data;
+    final shortType = _shortenType(data['notifiable_type']?.toString());
+    final targetId = data['notifiable_id']?.toString();
+
+    // Real-time chat sans WebSocket : si le push concerne une
+    // conversation, on declenche immediatement les refresh in-app
+    // (inbox + thread) pour mettre a jour la liste, le badge non-lus
+    // et le thread actif. Donne un feel WhatsApp avec FCM only.
+    var suppressBanner = false;
+    if (shortType == 'conversation' &&
+        targetId != null &&
+        targetId.isNotEmpty &&
+        Get.isRegistered<HomeController>()) {
+      final home = Get.find<HomeController>();
+      // Inbox : reload pour MAJ unreadCounters + lastMessage des cards.
+      home.loadConversations();
+      // Thread actif : si l'utilisateur est DANS la conversation
+      // concernee, on recharge ses messages et on supprime le banner
+      // (pas la peine de le notifier — il voit deja l'ecran).
+      if (home.activeConversationId.value == targetId) {
+        home.loadConversationThread(targetId);
+        suppressBanner = true;
+      }
+    }
+
+    if (suppressBanner) return;
     final notif = message.notification;
     if (notif == null) return;
-    final payload = _serializePayload(message.data);
+    final payload = _serializePayload(data);
     _localNotif.show(
       message.hashCode,
       notif.title,
@@ -203,6 +230,15 @@ class FcmService extends GetxService {
     );
   }
 
+  /// Reduit "App\\Models\\Conversation" → "conversation". Duplique de
+  /// `_shortenTargetType` cote messaging_methods (volontairement, pour
+  /// que FcmService reste autonome de la logique HomeController).
+  String? _shortenType(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final tail = raw.split('\\').last.toLowerCase();
+    return tail == 'user' ? null : tail;
+  }
+
   void _handleNotificationTap(RemoteMessage message) {
     _routeFromPayload(message.data);
   }
@@ -212,13 +248,9 @@ class FcmService extends GetxService {
   /// avant que l'ecran des notifs n'ait ete monte. Garde la logique
   /// minimale : on ouvre la route, l'ecran cible recharge ce qu'il faut.
   void _routeFromPayload(Map<String, dynamic> data) {
-    final type = (data['notifiable_type']?.toString() ?? '').toLowerCase();
     final id = data['notifiable_id']?.toString();
     if (id == null || id.isEmpty) return;
-    // Backend envoie le FQN PHP. On normalise sur le tail.
-    final shortType = type.split('\\').isEmpty
-        ? type
-        : type.split('\\').last;
+    final shortType = _shortenType(data['notifiable_type']?.toString());
     switch (shortType) {
       case 'conversation':
         // Pas d'overlay messaging direct ici : on bascule sur l'app et
