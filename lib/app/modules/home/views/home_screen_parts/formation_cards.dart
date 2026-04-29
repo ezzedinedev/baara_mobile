@@ -271,9 +271,45 @@ class _FormationCta extends StatelessWidget {
       final isEnrolling =
           controller.enrollingFormationId.value == formation.id;
       final isEnrolled = formation.isEnrolled;
-      final label = isEnrolled ? 'Commencer' : 'Suivre';
-      final icon = isEnrolled ? Icons.east_rounded : Icons.add_rounded;
 
+      // Deja inscrit : pas de CTA d'action — un badge "Inscrit" passif
+      // suffit. Le card lui-meme ouvre le detail au tap, donc le bouton
+      // "Commencer" en doublon embrouillait l'utilisateur ("pourquoi je
+      // dois encore cliquer Suivre alors que je suis inscrit ?").
+      if (isEnrolled) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.successSoft,
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(
+              color: AppColors.successDark.withValues(alpha: 0.30),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 13,
+                color: AppColors.successStrong,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Inscrit',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.successStrong,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Pas encore inscrit : pill "Suivre" qui declenche enrollInFormation.
       return Material(
         color: Colors.transparent,
         child: InkWell(
@@ -282,11 +318,7 @@ class _FormationCta extends StatelessWidget {
               ? null
               : () {
                   AppHaptics.tap();
-                  if (isEnrolled) {
-                    _showFormationDetails(context, formation);
-                  } else {
-                    controller.enrollInFormation(formation);
-                  }
+                  controller.enrollInFormation(formation);
                 },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -315,10 +347,11 @@ class _FormationCta extends StatelessWidget {
                     ),
                   )
                 else
-                  Icon(icon, size: 14, color: AppColors.primary),
+                  const Icon(Icons.add_rounded,
+                      size: 14, color: AppColors.primary),
                 const SizedBox(width: 6),
                 Text(
-                  label,
+                  'Suivre',
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.primaryDark,
                     fontWeight: FontWeight.w800,

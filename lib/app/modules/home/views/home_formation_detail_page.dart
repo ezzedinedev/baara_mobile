@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import '../../../core/widgets/widgets.dart';
 import '../../../core/theme/app_colors.dart';
@@ -71,7 +72,11 @@ class _FormationDetailPageState extends State<FormationDetailPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${formation.modules.length} videos',
+                  // Une formation peut contenir des videos, des PDF, ou un
+                  // mix → "X lecon(s)" est neutre et toujours juste, alors
+                  // que "X videos" mentait quand le module etait un PDF.
+                  '${formation.modules.length} '
+                  '${formation.modules.length > 1 ? "lecons" : "lecon"}',
                   style: AppTextStyles.bodySm.copyWith(
                     color: AppColors.hintColor,
                     fontWeight: FontWeight.w700,

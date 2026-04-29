@@ -740,63 +740,71 @@ class _MetaGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ordre regroupe par theme :
+    // 1. Contenu (modules / duree)
+    // 2. Planning (debut / limite)
+    // 3. Format (lieu / langue)
+    // 4. Valeur (prix / certificat)
+    // 5. Social (inscrits / note)
+    // Iconly partout pour rester coherent avec le reste de l'app.
+    // Langue : Iconly n'a pas d'icone "globe" → fallback Material accepte.
     final items = <_MetaEntry>[
       _MetaEntry(
-        icon: Icons.location_on_outlined,
-        color: AppColors.categoryBlue,
-        title: 'Lieu',
-        value: formation.location,
-      ),
-      _MetaEntry(
-        icon: Icons.access_time_rounded,
-        color: AppColors.categoryPink,
-        title: 'Duree',
-        value: formation.durationLabel,
-      ),
-      _MetaEntry(
-        icon: Icons.calendar_month_outlined,
-        color: AppColors.categoryPurple,
-        title: 'Debut',
-        value: formation.startDateLabel,
-      ),
-      _MetaEntry(
-        icon: Icons.event_busy_outlined,
-        color: AppColors.warning,
-        title: 'Limite',
-        value: formation.deadlineLabel,
-      ),
-      _MetaEntry(
-        icon: Icons.payments_outlined,
-        color: AppColors.categoryOrange,
-        title: 'Prix',
-        value: formation.priceLabel,
-      ),
-      _MetaEntry(
-        icon: Icons.menu_book_rounded,
+        icon: IconlyLight.paper,
         color: AppColors.categoryCyan,
         title: 'Modules',
         value: '${formation.modules.length} module(s)',
       ),
       _MetaEntry(
-        icon: Icons.verified_outlined,
-        color: AppColors.successDark,
-        title: 'Certificat',
-        value: formation.certificationLabel,
+        icon: IconlyLight.time_circle,
+        color: AppColors.categoryPink,
+        title: 'Duree',
+        value: formation.durationLabel,
       ),
       _MetaEntry(
-        icon: Icons.language_rounded,
+        icon: IconlyLight.calendar,
+        color: AppColors.categoryPurple,
+        title: 'Debut',
+        value: formation.startDateLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.time_square,
+        color: AppColors.warning,
+        title: 'Limite',
+        value: formation.deadlineLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.location,
+        color: AppColors.categoryBlue,
+        title: 'Lieu',
+        value: formation.location,
+      ),
+      _MetaEntry(
+        icon: Icons.public_outlined,
         color: AppColors.categoryGray,
         title: 'Langue',
         value: formation.languageLabel,
       ),
       _MetaEntry(
-        icon: Icons.groups_rounded,
+        icon: IconlyLight.wallet,
+        color: AppColors.categoryOrange,
+        title: 'Prix',
+        value: formation.priceLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.shield_done,
+        color: AppColors.successDark,
+        title: 'Certificat',
+        value: formation.certificationLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.profile,
         color: AppColors.primaryMedium,
         title: 'Inscrits',
         value: '${formation.enrolledCount}',
       ),
       _MetaEntry(
-        icon: Icons.star_rounded,
+        icon: IconlyBold.star,
         color: AppColors.warning,
         title: 'Note',
         value: formation.rating.toStringAsFixed(1),
