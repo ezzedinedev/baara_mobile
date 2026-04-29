@@ -54,6 +54,8 @@ class _OfferDeckCard extends StatelessWidget {
   final bool muted;
   // Callback du pill "Postuler". Null = pill purement decoratif (cards
   // d'arriere-plan dans le deck swipe). Top card et liste : on cable.
+  // Quand non-null, on affiche aussi le bouton "favoris" (cœur) en haut a
+  // droite — sinon la card est passive (background du deck swipe).
   final VoidCallback? onApply;
 
   String _initials(String value) {
@@ -184,9 +186,21 @@ class _OfferDeckCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    _CircularScoreBadge(
-                      score: matchScore,
-                      compact: compact,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Bouton favoris : visible uniquement sur la card
+                        // active (onApply != null). Etat partage via le
+                        // OffersController (savedOffers) pour rester
+                        // synchronise avec l'onglet Favoris.
+                        if (onApply != null)
+                          _DeckFavoriteButton(offerId: offer.id),
+                        if (onApply != null) const SizedBox(height: 6),
+                        _CircularScoreBadge(
+                          score: matchScore,
+                          compact: compact,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -509,6 +523,71 @@ class _OfferActionButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Bouton favoris circulaire, glassmorphism, place en haut a droite de la
+/// card top du deck. Lit `OffersController.isOfferSaved(offerId)` reactive
+/// — donc l'etat reste synchronise avec l'onglet "Favoris" de Mes
+/// candidatures et avec la liste /offres. Si le controller n'existe pas
+/// encore (premiere visite home avant /offres), on le lazy-cree.
+class _DeckFavoriteButton extends StatelessWidget {
+  const _DeckFavoriteButton({required this.offerId});
+
+  final String offerId;
+
+  OffersController _ensureController() {
+    if (!Get.isRegistered<OffersController>()) {
+      Get.lazyPut<OffersController>(() => OffersController());
+    }
+    return Get.find<OffersController>();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final offers = _ensureController();
+      final saved = offers.isOfferSaved(offerId);
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            AppHaptics.tap();
+            if (saved) {
+              await offers.unsaveOffer(offerId);
+            } else {
+              await offers.saveOffer(offerId);
+            }
+          },
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.onPrimary.withValues(alpha: 0.18),
+              border: Border.all(
+                color: AppColors.onPrimary.withValues(alpha: 0.32),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                saved ? IconlyBold.heart : IconlyLight.heart,
+                key: ValueKey(saved),
+                size: 18,
+                color: saved
+                    ? AppColors.error
+                    : AppColors.onPrimary,
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 
