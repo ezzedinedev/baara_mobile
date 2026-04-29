@@ -1,4 +1,4 @@
-package com.example.appli_pour_lemploie
+package com.opportune.bf
 
 import io.flutter.embedding.android.FlutterActivity
 
