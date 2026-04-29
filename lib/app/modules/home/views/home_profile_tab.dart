@@ -31,6 +31,7 @@ part 'home_profile_parts/hub_widgets.dart';
 part 'home_profile_parts/form_widgets.dart';
 part 'home_profile_parts/cv_editor.dart';
 part 'home_profile_parts/portfolio_editor.dart';
+part 'home_profile_parts/completeness_card.dart';
 
 class _PendingUploadFile {
   const _PendingUploadFile({
@@ -92,6 +93,13 @@ class HomeProfileTab extends StatelessWidget {
                   onAction: _manager.loadProfile,
                 ),
               ),
+            ],
+            // Card completude profil : visible des qu'un id existe (sinon
+            // on ne sait rien de l'utilisateur). Ne s'affiche pas pendant
+            // le tout premier chargement (PageSkeleton plus haut).
+            if (profile.id.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              _ProfileCompletenessCard(manager: _manager),
             ],
             const SizedBox(height: 24),
             _SettingsSection(
