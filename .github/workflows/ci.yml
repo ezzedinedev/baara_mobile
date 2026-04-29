@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-and-test:
+    name: Analyze + Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Analyse statique : doit etre clean. Si tu veux ignorer un warning
+      # legacy pour ne pas bloquer le CI, ajoute un // ignore: ... cible.
+      - name: Analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      # Tests unit + widget. Echec = job rouge. Si l'app n'a pas encore
+      # de tests, le step passe quand meme (no tests = pas d'erreur).
+      - name: Test
+        run: flutter test --no-pub
+
+  build-android:
+    name: Build APK debug
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    # Build APK seulement sur push main (pas a chaque PR pour gagner du
+    # temps CI). Active si tu veux verifier la compile en PR aussi.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK (debug)
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
