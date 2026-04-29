@@ -39,12 +39,41 @@ class OfferRepository {
     return _parseListResponse(response);
   }
 
+  /// Backend renvoie un paginator de [SavedItem] (item_type=job_offer) avec
+  /// la relation `offer` (employer + sector) eagerloadee. On extrait donc
+  /// l'offre imbriquee, pas le SavedItem lui-meme.
+  /// cf. `OfferApiController@saved` cote Laravel.
   Future<List<OfferModel>> getSavedOffers(
       {int page = 1, int perPage = 20}) async {
     final response = await _apiProvider.getJson(
       '${ApiConstants.offersSaved}?page=$page&per_page=$perPage',
     );
-    return _parseListResponse(response);
+    final data = response['data'];
+    final List<dynamic> rawItems;
+    if (data is List) {
+      rawItems = data;
+    } else if (data is Map && data['data'] is List) {
+      rawItems = data['data'] as List;
+    } else {
+      return <OfferModel>[];
+    }
+    return rawItems
+        .whereType<Map<String, dynamic>>()
+        .map<OfferModel?>((entry) {
+          // Cas attendu : SavedItem avec relation `offer` imbriquee.
+          final nested = entry['offer'];
+          if (nested is Map<String, dynamic>) {
+            return OfferModel.fromJson(nested);
+          }
+          // Fallback : si le backend renvoie deja l'offre a plat (pour
+          // d'eventuels endpoints rapides), on la consomme telle quelle.
+          if (entry['title'] != null) {
+            return OfferModel.fromJson(entry);
+          }
+          return null;
+        })
+        .whereType<OfferModel>()
+        .toList();
   }
 
   Future<bool> saveOffer(String offerId) async {
@@ -102,6 +131,9 @@ class OfferRepository {
   }
 
   /// Liste les candidatures de l'utilisateur connecté.
+  /// Leve une exception si le backend renvoie une erreur (401/403/5xx) —
+  /// sinon le bug etait masque car le parser tombait sur `data` non-list
+  /// et retournait silencieusement une liste vide ("Aucune candidature").
   Future<List<ApplicationModel>> getMyApplications({
     int page = 1,
     int perPage = 20,
@@ -115,6 +147,16 @@ class OfferRepository {
     final response = await _apiProvider.getJson(
       '${ApiConstants.applications}${_buildQuery(queryParams)}',
     );
+
+    final statusCode = response['statusCode'] as int?;
+    final success = response['success'] == true;
+    if (!success || (statusCode != null && statusCode >= 400)) {
+      throw _ApiCallException(
+        statusCode: statusCode,
+        message: _extractMessage(response),
+      );
+    }
+
     final data = response['data'];
     final list = data is List
         ? data
@@ -229,6 +271,19 @@ class OfferRepository {
     }
     return [];
   }
+}
+
+/// Exception interne levee quand un appel API renvoie une enveloppe
+/// `{success: false}` ou un statut HTTP >= 400. Sert a faire remonter
+/// le message backend au controller (qui le passe a `_friendlyError`).
+class _ApiCallException implements Exception {
+  const _ApiCallException({this.statusCode, required this.message});
+
+  final int? statusCode;
+  final String message;
+
+  @override
+  String toString() => 'API ${statusCode ?? '??'}: $message';
 }
 
 class PaginatedResult<T> {

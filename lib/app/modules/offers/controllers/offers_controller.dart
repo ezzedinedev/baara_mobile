@@ -18,6 +18,8 @@ class OffersController extends GetxController {
   final sectors = <SectorModel>[].obs;
   final isLoading = false.obs;
   final isLoadingMore = false.obs;
+  final isLoadingSaved = false.obs;
+  final savedOffersError = ''.obs;
   final errorMessage = ''.obs;
 
   final currentPage = 1.obs;
@@ -41,6 +43,10 @@ class OffersController extends GetxController {
     loadOffers();
     loadSectors();
     loadFeaturedOffers();
+    // Hydrate les favoris au boot pour que `isOfferSaved()` reflete l'etat
+    // serveur des le premier rendu des cards (sinon le cœur reste vide
+    // jusqu'au premier toggle).
+    loadSavedOffers(refresh: true);
   }
 
   Future<void> loadOffers({bool refresh = false}) async {
@@ -106,29 +112,30 @@ class OffersController extends GetxController {
     }
   }
 
+  /// Recharge la liste des offres sauvegardees. N'utilise plus
+  /// `currentPage`/`isLoading` (qui appartiennent a la pagination des offres
+  /// generales) — sinon l'appel parallele au boot ecrasait l'etat de la
+  /// liste principale.
   Future<void> loadSavedOffers({bool refresh = false}) async {
-    if (refresh) {
-      currentPage.value = 1;
-      savedOffers.clear();
-    }
-
-    isLoading.value = true;
+    if (isLoadingSaved.value) return;
+    isLoadingSaved.value = true;
+    savedOffersError.value = '';
 
     try {
       final result = await _repository.getSavedOffers(
-        page: currentPage.value,
+        page: 1,
         perPage: perPage,
       );
 
       if (refresh) {
-        savedOffers.value = result;
+        savedOffers.assignAll(result);
       } else {
         savedOffers.addAll(result);
       }
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      savedOffersError.value = _friendlyError(e);
     } finally {
-      isLoading.value = false;
+      isLoadingSaved.value = false;
     }
   }
 
@@ -151,17 +158,28 @@ class OffersController extends GetxController {
     loadOffers(refresh: true);
   }
 
+  /// Marque une offre comme favori. Optimiste : ajoute immediatement a
+  /// `savedOffers` (en remontant l'offre depuis n'importe quelle liste
+  /// connue : paginated, featured, ou detail), puis confirme/rollback selon
+  /// la reponse backend.
   Future<bool> saveOffer(String offerId) async {
-    final index = offers.indexWhere((o) => o.id == offerId);
-    if (index == -1 || savedOffers.any((o) => o.id == offerId)) {
-      return false;
+    if (savedOffers.any((o) => o.id == offerId)) return true;
+
+    final offer = _findOfferEverywhere(offerId);
+    if (offer != null) {
+      savedOffers.add(offer);
     }
-    final offer = offers[index];
-    savedOffers.add(offer);
 
     try {
       final success = await _repository.saveOffer(offerId);
-      if (!success) {
+      if (success) {
+        // Si on n'avait pas l'offre en cache local (ex: tap depuis une
+        // notification), on rafraichit depuis le serveur pour hydrater
+        // la liste favoris.
+        if (offer == null) {
+          await loadSavedOffers(refresh: true);
+        }
+      } else {
         savedOffers.removeWhere((o) => o.id == offerId);
       }
       return success;
@@ -169,6 +187,23 @@ class OffersController extends GetxController {
       savedOffers.removeWhere((o) => o.id == offerId);
       return false;
     }
+  }
+
+  /// Recherche une [OfferModel] dans toutes les listes locales connues.
+  /// Utilise par `saveOffer` pour permettre l'ajout aux favoris quel que
+  /// soit l'ecran d'origine (liste, carousel featured, detail, deck tinder).
+  OfferModel? _findOfferEverywhere(String offerId) {
+    for (final list in <List<OfferModel>>[
+      offers,
+      featuredOffers,
+      savedOffers,
+    ]) {
+      final i = list.indexWhere((o) => o.id == offerId);
+      if (i != -1) return list[i];
+    }
+    final selected = selectedOffer.value;
+    if (selected != null && selected.id == offerId) return selected;
+    return null;
   }
 
   Future<bool> unsaveOffer(String offerId) async {
@@ -302,6 +337,13 @@ class OffersController extends GetxController {
     if (message.contains('Unable to connect')) {
       return 'Connexion impossible. Verifiez votre reseau.';
     }
-    return 'Erreur lors du chargement des offres.';
+    // Format `_ApiCallException` : "API 403: <msg backend>". On extrait le
+    // message pour le rendre actionnable a l'utilisateur (ex: "Seuls les
+    // comptes candidat peuvent gerer les candidatures.").
+    final apiMatch = RegExp(r'^API \d+: (.+)$').firstMatch(message);
+    if (apiMatch != null) {
+      return apiMatch.group(1) ?? 'Erreur serveur';
+    }
+    return 'Erreur lors du chargement.';
   }
 }

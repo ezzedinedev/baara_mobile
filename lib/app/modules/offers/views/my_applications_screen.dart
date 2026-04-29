@@ -1,19 +1,25 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/asset_url.dart';
 import '../../../core/utils/haptics.dart';
 import '../../../core/widgets/widgets.dart';
 import '../controllers/offers_controller.dart';
 import '../data/models/application_model.dart';
+import '../data/models/offer_model.dart';
 
-/// Vue "Mes candidatures" — liste des candidatures envoyees par le candidat.
-/// Source : `GET /api/v1/applications` via [OffersController.loadMyApplications].
-/// Affiche le score serveur (`ai_match_score`), le statut backend, la date,
-/// et un filtre par statut.
+/// Vue "Mes candidatures" — deux onglets :
+/// 1. **Postulées** : liste des candidatures envoyées (`GET /applications`)
+/// 2. **Favoris**   : offres mises en favori (`GET /offers/saved/list`)
+///
+/// Le filtre par statut ne s'applique qu'à l'onglet Postulées (caché sinon).
 class MyApplicationsScreen extends StatefulWidget {
   const MyApplicationsScreen({super.key});
 
@@ -21,16 +27,32 @@ class MyApplicationsScreen extends StatefulWidget {
   State<MyApplicationsScreen> createState() => _MyApplicationsScreenState();
 }
 
-class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
+class _MyApplicationsScreenState extends State<MyApplicationsScreen>
+    with SingleTickerProviderStateMixin {
   final OffersController controller = Get.find<OffersController>();
   final Rx<ApplicationStatus?> _filter = Rx<ApplicationStatus?>(null);
+  late final TabController _tabController;
+  final RxInt _activeTab = 0.obs;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        _activeTab.value = _tabController.index;
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadMyApplications();
+      controller.loadSavedOffers(refresh: true);
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   bool _matches(ApplicationModel a) {
@@ -52,88 +74,33 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
               subtitle: 'applications.subtitle'.tr,
               gradient: AppColors.heroOffersGradient,
               actions: [
-                WavyHeaderActionButton(
-                  icon: IconlyLight.filter,
-                  onTap: () {
-                    AppHaptics.tap();
-                    _showFilterSheet(context);
-                  },
+                Obx(
+                  () => _activeTab.value == 0
+                      ? WavyHeaderActionButton(
+                          icon: IconlyLight.filter,
+                          onTap: () {
+                            AppHaptics.tap();
+                            _showFilterSheet(context);
+                          },
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),
           ),
+          _TabsBar(controller: _tabController),
           Expanded(
-            child: Obx(() {
-              final isLoading = controller.isLoadingApplications.value;
-              final error = controller.applicationsError.value;
-              final raw = controller.myApplications;
-              _filter.value;
-              final filtered =
-                  raw.where(_matches).toList(growable: false);
-
-              if (isLoading && raw.isEmpty) {
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                  itemCount: 5,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, __) => const OfferCardSkeleton(height: 160),
-                );
-              }
-
-              if (filtered.isEmpty) {
-                return RefreshIndicator(
-                  color: AppColors.primary,
-                  onRefresh: controller.loadMyApplications,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.sizeOf(context).height * 0.6,
-                        child: error.isNotEmpty
-                            ? ErrorStateView(
-                                message: error,
-                                onRetry: controller.loadMyApplications,
-                              )
-                            : EmptyState(
-                                icon: IconlyLight.work,
-                                title: _filter.value == null
-                                    ? 'Aucune candidature'
-                                    : 'Aucune candidature dans ce statut',
-                                subtitle: _filter.value == null
-                                    ? 'Postulez a vos premieres offres pour les voir ici.'
-                                    : 'Changez ou retirez le filtre pour voir plus de candidatures.',
-                              ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: controller.loadMyApplications,
-                child: AnimationLimiter(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 130),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final app = filtered[index];
-                      return AnimationConfiguration.staggeredList(
-                        position: index,
-                        duration: const Duration(milliseconds: 280),
-                        child: SlideAnimation(
-                          verticalOffset: 14,
-                          child: FadeInAnimation(
-                            child: _ApplicationTile(application: app),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _AppliedTab(
+                  controller: controller,
+                  filter: _filter,
+                  matches: _matches,
                 ),
-              );
-            }),
+                _SavedTab(controller: controller),
+              ],
+            ),
           ),
         ],
       ),
@@ -166,7 +133,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'Filtrer par statut',
+                'applications.filter_title'.tr,
                 style: AppTextStyles.titleLg.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -178,7 +145,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                   runSpacing: 8,
                   children: [
                     _FilterChip(
-                      label: 'Toutes',
+                      label: 'applications.filter.all'.tr,
                       selected: _filter.value == null,
                       onTap: () {
                         AppHaptics.tap();
@@ -204,6 +171,394 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Bandeau d'onglets segmente entre le hero et le contenu.
+class _TabsBar extends StatelessWidget {
+  const _TabsBar({required this.controller});
+
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLow,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.18),
+          ),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: TabBar(
+          controller: controller,
+          onTap: (_) => AppHaptics.tap(),
+          indicator: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.30),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          labelColor: AppColors.onPrimary,
+          unselectedLabelColor: AppColors.bodyColor,
+          labelStyle: AppTextStyles.titleMd.copyWith(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+          ),
+          unselectedLabelStyle: AppTextStyles.titleMd.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+          tabs: [
+            Tab(text: 'applications.tab.applied'.tr),
+            Tab(text: 'applications.tab.saved'.tr),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Onglet "Postulées" : reprend la liste existante des candidatures.
+class _AppliedTab extends StatelessWidget {
+  const _AppliedTab({
+    required this.controller,
+    required this.filter,
+    required this.matches,
+  });
+
+  final OffersController controller;
+  final Rx<ApplicationStatus?> filter;
+  final bool Function(ApplicationModel) matches;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isLoading = controller.isLoadingApplications.value;
+      final error = controller.applicationsError.value;
+      final raw = controller.myApplications;
+      filter.value;
+      final filtered = raw.where(matches).toList(growable: false);
+
+      if (isLoading && raw.isEmpty) {
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 130),
+          itemCount: 5,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, __) => const OfferCardSkeleton(height: 160),
+        );
+      }
+
+      if (filtered.isEmpty) {
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: controller.loadMyApplications,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.55,
+                child: error.isNotEmpty
+                    ? ErrorStateView(
+                        message: error,
+                        onRetry: controller.loadMyApplications,
+                      )
+                    : EmptyState(
+                        icon: IconlyLight.work,
+                        title: filter.value == null
+                            ? 'applications.empty_all'.tr
+                            : 'applications.empty_filtered'.tr,
+                        subtitle: filter.value == null
+                            ? 'applications.empty_all_sub'.tr
+                            : 'applications.empty_filtered_sub'.tr,
+                      ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: controller.loadMyApplications,
+        child: AnimationLimiter(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 130),
+            itemCount: filtered.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final app = filtered[index];
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 280),
+                child: SlideAnimation(
+                  verticalOffset: 14,
+                  child: FadeInAnimation(
+                    child: _ApplicationTile(application: app),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    });
+  }
+}
+
+/// Onglet "Favoris" : offres sauvegardees, navigables et retirables.
+class _SavedTab extends StatelessWidget {
+  const _SavedTab({required this.controller});
+
+  final OffersController controller;
+
+  Future<void> _refresh() => controller.loadSavedOffers(refresh: true);
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isLoading = controller.isLoadingSaved.value;
+      final error = controller.savedOffersError.value;
+      final list = controller.savedOffers;
+
+      if (isLoading && list.isEmpty) {
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 130),
+          itemCount: 5,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, __) => const OfferCardSkeleton(height: 140),
+        );
+      }
+
+      if (list.isEmpty) {
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: _refresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.55,
+                child: error.isNotEmpty
+                    ? ErrorStateView(message: error, onRetry: _refresh)
+                    : EmptyState(
+                        icon: IconlyLight.heart,
+                        title: 'applications.saved.empty'.tr,
+                        subtitle: 'applications.saved.empty_sub'.tr,
+                      ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: _refresh,
+        child: AnimationLimiter(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 130),
+            itemCount: list.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final offer = list[index];
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 280),
+                child: SlideAnimation(
+                  verticalOffset: 14,
+                  child: FadeInAnimation(
+                    child: _SavedOfferTile(
+                      offer: offer,
+                      onTap: () {
+                        AppHaptics.tap();
+                        Get.toNamed(
+                          AppRoutes.offerDetail.replaceFirst(':id', offer.id),
+                        );
+                      },
+                      onUnsave: () async {
+                        AppHaptics.success();
+                        final ok = await controller.unsaveOffer(offer.id);
+                        if (ok) {
+                          AppToast.info(
+                            'applications.saved.removed_toast'.tr,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _SavedOfferTile extends StatelessWidget {
+  const _SavedOfferTile({
+    required this.offer,
+    required this.onTap,
+    required this.onUnsave,
+  });
+
+  final OfferModel offer;
+  final VoidCallback onTap;
+  final VoidCallback onUnsave;
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = offer.companyLogo;
+    final logoUrl = (raw == null || raw.isEmpty) ? '' : resolveAssetUrl(raw);
+
+    return BrandCard(
+      borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Logo / placeholder.
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.20),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: logoUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: logoUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => const Icon(
+                      IconlyBold.work,
+                      size: 22,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : const Icon(
+                    IconlyBold.work,
+                    size: 22,
+                    color: AppColors.primary,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  offer.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.titleMd.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  offer.company.isEmpty
+                      ? offer.sector
+                      : offer.company,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySm.copyWith(
+                    color: AppColors.bodyColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      IconlyLight.location,
+                      size: 13,
+                      color: AppColors.hintColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        offer.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.hintColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(
+                      IconlyLight.work,
+                      size: 13,
+                      color: AppColors.hintColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        offer.contractType.isEmpty
+                            ? '—'
+                            : offer.contractType,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.hintColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Bouton "retirer des favoris" : cœur plein, hit area large.
+          Tooltip(
+            message: 'applications.saved.remove'.tr,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onUnsave,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    IconlyBold.heart,
+                    size: 18,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -335,12 +690,19 @@ class _ApplicationTile extends StatelessWidget {
 
     return BrandCard(
       borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
+      onTap: hasOffer
+          ? () {
+              AppHaptics.tap();
+              Get.toNamed(
+                AppRoutes.offerDetail.replaceFirst(':id', offer!.id),
+              );
+            }
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              // Score circulaire ou badge "—" si pas de score.
               if (score != null)
                 _ScoreCircle(score: score)
               else

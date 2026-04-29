@@ -109,6 +109,13 @@ const Map<String, String> _fr = {
   'applications.status.withdrawn': 'Retirée',
   'applications.filter.all': 'Toutes',
   'applications.filter_title': 'Filtrer par statut',
+  'applications.tab.applied': 'Postulées',
+  'applications.tab.saved': 'Favoris',
+  'applications.saved.empty': 'Aucune offre en favori',
+  'applications.saved.empty_sub':
+      'Touchez le cœur sur une offre pour la retrouver ici.',
+  'applications.saved.remove': 'Retirer des favoris',
+  'applications.saved.removed_toast': 'Retirée des favoris',
 
   // ── Trainings ─────────────────────────────────────────────
   'trainings.title': 'Formations',
@@ -309,6 +316,13 @@ const Map<String, String> _en = {
   'applications.status.withdrawn': 'Withdrawn',
   'applications.filter.all': 'All',
   'applications.filter_title': 'Filter by status',
+  'applications.tab.applied': 'Applied',
+  'applications.tab.saved': 'Saved',
+  'applications.saved.empty': 'No saved offers yet',
+  'applications.saved.empty_sub':
+      'Tap the heart on an offer to find it here.',
+  'applications.saved.remove': 'Remove from favorites',
+  'applications.saved.removed_toast': 'Removed from favorites',
 
   // ── Trainings ─────────────────────────────────────────────
   'trainings.title': 'Courses',
