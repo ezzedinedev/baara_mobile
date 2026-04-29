@@ -190,11 +190,12 @@ class CandidateLoginController extends GetxController {
     required String userType,
   }) async {
     await _tokenStore.saveSession(token: token, userType: userType);
-    // Re-pousse le token FCM au backend maintenant qu'on est authentifie.
-    // Sans ca, le token cree au boot (avant login) n'a jamais atteint le
-    // serveur car `readToken()` throwait → l'user ne recoit aucun push.
+    // Demande la permission notif et enregistre le token FCM au backend.
+    // On le fait ICI (pas au boot) pour que l'utilisateur voie d'abord
+    // l'ecran de connexion : il sait alors que la permission demandee
+    // est legitime, taux d'acceptation x2 vs au boot a froid.
     if (Get.isRegistered<FcmService>()) {
-      await Get.find<FcmService>().syncTokenToBackend();
+      await Get.find<FcmService>().activateAfterLogin();
     }
   }
 

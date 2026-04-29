@@ -51,46 +51,57 @@ class FcmService extends GetxService {
   static const String _androidChannelDescription =
       'Messages, candidatures, formations.';
 
-  /// Initialise FCM : permissions, channels, handlers, push token au backend.
-  /// Appele depuis main.dart apres `Firebase.initializeApp()`.
+  /// Init passive : channels, listeners, handlers. **Ne demande pas la
+  /// permission notif** et n'enregistre pas le token — c'est le job de
+  /// `activateAfterLogin()`. Appele depuis main.dart au boot de l'app.
+  ///
+  /// Pourquoi ce split : demander la permission au boot avant meme que
+  /// l'utilisateur ait vu l'ecran de connexion = mauvaise UX. Le user
+  /// n'a aucun contexte → il refuse souvent → permission perdue ensuite
+  /// (Android exige une procedure manuelle pour reactiver).
   Future<void> init() async {
     final messaging = FirebaseMessaging.instance;
 
-    // iOS : demander la permission. Android : auto-accordee jusqu'a 13 ;
-    // depuis 13+ il faut demander aussi (Firebase le gere via cette API).
+    await _setupLocalNotifications();
+
+    // Listeners de messages : actifs des le boot pour ne perdre aucun
+    // payload, meme si la permission n'est pas encore accordee (le push
+    // ne s'affichera pas mais le data peut quand meme etre traite).
+    _foregroundSub?.cancel();
+    _foregroundSub = FirebaseMessaging.onMessage.listen(_handleForeground);
+
+    _openedAppSub?.cancel();
+    _openedAppSub =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+
+    _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = messaging.onTokenRefresh.listen(_pushTokenToBackend);
+
+    // App ouverte depuis terminated par tap sur notif → routage deeplink.
+    final initial = await messaging.getInitialMessage();
+    if (initial != null) {
+      _handleNotificationTap(initial);
+    }
+  }
+
+  /// Active FCM apres un login reussi : demande la permission systeme
+  /// (Android 13+ / iOS) puis pousse le token au backend.
+  ///
+  /// Idempotent : si l'utilisateur a deja accorde la permission, l'API
+  /// Firebase no-op et retourne directement le statut. Si refusee, on
+  /// log et on s'arrete sans crash — le polling cloche continue.
+  Future<void> activateAfterLogin() async {
+    final messaging = FirebaseMessaging.instance;
     final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      // L'utilisateur a refuse — on n'insiste pas. Le badge cloche dans
-      // l'app continue de fonctionner (polling), juste pas de push systeme.
+      if (kDebugMode) debugPrint('[FCM] permission refusee par l user');
       return;
     }
-
-    await _setupLocalNotifications();
     await _registerToken(messaging);
-
-    // Le token peut tourner (reinstall, restore, etc.) — on resync.
-    _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = messaging.onTokenRefresh.listen(_pushTokenToBackend);
-
-    // Foreground : on affiche soi-meme un banner via flutter_local_notifs.
-    _foregroundSub?.cancel();
-    _foregroundSub = FirebaseMessaging.onMessage.listen(_handleForeground);
-
-    // Tap sur banner alors que l'app etait en background → routage deeplink.
-    _openedAppSub?.cancel();
-    _openedAppSub =
-        FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
-
-    // App ouverte depuis terminated par tap sur notif : on traite le
-    // initialMessage (sinon le deeplink est perdu).
-    final initial = await messaging.getInitialMessage();
-    if (initial != null) {
-      _handleNotificationTap(initial);
-    }
   }
 
   Future<void> _setupLocalNotifications() async {

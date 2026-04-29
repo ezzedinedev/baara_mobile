@@ -148,10 +148,10 @@ class RecruiterLoginController extends GetxController {
     required String userType,
   }) async {
     await _tokenStore.saveSession(token: token, userType: userType);
-    // Re-pousse le token FCM au backend maintenant qu'on est authentifie
-    // (au boot le token n'avait pas encore pu etre push faute de session).
+    // Demande la permission notif + enregistre le token FCM (apres login
+    // pour que la demande systeme soit contextualisee, cf. candidate flow).
     if (Get.isRegistered<FcmService>()) {
-      await Get.find<FcmService>().syncTokenToBackend();
+      await Get.find<FcmService>().activateAfterLogin();
     }
   }
 
