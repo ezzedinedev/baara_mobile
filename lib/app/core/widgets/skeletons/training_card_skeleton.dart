@@ -19,14 +19,17 @@ class TrainingCardSkeleton extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
+      // Skeleton compact qui tient dans la hauteur fixe du container
+      // parent (314px sur petits ecrans Tecno) — la version precedente
+      // faisait 414px et debordait de 96px sur un phone <380px de large.
       child: const SkeletonCluster(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover hero 180.
-            SkeletonBox(height: 180, width: double.infinity, radius: 0),
+            // Cover hero reduit (130 vs 180).
+            SkeletonBox(height: 130, width: double.infinity, radius: 0),
             Padding(
-              padding: EdgeInsets.fromLTRB(14, 14, 14, 14),
+              padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -34,8 +37,8 @@ class TrainingCardSkeleton extends StatelessWidget {
                   Row(
                     children: [
                       SkeletonBox(
-                        height: 30,
-                        width: 30,
+                        height: 28,
+                        width: 28,
                         shape: BoxShape.circle,
                       ),
                       SizedBox(width: 8),
@@ -44,36 +47,32 @@ class TrainingCardSkeleton extends StatelessWidget {
                       SkeletonBox(height: 10, width: 50),
                     ],
                   ),
-                  SizedBox(height: 12),
-                  // Titre.
+                  SizedBox(height: 10),
+                  // Titre 1 ligne (au lieu de 2).
                   SkeletonBox(height: 16, width: double.infinity),
-                  SizedBox(height: 6),
-                  SkeletonBox(height: 16, width: 180),
                   SizedBox(height: 8),
-                  // Description preview.
+                  // Description preview 1 ligne.
                   SkeletonBox(height: 10, width: double.infinity),
-                  SizedBox(height: 4),
-                  SkeletonBox(height: 10, width: 230),
-                  SizedBox(height: 14),
-                  // Stats.
+                  SizedBox(height: 12),
+                  // Stats compactes.
                   Row(
                     children: [
-                      SkeletonBox(height: 24, width: 24, radius: 7),
+                      SkeletonBox(height: 20, width: 20, radius: 6),
                       SizedBox(width: 6),
-                      SkeletonBox(height: 12, width: 50),
-                      SizedBox(width: 14),
-                      SkeletonBox(height: 24, width: 24, radius: 7),
+                      SkeletonBox(height: 11, width: 44),
+                      SizedBox(width: 12),
+                      SkeletonBox(height: 20, width: 20, radius: 6),
                       SizedBox(width: 6),
-                      SkeletonBox(height: 12, width: 50),
-                      SizedBox(width: 14),
-                      SkeletonBox(height: 24, width: 24, radius: 7),
+                      SkeletonBox(height: 11, width: 44),
+                      SizedBox(width: 12),
+                      SkeletonBox(height: 20, width: 20, radius: 6),
                       SizedBox(width: 6),
-                      SkeletonBox(height: 12, width: 50),
+                      SkeletonBox(height: 11, width: 44),
                     ],
                   ),
-                  SizedBox(height: 14),
-                  // Bandeau prix.
-                  SkeletonBox(height: 38, width: double.infinity, radius: 12),
+                  SizedBox(height: 12),
+                  // Bandeau prix reduit.
+                  SkeletonBox(height: 32, width: double.infinity, radius: 10),
                 ],
               ),
             ),

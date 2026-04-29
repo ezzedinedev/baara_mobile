@@ -105,26 +105,28 @@ class _FormationDarkCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
+                      // Flexible autour des 2 _CardStat → ils se compriment
+                      // au lieu de deborder lateralement sur les ecrans
+                      // etroits (Tecno KG5j ~360px de large debordait de
+                      // 28px quand durationLabel etait long).
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _CardStat(
-                            icon: Icons.menu_book_rounded,
-                            label: lessonsLabel,
-                          ),
-                          const Spacer(),
-                          if (formation.durationLabel.isNotEmpty) ...[
-                            _CardStat(
-                              icon: Icons.access_time_rounded,
-                              label: formation.durationLabel,
+                          Flexible(
+                            child: _CardStat(
+                              icon: Icons.menu_book_rounded,
+                              label: lessonsLabel,
                             ),
-                            // Le pourcentage n'apparait qu'a partir du moment
-                            // ou l'utilisateur a vraiment commence la formation
-                            // (au moins une lecon completee). Avant ca, "0 %"
-                            // affiche cote utilisateur fait croire qu'il est
-                            // deja inscrit, ce qui est trompeur — on prefere
-                            // un CTA explicite (Suivre / Commencer).
-                            if (progressPct > 0) const SizedBox(width: 14),
+                          ),
+                          const SizedBox(width: 12),
+                          if (formation.durationLabel.isNotEmpty) ...[
+                            Flexible(
+                              child: _CardStat(
+                                icon: Icons.access_time_rounded,
+                                label: formation.durationLabel,
+                              ),
+                            ),
+                            if (progressPct > 0) const SizedBox(width: 12),
                           ],
                           if (progressPct > 0)
                             Text(
