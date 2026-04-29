@@ -119,8 +119,11 @@ class HomeController extends GetxController {
   /// d'un live chat sans WebSocket. Arrete proprement dans `onClose`.
   Timer? _inboxPollTimer;
   Timer? _activeThreadPollTimer;
+  Timer? _notificationsPollTimer;
   static const Duration _inboxPollInterval = Duration(seconds: 20);
   static const Duration _activeThreadPollInterval = Duration(seconds: 4);
+  // Notifications : 45s suffit (moins critique que les messages).
+  static const Duration _notificationsPollInterval = Duration(seconds: 45);
 
   /// Nombre total de tabs dans l'IndexedStack (nav items + onglet profil caché).
   int get _totalTabs => navItems.length + 1;
@@ -146,11 +149,13 @@ class HomeController extends GetxController {
     // Sans WebSocket, c'est ce qui declenche l'auto-refresh quand un
     // nouveau message arrive — sinon l'utilisateur devait pull-to-refresh.
     startMessagingPolling();
+    startNotificationsPolling();
   }
 
   @override
   void onClose() {
     stopMessagingPolling();
+    stopNotificationsPolling();
     chatInputCtrl.dispose();
     super.onClose();
   }

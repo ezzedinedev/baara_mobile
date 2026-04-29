@@ -252,6 +252,23 @@ extension HomeControllerMessaging on HomeController {
     _stopActiveThreadPoll();
   }
 
+  /// Polling des notifications. Appele depuis `onInit`. Refresh toutes les
+  /// 45s pour eviter au candidat de pull-to-refresh — sans WebSocket, c'est
+  /// ce qui declenche l'arrivee des nouvelles notifs (et la decrementation
+  /// du badge cloche du header). Skip si chargement deja en cours.
+  void startNotificationsPolling() {
+    _notificationsPollTimer?.cancel();
+    _notificationsPollTimer =
+        Timer.periodic(HomeController._notificationsPollInterval, (_) {
+      loadNotifications();
+    });
+  }
+
+  void stopNotificationsPolling() {
+    _notificationsPollTimer?.cancel();
+    _notificationsPollTimer = null;
+  }
+
   void _startActiveThreadPoll() {
     _activeThreadPollTimer?.cancel();
     _activeThreadPollTimer =
