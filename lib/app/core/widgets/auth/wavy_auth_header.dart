@@ -86,7 +86,11 @@ class WavyAuthHeader extends StatelessWidget {
                           size: 36,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      // Spacer uniquement s'il y a un titre/sous-titre dessous.
+                      // Sans cette condition l'icone seule (cas profileEdit)
+                      // gaspillait 18px → overflow de 16px sur petits ecrans.
+                      if (title != null || subtitle != null)
+                        const SizedBox(height: 18),
                     ],
                     if (title != null)
                       Text(
