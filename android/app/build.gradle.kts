@@ -16,6 +16,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Requis par flutter_local_notifications pour utiliser des APIs
+        // Java 8+ (java.time, etc.) sur les vieux Android. Sans ca, build
+        // fail avec "core library desugaring required".
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -44,4 +48,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Polyfill des APIs Java 8+ pour les minSdk < 26.
+    // Requis par flutter_local_notifications (cf. compileOptions plus haut).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
