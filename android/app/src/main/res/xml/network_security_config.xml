@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Autorise le trafic HTTP cleartext UNIQUEMENT vers les hotes de dev locaux
+  (localhost via adb reverse + emulateur Android + IP LAN du dev). La
+  production utilise https://api.opportunebf.com qui reste bloque par le
+  defaut cleartextTrafficPermitted=false — la securite prod n'est pas
+  degradee.
+
+  Android network_security_config n'accepte pas de wildcards / ranges IP :
+  il faut declarer chaque host. Si tu changes d'IP LAN, ajoute-la ici puis
+  rebuild.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- adb reverse tcp:8000 → trafic interne au phone via USB -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <!-- Emulateur Android pointant vers le PC host -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- IP LAN du dev (Wi-Fi PC actuel). Ajouter d'autres si besoin. -->
+        <domain includeSubdomains="false">192.168.11.112</domain>
+    </domain-config>
+</network-security-config>

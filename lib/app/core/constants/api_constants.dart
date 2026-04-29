@@ -37,6 +37,28 @@ class ApiConstants {
     return 'http://127.0.0.1:8000';
   }
 
+  /// Hosts dev locaux autorises a utiliser http (cleartext) meme en release —
+  /// indispensable pour tester un build release contre un Laravel local
+  /// (USB tunnel via `adb reverse`, emulateur Android, hotspot LAN…). En
+  /// production le baseUrl par defaut est `productionBaseUrl` qui est en
+  /// https — ce bypass concerne uniquement les overrides explicites via
+  /// `--dart-define=API_BASE_URL=...`.
+  static bool _isLocalDevHost(String host) {
+    if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
+      return true;
+    }
+    // RFC 1918 private ranges — couvre 192.168.*, 10.*, 172.16-31.*
+    if (host.startsWith('192.168.') || host.startsWith('10.')) return true;
+    if (host.startsWith('172.')) {
+      final parts = host.split('.');
+      if (parts.length >= 2) {
+        final second = int.tryParse(parts[1]);
+        if (second != null && second >= 16 && second <= 31) return true;
+      }
+    }
+    return false;
+  }
+
   static String _sanitizeHost(String host) {
     final trimmed = host.trim();
     final withoutTrailingSlash = trimmed.endsWith('/')
@@ -44,10 +66,15 @@ class ApiConstants {
         : trimmed;
     final uri = Uri.tryParse(withoutTrailingSlash);
 
-    if (uri == null ||
-        uri.scheme.isEmpty ||
-        uri.host.isEmpty ||
-        (!kDebugMode && uri.scheme != 'https')) {
+    if (uri == null || uri.scheme.isEmpty || uri.host.isEmpty) {
+      throw ArgumentError('Configuration API invalide.');
+    }
+    // Refuse http en release UNIQUEMENT si le host n'est pas un hote
+    // dev local. Cela permet de tester un build release contre un
+    // Laravel local sans casser la securite cote prod.
+    if (!kDebugMode &&
+        uri.scheme != 'https' &&
+        !_isLocalDevHost(uri.host)) {
       throw ArgumentError('Configuration API invalide.');
     }
 
