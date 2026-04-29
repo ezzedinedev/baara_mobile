@@ -183,21 +183,25 @@ class _AppToastBodyState extends State<_AppToastBody>
   @override
   Widget build(BuildContext context) {
     final p = _palette;
-    final tinted = p.color.withValues(alpha: 0.06);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.surfaceCard, tinted],
+          // Fond OPAQUE de bout en bout — l'ancien gradient finissait a
+          // 6% d'opacite cote droit, ce qui laissait passer le contenu
+          // derriere (toast illisible quand au-dessus d'une card colorée).
+          // Le tint colore reste present mais subtil via une teinte
+          // appliquee au surfaceCard (Color.alphaBlend) au lieu d'une
+          // alpha directe.
+          color: Color.alphaBlend(
+            p.color.withValues(alpha: 0.05),
+            AppColors.surfaceCard,
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: p.color.withValues(alpha: 0.22),
-            width: 1.2,
+            color: p.color.withValues(alpha: 0.30),
+            width: 1.4,
           ),
           boxShadow: [
             BoxShadow(
@@ -207,7 +211,7 @@ class _AppToastBodyState extends State<_AppToastBody>
               offset: const Offset(0, 10),
             ),
             BoxShadow(
-              color: AppColors.secondaryDeep.withValues(alpha: 0.06),
+              color: AppColors.secondaryDeep.withValues(alpha: 0.10),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

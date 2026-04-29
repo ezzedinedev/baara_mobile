@@ -19,20 +19,37 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+      // Bouton "Se connecter" en sticky : Scaffold.bottomNavigationBar
+      // est automatiquement pousse au-dessus du clavier par Android, donc
+      // l'utilisateur garde toujours le CTA principal visible quand il
+      // tape son mot de passe. Resout le bug "Se connecter cache derriere
+      // le clavier" sur petits ecrans.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(26, 8, 26, 14),
+          child: Obx(
+            () => AuthCtaButton(
+              label: 'Se connecter',
+              isLoading: controller.isLoading.value,
+              onPressed: controller.loginWithEmail,
+            ),
+          ),
         ),
+      ),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior:
+            ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             WavyAuthHeader(
-              height: 240,
+              height: 200,
               showLeading: true,
               onLeadingTap: () => Get.back<void>(),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(26, 10, 26, 28),
+              padding: const EdgeInsets.fromLTRB(26, 10, 26, 14),
               child: Form(
                 key: controller.formKey,
                 child: Column(
@@ -41,7 +58,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                     Text(
                       'Connexion',
                       style: AppTextStyles.displayMd.copyWith(
-                        fontSize: 34,
+                        fontSize: 30,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -54,7 +71,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 22),
                     AuthTextField(
                       label: 'Email',
                       hint: 'nom@exemple.com',
@@ -63,7 +80,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                       keyboardType: TextInputType.emailAddress,
                       validator: controller.validateEmail,
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     AuthTextField(
                       label: 'Mot de passe',
                       hint: '********',
@@ -72,7 +89,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                       obscureText: true,
                       validator: controller.validatePassword,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
@@ -91,10 +108,10 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                     ),
                     Obx(() {
                       if (controller.errorMsg.value.isEmpty) {
-                        return const SizedBox(height: 24);
+                        return const SizedBox.shrink();
                       }
                       return Padding(
-                        padding: const EdgeInsets.only(top: 14, bottom: 8),
+                        padding: const EdgeInsets.only(top: 14),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -129,14 +146,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                         ),
                       );
                     }),
-                    Obx(
-                      () => AuthCtaButton(
-                        label: 'Se connecter',
-                        isLoading: controller.isLoading.value,
-                        onPressed: controller.loginWithEmail,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 18),
                     Row(
                       children: [
                         Expanded(
@@ -166,13 +176,13 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     _SocialButton(
                       icon: const GoogleLogoAsset(size: 20),
                       label: 'Continuer avec Google',
                       onTap: controller.loginWithGoogle,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
                     Center(
                       child: GestureDetector(
                         onTap: () {

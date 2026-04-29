@@ -133,7 +133,7 @@ class _PreferencesCard extends StatelessWidget {
       child: Column(
         children: [
           _PreferenceSwitchRow(
-            icon: Icons.notifications_active_outlined,
+            icon: IconlyLight.notification,
             color: AppColors.categoryOrange,
             title: 'Notifications',
             subtitle: 'Alertes, messages et mises a jour',
@@ -144,7 +144,7 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _PreferenceSwitchRow(
-            icon: Icons.local_offer_outlined,
+            icon: IconlyLight.bookmark,
             color: AppColors.categoryBlue,
             title: 'Nouvelles offres',
             subtitle: 'Offres ciblees selon votre profil',
@@ -155,7 +155,7 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _PreferenceSwitchRow(
-            icon: Icons.forum_outlined,
+            icon: IconlyLight.chat,
             color: AppColors.successDark,
             title: 'Messages recruteurs',
             subtitle: 'Conversations et relances',
@@ -166,7 +166,7 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _PreferenceSwitchRow(
-            icon: Icons.school_outlined,
+            icon: IconlyLight.paper,
             color: AppColors.categoryPurple,
             title: 'Formations',
             subtitle: 'Parcours et certifications',
@@ -177,7 +177,10 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ChoiceRow(
-            icon: Icons.language_rounded,
+            // Iconly n'a pas d'icone "globe" — fallback sur Material
+            // public_outlined (cercle de meridiens) qui reste tres proche
+            // visuellement des outlines Iconly et coherent avec les autres.
+            icon: Icons.public_outlined,
             color: AppColors.categoryCyan,
             title: 'profile.language'.tr,
             subtitle: 'Choisissez la langue d\'affichage',
@@ -195,7 +198,10 @@ class _PreferencesCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ChoiceRow(
-            icon: Icons.contrast_rounded,
+            // Iconly n'a pas d'icone "contraste/theme" → on utilise show
+            // (œil) qui evoque l'aspect visuel/affichage. Pas parfait mais
+            // proche stylistiquement des autres outlines Iconly.
+            icon: IconlyLight.show,
             color: AppColors.categoryGray,
             title: 'profile.theme'.tr,
             subtitle: 'Preference synchronisee',
@@ -295,7 +301,13 @@ class _ChoiceRow extends StatelessWidget {
         color: AppColors.surfaceLow,
         borderRadius: BorderRadius.circular(18),
       ),
+      // Layout vertical : icone + (titre/sous-titre + chips dessous).
+      // Avant, les chips et le titre etaient cote-a-cote dans un Row →
+      // sur ecran etroit, le Wrap des chips prenait toute la largeur
+      // naturelle et ecrasait l'Expanded du titre a 10px → titre rendu
+      // 1 caractere par ligne (vertical).
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SquareIconBadge(icon: icon, color: color),
           const SizedBox(width: 12),
@@ -304,27 +316,37 @@ class _ChoiceRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: AppTextStyles.titleMd),
-                Text(subtitle, style: AppTextStyles.bodySm),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySm,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: options.entries
+                      .map(
+                        (entry) => ChoiceChip(
+                          label: Text(entry.value),
+                          selected: selected == entry.key,
+                          onSelected:
+                              isBusy ? null : (_) => onSelected(entry.key),
+                          selectedColor: color.withValues(alpha: 0.16),
+                          labelStyle: AppTextStyles.bodySm.copyWith(
+                            color: selected == entry.key
+                                ? color
+                                : AppColors.bodyColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
               ],
             ),
-          ),
-          Wrap(
-            spacing: 6,
-            children: options.entries
-                .map(
-                  (entry) => ChoiceChip(
-                    label: Text(entry.value),
-                    selected: selected == entry.key,
-                    onSelected: isBusy ? null : (_) => onSelected(entry.key),
-                    selectedColor: color.withValues(alpha: 0.16),
-                    labelStyle: AppTextStyles.bodySm.copyWith(
-                      color:
-                          selected == entry.key ? color : AppColors.bodyColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                )
-                .toList(growable: false),
           ),
         ],
       ),

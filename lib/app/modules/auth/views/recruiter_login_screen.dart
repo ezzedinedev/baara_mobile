@@ -18,22 +18,35 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+      // Sticky CTA : le clavier ne cache plus "Se connecter".
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(26, 8, 26, 14),
+          child: Obx(
+            () => AuthCtaButton(
+              label: 'Se connecter',
+              isLoading: controller.isLoading.value,
+              onPressed: controller.login,
+            ),
+          ),
         ),
+      ),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior:
+            ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             WavyAuthHeader(
-              height: 240,
+              height: 200,
               showLeading: true,
               onLeadingTap: () => Get.back<void>(),
               gradient: AppColors.recruiterGradient,
               foregroundIcon: Icons.business_center_outlined,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(26, 10, 26, 28),
+              padding: const EdgeInsets.fromLTRB(26, 10, 26, 14),
               child: Form(
                 key: controller.formKey,
                 child: Column(
@@ -134,13 +147,6 @@ class RecruiterLoginScreen extends GetView<RecruiterLoginController> {
                         ),
                       );
                     }),
-                    Obx(
-                      () => AuthCtaButton(
-                        label: 'Se connecter',
-                        isLoading: controller.isLoading.value,
-                        onPressed: controller.login,
-                      ),
-                    ),
                     const SizedBox(height: 22),
                     Center(
                       child: GestureDetector(
