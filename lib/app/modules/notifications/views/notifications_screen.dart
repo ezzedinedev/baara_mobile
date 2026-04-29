@@ -3,6 +3,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -24,6 +25,68 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final HomeController controller = Get.find<HomeController>();
   final AppThemeController themeController = Get.find<AppThemeController>();
   final Rx<_NotifFilter> _filter = _NotifFilter.all.obs;
+
+  /// Routage tap-sur-card avec deeplink fin si le backend a fourni
+  /// `notifiable_type`/`notifiable_id`. Sinon on retombe sur le simple
+  /// switch d'onglet base sur la categorie.
+  ///
+  /// Mapping des `notifiable_type` (normalises lower-case par le parser) :
+  /// - conversation → tab messagerie + ouvre le thread
+  /// - joboffer / application → ecran detail offre (pour application,
+  ///   targetId = id candidature, mais la navigation utile cote candidat
+  ///   est l'offre concernee → on reste sur le tab offres a defaut)
+  /// - trainingoffer / training → ecran detail formation
+  void _navigateToTarget(HomeNotificationPreview n) {
+    final tt = n.targetType;
+    final tid = n.targetId;
+    final hasTarget = tt != null && tid != null && tid.isNotEmpty;
+
+    if (hasTarget) {
+      switch (tt) {
+        case 'conversation':
+          Get.back();
+          controller.changeTab(1);
+          controller.openConversationById(tid);
+          return;
+        case 'joboffer':
+          Get.back();
+          Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', tid));
+          return;
+        case 'application':
+          // Pas de detail candidature cote candidat — on amene sur Mes
+          // candidatures pour qu'il retrouve sa candidature. Si plus tard
+          // le payload backend porte aussi `offer_id`, on pourra ouvrir
+          // direct l'offre.
+          Get.back();
+          Get.toNamed(AppRoutes.myApplications);
+          return;
+        case 'trainingoffer':
+        case 'training':
+          Get.back();
+          Get.toNamed(AppRoutes.trainingDetail.replaceFirst(':id', tid));
+          return;
+      }
+    }
+
+    // Fallback : switch d'onglet selon categorie textuelle (notifs anciennes
+    // sans notifiable_type, ou type non encore mappe).
+    final c = n.category.toLowerCase();
+    int? targetTab;
+    if (c.contains('message')) {
+      targetTab = 1;
+    } else if (c.contains('offre') || c.contains('offer') || c.contains('job')) {
+      targetTab = 2;
+    } else if (c.contains('formation') ||
+        c.contains('training') ||
+        c.contains('course')) {
+      targetTab = 3;
+    } else if (c.contains('profil') || c.contains('portfolio')) {
+      targetTab = HomeController.profileTabIndex;
+    }
+    if (targetTab == null) return;
+    controller.changeTab(targetTab);
+    Get.back();
+  }
 
   bool _matches(HomeNotificationPreview n) {
     switch (_filter.value) {
@@ -94,6 +157,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 },
               ),
             ),
+            // CTA explicite "Marquer tout lu" : l'icone-check du header
+            // n'etait pas evidente comme bouton. Cette pill est visible
+            // uniquement quand il y a des non-lues, pour ne pas polluer
+            // l'UI quand tout est deja lu.
+            if (unread > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                child: _MarkAllReadButton(
+                  count: unread,
+                  onTap: () async {
+                    AppHaptics.success();
+                    await controller.markAllNotificationsAsRead();
+                    AppToast.success(
+                      'Notifications',
+                      'Tout est marqué comme lu.',
+                    );
+                  },
+                ),
+              ),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primary,
@@ -114,6 +196,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           onTapItem: (n) {
                             AppHaptics.tap();
                             controller.markNotificationAsRead(n.id);
+                            _navigateToTarget(n);
                           },
                         ),
                       ),
@@ -223,6 +306,96 @@ class _SectionedList extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// CTA pill "Marquer tout lu" — visible uniquement quand au moins une
+/// notification est non-lue. Bouton plein largeur, fond primary tres clair,
+/// icone tick a gauche + texte explicite + compteur. Plus discoverable que
+/// l'icone seule du header (que l'utilisateur prenait pour un badge inerte).
+class _MarkAllReadButton extends StatelessWidget {
+  const _MarkAllReadButton({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withValues(alpha: 0.10),
+                AppColors.primary.withValues(alpha: 0.04),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.30),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.30),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  IconlyBold.tick_square,
+                  color: AppColors.onPrimary,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Marquer tout comme lu',
+                  style: AppTextStyles.titleMd.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
