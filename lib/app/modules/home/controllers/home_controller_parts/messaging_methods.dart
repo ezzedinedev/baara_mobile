@@ -63,7 +63,25 @@ extension HomeControllerMessaging on HomeController {
       createdAt: createdAt,
       icon: _iconFromType(type),
       isRead: raw['is_read'] == true,
+      // Backend renvoie `notifiable_type` complet (ex:
+      // "App\\Models\\Conversation") + `notifiable_id`. On normalise le
+      // type vers une cle courte pour matcher cote UI.
+      targetType: _shortenTargetType(raw['notifiable_type']?.toString()),
+      targetId: raw['notifiable_id']?.toString(),
     );
+  }
+
+  /// Reduit "App\\Models\\Conversation" → "conversation".
+  /// `null` ou User-pointing-to-self → null (rien a deeplinker).
+  String? _shortenTargetType(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final parts = raw.split('\\');
+    final tail = parts.isEmpty ? raw : parts.last;
+    final lower = tail.toLowerCase();
+    // L'auto-fill backend met notifiable_type=User par defaut quand non
+    // explicitement defini → ce n'est pas une vraie cible deeplink.
+    if (lower == 'user') return null;
+    return lower;
   }
 
   /// Mappe le `type` backend (training, message, application, profile, ...)
@@ -193,14 +211,67 @@ extension HomeControllerMessaging on HomeController {
   }
 
   void openConversation(HomeConversationPreview conversation) {
-    activeConversationId.value = conversation.id;
-    unreadCounters[conversation.id] = 0;
-    loadConversationThread(conversation.id);
+    openConversationById(conversation.id);
+  }
+
+  /// Ouvre une conversation directement par son id (utile pour le deeplink
+  /// notifications : on a l'uuid sans avoir charge la preview en memoire).
+  /// La liste `conversations` se mettra a jour au prochain poll inbox.
+  void openConversationById(String conversationId) {
+    activeConversationId.value = conversationId;
+    unreadCounters[conversationId] = 0;
+    loadConversationThread(conversationId);
+    _startActiveThreadPoll();
   }
 
   void closeConversation() {
     activeConversationId.value = null;
     chatInputCtrl.clear();
+    _stopActiveThreadPoll();
+  }
+
+  /// Demarre les pollings background. Appele depuis `onInit`.
+  /// - inbox : toutes les 20s pour mettre a jour la liste des conversations
+  ///   (lastMessage, unreadCount) → l'utilisateur voit les nouveaux messages
+  ///   et le badge bottom-nav sans pull-to-refresh.
+  /// - thread actif : seulement quand une conversation est ouverte (geree
+  ///   par `_startActiveThreadPoll`).
+  void startMessagingPolling() {
+    _inboxPollTimer?.cancel();
+    _inboxPollTimer = Timer.periodic(HomeController._inboxPollInterval, (_) {
+      // Skip si chargement en cours pour eviter les volees concurrentes.
+      if (!isLoadingConversations.value) {
+        loadConversations();
+      }
+    });
+  }
+
+  void stopMessagingPolling() {
+    _inboxPollTimer?.cancel();
+    _inboxPollTimer = null;
+    _stopActiveThreadPoll();
+  }
+
+  void _startActiveThreadPoll() {
+    _activeThreadPollTimer?.cancel();
+    _activeThreadPollTimer =
+        Timer.periodic(HomeController._activeThreadPollInterval, (_) {
+      final id = activeConversationId.value;
+      if (id == null) {
+        _stopActiveThreadPoll();
+        return;
+      }
+      // Skip si un envoi est en cours : sinon le `assignAll` du fetch
+      // ecraserait le message optimiste avant que le backend ne l'ait
+      // persiste, et l'utilisateur verrait son message disparaitre.
+      if (isSendingChat.value) return;
+      loadConversationThread(id);
+    });
+  }
+
+  void _stopActiveThreadPoll() {
+    _activeThreadPollTimer?.cancel();
+    _activeThreadPollTimer = null;
   }
 
   HomeConversationPreview? get activeConversation {
@@ -320,6 +391,11 @@ extension HomeControllerMessaging on HomeController {
           fallback: 'Echec de l\'envoi du message.',
         ));
       }
+      // Refetch immediat pour remplacer le message optimiste par sa
+      // version canonique backend (id serveur, timestamps reels). Sinon
+      // il fallait attendre le prochain tick du poll (4s) — fenetre
+      // pendant laquelle un poll concurrent aurait pu wiper le temp.
+      await loadConversationThread(conversationId);
     } on Exception catch (error) {
       // Rollback : retire le message en cas d'echec et previent l'utilisateur.
       threadFor(conversationId).remove(tempMessage);

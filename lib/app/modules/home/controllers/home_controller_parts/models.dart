@@ -296,6 +296,8 @@ class HomeNotificationPreview {
     required this.createdAt,
     required this.icon,
     required this.isRead,
+    this.targetType,
+    this.targetId,
   });
 
   final String id;
@@ -305,6 +307,12 @@ class HomeNotificationPreview {
   final DateTime createdAt;
   final IconData icon;
   final bool isRead;
+  /// Cible deeplink — alimentee par `notifiable_type`/`notifiable_id` cote
+  /// backend. Ex: targetType='conversation', targetId='<uuid>'. Utilise
+  /// par l'ecran notifications pour ouvrir directement la ressource au
+  /// lieu de juste switcher d'onglet.
+  final String? targetType;
+  final String? targetId;
 
   HomeNotificationPreview copyWith({
     String? id,
@@ -314,6 +322,8 @@ class HomeNotificationPreview {
     DateTime? createdAt,
     IconData? icon,
     bool? isRead,
+    String? targetType,
+    String? targetId,
   }) {
     return HomeNotificationPreview(
       id: id ?? this.id,
@@ -323,6 +333,8 @@ class HomeNotificationPreview {
       createdAt: createdAt ?? this.createdAt,
       icon: icon ?? this.icon,
       isRead: isRead ?? this.isRead,
+      targetType: targetType ?? this.targetType,
+      targetId: targetId ?? this.targetId,
     );
   }
 }

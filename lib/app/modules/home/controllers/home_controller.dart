@@ -114,6 +114,14 @@ class HomeController extends GetxController {
   final isLoadingConversations = false.obs;
   final conversationsLoadError = ''.obs;
 
+  /// Polling messages : refresh inbox toutes les 20s (en arriere plan,
+  /// silencieux), et thread actif toutes les 4s pour donner l'impression
+  /// d'un live chat sans WebSocket. Arrete proprement dans `onClose`.
+  Timer? _inboxPollTimer;
+  Timer? _activeThreadPollTimer;
+  static const Duration _inboxPollInterval = Duration(seconds: 20);
+  static const Duration _activeThreadPollInterval = Duration(seconds: 4);
+
   /// Nombre total de tabs dans l'IndexedStack (nav items + onglet profil caché).
   int get _totalTabs => navItems.length + 1;
 
@@ -134,10 +142,15 @@ class HomeController extends GetxController {
     loadPublishedContent();
     loadConversations();
     profileManager.loadAll();
+    // Demarre le polling messages (inbox + thread actif quand ouvert).
+    // Sans WebSocket, c'est ce qui declenche l'auto-refresh quand un
+    // nouveau message arrive — sinon l'utilisateur devait pull-to-refresh.
+    startMessagingPolling();
   }
 
   @override
   void onClose() {
+    stopMessagingPolling();
     chatInputCtrl.dispose();
     super.onClose();
   }
