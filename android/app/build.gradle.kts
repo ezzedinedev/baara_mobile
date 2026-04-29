@@ -6,6 +6,9 @@ plugins {
     // Google Services : lit android/app/google-services.json et genere les
     // ressources Firebase au build.
     id("com.google.gms.google-services")
+    // Crashlytics Gradle plugin : upload des mappings d'obfuscation
+    // pour deobfusquer les stack traces remontees en prod.
+    id("com.google.firebase.crashlytics")
 }
 
 android {

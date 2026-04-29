@@ -24,6 +24,9 @@ plugins {
     // Plugin Google Services pour Firebase. apply=false : declare ici, on
     // l'applique dans android/app/build.gradle.kts.
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Crashlytics : envoie automatiquement les mappings ProGuard/R8 a
+    // Firebase au build release pour deobfusquer les stack traces.
+    id("com.google.firebase.crashlytics") version "3.0.2" apply false
 }
 
 include(":app")

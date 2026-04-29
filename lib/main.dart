@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -16,6 +19,19 @@ import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 
 Future<void> main() async {
+  // runZonedGuarded capture les erreurs async non-cantonnees a un widget
+  // (ex: Future qui throw sans .catchError). Indispensable pour que
+  // Crashlytics voie tous les crashes — sinon ces erreurs disparaissent.
+  await runZonedGuarded<Future<void>>(_bootstrap, (error, stack) {
+    if (Firebase.apps.isNotEmpty) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    } else {
+      debugPrint('[Crash unhandled async] $error\n$stack');
+    }
+  });
+}
+
+Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -36,6 +52,7 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+    _wireCrashlytics();
   } catch (e) {
     debugPrint('[Firebase] init failed: $e');
   }
@@ -53,6 +70,29 @@ Future<void> main() async {
   }
 
   runApp(const OpportuneBFApp());
+}
+
+/// Branche Crashlytics sur les 2 canaux d'erreur Flutter :
+/// - FlutterError.onError : erreurs framework (build, layout, etc.)
+/// - PlatformDispatcher.onError : erreurs async non rattrapees
+///
+/// `runZonedGuarded` (dans `main`) capture le 3e canal (top-level async).
+/// En debug : on les laisse aussi imprimer dans la console pour le dev.
+void _wireCrashlytics() {
+  final crashlytics = FirebaseCrashlytics.instance;
+  // En debug, on peut desactiver l'envoi automatique pour ne pas polluer
+  // le dashboard Firebase avec des erreurs de dev. Decommenter si besoin :
+  // crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
+
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    crashlytics.recordFlutterFatalError(details);
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    crashlytics.recordError(error, stack, fatal: true);
+    return true;
+  };
 }
 
 class OpportuneBFApp extends StatelessWidget {
