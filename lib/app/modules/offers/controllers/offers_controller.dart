@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_provider.dart';
+import '../../../core/services/local_cache_service.dart';
 import '../data/models/application_model.dart';
 import '../data/models/offer_model.dart';
 import '../data/repositories/offer_repository.dart';
@@ -55,7 +56,29 @@ class OffersController extends GetxController {
       offers.clear();
     }
 
-    isLoading.value = true;
+    // 1. Hydrate-from-cache : si la liste est vide (premier mount, ou
+    // refresh) on tente d'afficher immediatement la derniere version
+    // connue stockee sur disque. Pas de spinner si on a du cache.
+    if (offers.isEmpty && currentPage.value == 1) {
+      final cached =
+          await LocalCacheService.instance.readMap(CacheKeys.offersList);
+      if (cached != null) {
+        try {
+          final parsed = _repository.parsePaginatedResponse(cached);
+          offers.value = parsed.items;
+          hasNextPage.value = parsed.hasNextPage;
+          totalOffers.value = parsed.total;
+        } catch (_) {
+          // Cache corrompu / shape change → on l'ignore et on attendra
+          // le fetch backend pour repeupler.
+        }
+      }
+    }
+
+    // 2. Fetch backend en background. Spinner uniquement si vraiment
+    // rien a montrer (cache miss + liste vide).
+    final shouldShowSpinner = offers.isEmpty;
+    isLoading.value = shouldShowSpinner;
     errorMessage.value = '';
 
     try {
@@ -63,9 +86,15 @@ class OffersController extends GetxController {
         page: currentPage.value,
         perPage: perPage,
         filter: filter.value,
+        // Cache uniquement la 1ere page sans filtre — la pagination et
+        // les filtres font exploser le nombre de cles autrement.
+        onRaw: (currentPage.value == 1 && filter.value == null)
+            ? (raw) =>
+                LocalCacheService.instance.writeJson(CacheKeys.offersList, raw)
+            : null,
       );
 
-      if (refresh) {
+      if (refresh || currentPage.value == 1) {
         offers.value = result.items;
       } else {
         offers.addAll(result.items);
@@ -74,7 +103,11 @@ class OffersController extends GetxController {
       hasNextPage.value = result.hasNextPage;
       totalOffers.value = result.total;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      // Si on n'a rien (pas de cache + fetch echoue), surface l'erreur.
+      // Sinon le user voit le cache stale, on log silencieusement.
+      if (offers.isEmpty) {
+        errorMessage.value = _friendlyError(e);
+      }
     } finally {
       isLoading.value = false;
     }
@@ -112,19 +145,32 @@ class OffersController extends GetxController {
     }
   }
 
-  /// Recharge la liste des offres sauvegardees. N'utilise plus
-  /// `currentPage`/`isLoading` (qui appartiennent a la pagination des offres
-  /// generales) — sinon l'appel parallele au boot ecrasait l'etat de la
-  /// liste principale.
+  /// Recharge la liste des offres sauvegardees. Pattern stale-while-revalidate :
+  /// hydrate cache → fetch backend → reecrit cache.
   Future<void> loadSavedOffers({bool refresh = false}) async {
     if (isLoadingSaved.value) return;
-    isLoadingSaved.value = true;
+
+    // Hydrate-from-cache si vide.
+    if (savedOffers.isEmpty) {
+      final cached =
+          await LocalCacheService.instance.readMap(CacheKeys.savedOffers);
+      if (cached != null) {
+        try {
+          savedOffers.assignAll(_repository.parseSavedOffersResponse(cached));
+        } catch (_) {/* ignore cache obsolete */}
+      }
+    }
+
+    final shouldShowSpinner = savedOffers.isEmpty;
+    isLoadingSaved.value = shouldShowSpinner;
     savedOffersError.value = '';
 
     try {
       final result = await _repository.getSavedOffers(
         page: 1,
         perPage: perPage,
+        onRaw: (raw) => LocalCacheService.instance
+            .writeJson(CacheKeys.savedOffers, raw),
       );
 
       if (refresh) {
@@ -133,7 +179,9 @@ class OffersController extends GetxController {
         savedOffers.addAll(result);
       }
     } catch (e) {
-      savedOffersError.value = _friendlyError(e);
+      if (savedOffers.isEmpty) {
+        savedOffersError.value = _friendlyError(e);
+      }
     } finally {
       isLoadingSaved.value = false;
     }
@@ -288,19 +336,41 @@ class OffersController extends GetxController {
 
   Future<void> loadMyApplications({String? statusFilter}) async {
     if (isLoadingApplications.value) return;
-    isLoadingApplications.value = true;
+
+    // Hydrate-from-cache si vide. Cache uniquement le cas "sans filtre"
+    // (le statusFilter est session-only, pas la peine de cacher chaque
+    // combinaison).
+    if (myApplications.isEmpty && statusFilter == null) {
+      final cached =
+          await LocalCacheService.instance.readMap(CacheKeys.myApplications);
+      if (cached != null) {
+        try {
+          myApplications
+              .assignAll(_repository.parseMyApplicationsResponse(cached));
+          appliedOfferIds.addAll(myApplications.map((a) => a.offerId));
+        } catch (_) {/* ignore */}
+      }
+    }
+
+    final shouldShowSpinner = myApplications.isEmpty;
+    isLoadingApplications.value = shouldShowSpinner;
     applicationsError.value = '';
     try {
       final list = await _repository.getMyApplications(
         page: 1,
         perPage: 50,
         status: statusFilter,
+        onRaw: statusFilter == null
+            ? (raw) => LocalCacheService.instance
+                .writeJson(CacheKeys.myApplications, raw)
+            : null,
       );
       myApplications.assignAll(list);
-      // Sync local : les offres deja candidatees sont marquees applied.
       appliedOfferIds.addAll(list.map((a) => a.offerId));
     } catch (e) {
-      applicationsError.value = _friendlyError(e);
+      if (myApplications.isEmpty) {
+        applicationsError.value = _friendlyError(e);
+      }
     } finally {
       isLoadingApplications.value = false;
     }

@@ -15,9 +15,23 @@ extension HomeControllerMessaging on HomeController {
   }
 
   /// Charge la liste des notifications depuis le backend
-  /// (`GET /api/v1/notifications`). Renseigne `notifications` avec ce qui
-  /// existe vraiment cote serveur pour l'utilisateur courant.
+  /// (`GET /api/v1/notifications`). Pattern stale-while-revalidate :
+  /// hydrate cache disque immediat → fetch backend silencieux → reecrit
+  /// cache. L'utilisateur voit toujours du contenu, jamais de spinner
+  /// sur un ecran deja visite.
   Future<void> loadNotifications() async {
+    // 1. Hydrate-from-cache si la liste est vide (premier mount).
+    if (notifications.isEmpty) {
+      final cached =
+          await LocalCacheService.instance.readMap(CacheKeys.notifications);
+      if (cached != null) {
+        final parsed = _parseNotificationsPayload(cached);
+        if (parsed != null) notifications.assignAll(parsed);
+      }
+    }
+
+    // 2. Fetch backend silencieux (pas de spinner — on a deja le cache
+    // ou la liste vide acceptable).
     try {
       final token = await const AuthTokenStore().readToken();
       final response = await _apiProvider.getJson(
@@ -27,20 +41,28 @@ extension HomeControllerMessaging on HomeController {
 
       if (response['success'] != true) return;
 
-      final data = response['data'];
-      final items = data is Map ? data['items'] : null;
-      if (items is! List) return;
-
-      final parsed = items
-          .whereType<Map>()
-          .map((m) => _parseNotification(Map<String, dynamic>.from(m)))
-          .whereType<HomeNotificationPreview>()
-          .toList(growable: false);
+      final parsed = _parseNotificationsPayload(response);
+      if (parsed == null) return;
 
       notifications.assignAll(parsed);
+      // 3. Cache la reponse pour le prochain mount.
+      await LocalCacheService.instance
+          .writeJson(CacheKeys.notifications, response);
     } catch (_) {
-      // Silent : la liste reste vide, l'UI affiche son empty state.
+      // Silent : si on avait du cache l'ecran reste utilisable.
     }
+  }
+
+  List<HomeNotificationPreview>? _parseNotificationsPayload(
+      Map<String, dynamic> response) {
+    final data = response['data'];
+    final items = data is Map ? data['items'] : null;
+    if (items is! List) return null;
+    return items
+        .whereType<Map>()
+        .map((m) => _parseNotification(Map<String, dynamic>.from(m)))
+        .whereType<HomeNotificationPreview>()
+        .toList(growable: false);
   }
 
   /// Pull-to-refresh : recharge depuis le backend.
@@ -129,10 +151,29 @@ extension HomeControllerMessaging on HomeController {
   }
 
   /// Charge la liste des conversations depuis le backend Laravel
-  /// (`GET /api/v1/messages`). Aucune donnee demo n'est injectee.
+  /// (`GET /api/v1/messages`). Pattern stale-while-revalidate.
   Future<void> loadConversations() async {
     if (isLoadingConversations.value) return;
-    isLoadingConversations.value = true;
+
+    // 1. Hydrate-from-cache : affichage immediat de la derniere version
+    // connue. Pas de spinner si on a quelque chose a montrer.
+    if (conversations.isEmpty) {
+      final cached =
+          await LocalCacheService.instance.readMap(CacheKeys.conversations);
+      if (cached != null) {
+        final parsed = _parseConversationsPayload(cached);
+        if (parsed != null) {
+          conversations.assignAll(parsed);
+          unreadCounters.clear();
+          for (final c in parsed) {
+            unreadCounters[c.id] = c.unreadCount;
+          }
+        }
+      }
+    }
+
+    final shouldShowSpinner = conversations.isEmpty;
+    isLoadingConversations.value = shouldShowSpinner;
     conversationsLoadError.value = '';
     try {
       final token = await const AuthTokenStore().readToken();
@@ -148,26 +189,40 @@ extension HomeControllerMessaging on HomeController {
         ));
       }
 
-      final items = _extractConversationItems(response['data']);
-      final parsed = items
-          .map((raw) => _parseConversation(raw))
-          .whereType<HomeConversationPreview>()
-          .toList(growable: false);
-
-      conversations.assignAll(parsed);
-      // Synchronise les compteurs non-lus.
-      unreadCounters.clear();
-      for (final c in parsed) {
-        unreadCounters[c.id] = c.unreadCount;
+      final parsed = _parseConversationsPayload(response);
+      if (parsed != null) {
+        conversations.assignAll(parsed);
+        unreadCounters.clear();
+        for (final c in parsed) {
+          unreadCounters[c.id] = c.unreadCount;
+        }
+        await LocalCacheService.instance
+            .writeJson(CacheKeys.conversations, response);
       }
     } on Exception catch (error) {
-      conversationsLoadError.value = _friendlyErrorMessage(
-        error,
-        fallback: 'Impossible de charger les conversations.',
-      );
+      // Si la liste etait vide ET que le fetch echoue, montre l'erreur ;
+      // sinon (cache hit) on garde silencieusement l'affichage stale.
+      if (conversations.isEmpty) {
+        conversationsLoadError.value = _friendlyErrorMessage(
+          error,
+          fallback: 'Impossible de charger les conversations.',
+        );
+      }
     } finally {
       isLoadingConversations.value = false;
     }
+  }
+
+  List<HomeConversationPreview>? _parseConversationsPayload(
+      Map<String, dynamic> response) {
+    final items = _extractConversationItems(response['data']);
+    if (items.isEmpty && response['data'] is! List && response['data'] is! Map) {
+      return null;
+    }
+    return items
+        .map((raw) => _parseConversation(raw))
+        .whereType<HomeConversationPreview>()
+        .toList(growable: false);
   }
 
   /// Charge les messages d'une conversation et les place dans

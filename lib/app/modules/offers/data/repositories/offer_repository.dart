@@ -13,6 +13,7 @@ class OfferRepository {
     int page = 1,
     int perPage = 20,
     OfferFilter? filter,
+    void Function(Map<String, dynamic> raw)? onRaw,
   }) async {
     final queryParams = <String, dynamic>{
       'page': page,
@@ -22,8 +23,57 @@ class OfferRepository {
 
     final query = _buildQuery(queryParams);
     final response = await _apiProvider.getJson('${ApiConstants.offers}$query');
+    onRaw?.call(response);
 
     return _parsePaginatedResponse(response);
+  }
+
+  /// Public — utilise par le controller pour parser un payload deja en
+  /// memoire (cache disque ou response API). Evite de devoir refaire
+  /// l'appel API quand on hydrate depuis le cache au boot d'un ecran.
+  PaginatedResult<OfferModel> parsePaginatedResponse(
+      Map<String, dynamic> response) {
+    return _parsePaginatedResponse(response);
+  }
+
+  /// Pareil pour la liste savedOffers : reutilise la logique de
+  /// `getSavedOffers` sur un payload cache.
+  List<OfferModel> parseSavedOffersResponse(Map<String, dynamic> response) {
+    final data = response['data'];
+    final List<dynamic> rawItems;
+    if (data is List) {
+      rawItems = data;
+    } else if (data is Map && data['data'] is List) {
+      rawItems = data['data'] as List;
+    } else {
+      return <OfferModel>[];
+    }
+    return rawItems
+        .whereType<Map<String, dynamic>>()
+        .map<OfferModel?>((entry) {
+          final nested = entry['offer'];
+          if (nested is Map<String, dynamic>) {
+            return OfferModel.fromJson(nested);
+          }
+          if (entry['title'] != null) return OfferModel.fromJson(entry);
+          return null;
+        })
+        .whereType<OfferModel>()
+        .toList();
+  }
+
+  /// Pareil pour applications : extrait la liste depuis le payload cache.
+  List<ApplicationModel> parseMyApplicationsResponse(
+      Map<String, dynamic> response) {
+    final data = response['data'];
+    final list = data is List
+        ? data
+        : (data is Map && data['data'] is List ? data['data'] as List : null);
+    if (list == null) return <ApplicationModel>[];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ApplicationModel.fromJson)
+        .toList();
   }
 
   Future<OfferModel?> getOfferById(String id) async {
@@ -43,11 +93,15 @@ class OfferRepository {
   /// la relation `offer` (employer + sector) eagerloadee. On extrait donc
   /// l'offre imbriquee, pas le SavedItem lui-meme.
   /// cf. `OfferApiController@saved` cote Laravel.
-  Future<List<OfferModel>> getSavedOffers(
-      {int page = 1, int perPage = 20}) async {
+  Future<List<OfferModel>> getSavedOffers({
+    int page = 1,
+    int perPage = 20,
+    void Function(Map<String, dynamic> raw)? onRaw,
+  }) async {
     final response = await _apiProvider.getJson(
       '${ApiConstants.offersSaved}?page=$page&per_page=$perPage',
     );
+    onRaw?.call(response);
     final data = response['data'];
     final List<dynamic> rawItems;
     if (data is List) {
@@ -138,6 +192,7 @@ class OfferRepository {
     int page = 1,
     int perPage = 20,
     String? status,
+    void Function(Map<String, dynamic> raw)? onRaw,
   }) async {
     final queryParams = <String, dynamic>{
       'page': page,
@@ -147,6 +202,7 @@ class OfferRepository {
     final response = await _apiProvider.getJson(
       '${ApiConstants.applications}${_buildQuery(queryParams)}',
     );
+    onRaw?.call(response);
 
     final statusCode = response['statusCode'] as int?;
     final success = response['success'] == true;
