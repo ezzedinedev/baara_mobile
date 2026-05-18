@@ -69,9 +69,7 @@ class ApiConstants {
     if (uri == null || uri.scheme.isEmpty || uri.host.isEmpty) {
       throw ArgumentError('Configuration API invalide.');
     }
-    // Refuse http en release UNIQUEMENT si le host n'est pas un hote
-    // dev local. Cela permet de tester un build release contre un
-    // Laravel local sans casser la securite cote prod.
+    
     if (!kDebugMode &&
         uri.scheme != 'https' &&
         !_isLocalDevHost(uri.host)) {
@@ -128,6 +126,8 @@ class ApiConstants {
   static const String resetPassword = '/auth/reset-password';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
+  static const String logoutAll = '/auth/logout-all';
+  static const String authRefresh = '/auth/refresh';
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';
   static const String profilePreferences = '/profile/preferences';
@@ -142,19 +142,84 @@ class ApiConstants {
   // L'endpoint legacy `/profile/cv/upload` n'existe pas côté backend.
   static const String profileCvImportAnalyze =
       '/profile/cv-builder/import/analyze';
+  static const String profileCvImportImprove =
+      '/profile/cv-builder/import/improve';
   static const String profileCvImportApply =
       '/profile/cv-builder/import/apply';
+  static const String profileCvImportDownload =
+      '/profile/cv-builder/import/download';
+
+  // Documents (diplomes, certificats, lettres) - synchro web
+  static const String profileDocuments = '/profile/documents';
+  static String profileDocument(String id) => '/profile/documents/$id';
+  static String profileDocumentDownload(String id) =>
+      '/profile/documents/$id/download';
+
+  // Certificats de formation OpporTune obtenus
+  static const String profileCertificates = '/profile/certificates';
 
   static const String offers = '/offers';
   static const String offersFeatured = '/offers/featured/list';
   static const String offersSaved = '/offers/saved/list';
+  static String offerSavePath(String id) => '/offers/$id/save';
+  static String offerMatch(String id) => '/offers/$id/match';
+  static String offerApply(String id) => '/offers/$id/apply';
+  static String offerSwipe(String id) => '/offers/$id/swipe';
   static const String applications = '/applications';
+  static String application(String id) => '/applications/$id';
+  // Entretiens a venir pour le candidat connecte (widget "Mes entretiens").
+  // Le payload inclut la geolocalisation entreprise + deep links itineraire +
+  // QR de convocation. cf. ApplicationApiController@upcomingInterviews.
+  static const String applicationsInterviewsUpcoming =
+      '/applications/interviews/upcoming';
+  // URL web absolue (hors /api/v1) pour telecharger le .ics d'un entretien.
+  // Authentification Sanctum ne s'applique pas — la route web utilise le
+  // middleware auth standard. On ouvre dans un browser tab.
+  static String interviewIcsWebUrl(String applicationId) =>
+      '$resolvedHost/candidatures/$applicationId/interview.ics';
   static const String trainings = '/trainings';
+  // /trainings/enrolled (legacy) collisionnait avec /trainings/{training}.
+  // La vraie route backend est /trainings/enrolled/list.
+  static const String trainingsEnrolled = '/trainings/enrolled/list';
+  static String trainingEnroll(String id) => '/trainings/$id/enroll';
+  static String trainingPay(String id) => '/trainings/$id/pay';
+  static String trainingProgress(String id) => '/trainings/$id/progress';
+  static String trainingReview(String id) => '/trainings/$id/review';
   static const String sectors = '/offers/sectors/list';
+
+  // Dashboard candidat — miroir JSON de /espace-candidat (web).
+  static const String candidateDashboard = '/candidate/dashboard';
+
+  // Concours Fonction Publique (FP)
+  static const String contests = '/contests';
+  static String contest(String id) => '/contests/$id';
+  static String contestSave(String id) => '/contests/$id/save';
+
+  // Stats publiques pour la home / landing.
+  static const String statsPublic = '/stats/public';
+
+  // ── IA cross-cutting ──────────────────────────────────────
+  // Endpoints qui ne sont ni purement profil ni purement offre.
+  // CV-builder IA reste sous /profile/cv-builder/* (intentionnel).
+  static const String aiProfileScore = '/ai/profile/score';
+  static const String aiCvAudit = '/ai/cv/audit';
+  static const String aiCvAdapt = '/ai/cv/adapt';
+  static const String aiCoverLetter = '/ai/cover-letter/generate';
+  static const String aiMatchFeed = '/ai/match/feed';
+  static const String aiChatSend = '/ai/chat/send';
+  static const String aiChatSessions = '/ai/chat/sessions';
+  static String aiChatSession(String id) => '/ai/chat/sessions/$id';
 
   // Backend Laravel monte la messagerie sous /messages (cf. MessageApiController).
   static const String conversations = '/messages';
+  static String conversation(String id) => '/messages/$id';
+  static String conversationSend(String id) => '/messages/$id/send';
+  static String conversationRead(String id) => '/messages/$id/read';
+
   static const String notifications = '/notifications';
+  static String notification(String id) => '/notifications/$id';
+  static String notificationRead(String id) => '/notifications/$id/read';
+  static const String notificationsReadAll = '/notifications/read-all';
   // PUT cet endpoint au boot pour enregistrer/refresh le token FCM du
   // device courant cote backend (cf. NotificationApiController@updateFcmToken).
   static const String notificationsFcmToken = '/notifications/fcm-token';
