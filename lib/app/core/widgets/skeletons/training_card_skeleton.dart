@@ -26,8 +26,9 @@ class TrainingCardSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover hero reduit (130 vs 180).
-            SkeletonBox(height: 130, width: double.infinity, radius: 0),
+            // Cover hero reduit — 124 pour tenir dans la hauteur du carrousel
+            // (≈298px) sans overflow de quelques px.
+            SkeletonBox(height: 124, width: double.infinity, radius: 0),
             Padding(
               padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
               child: Column(

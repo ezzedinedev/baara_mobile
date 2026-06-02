@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     // Google Services : lit android/app/google-services.json et genere les
@@ -14,7 +13,7 @@ plugins {
 android {
     namespace = "com.opportune.bf"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "30.0.14904198"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -23,10 +22,6 @@ android {
         // Java 8+ (java.time, etc.) sur les vieux Android. Sans ca, build
         // fail avec "core library desugaring required".
         isCoreLibraryDesugaringEnabled = true
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -49,6 +44,14 @@ android {
     }
 }
 
+// Migration vers le nouveau DSL compilerOptions requis par Kotlin 2.x+
+// pour aligner le target JVM avec celui de Java (17).
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 flutter {
     source = "../.."
 }
@@ -56,5 +59,5 @@ flutter {
 dependencies {
     // Polyfill des APIs Java 8+ pour les minSdk < 26.
     // Requis par flutter_local_notifications (cf. compileOptions plus haut).
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

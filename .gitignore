@@ -31,7 +31,14 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
+devtools_options.yaml
+
+# Outils & fichiers locaux (ne pas versionner)
+.kombai/
+.vscode/
+all_user_messages.txt
 
 # Symbolication related
 app.*.symbols

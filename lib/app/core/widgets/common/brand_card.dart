@@ -35,7 +35,7 @@ class BrandCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(14),
     this.radius = AppRadius.lg,
     this.borderColor,
-    this.shadow = BrandCardShadow.light,
+    this.shadow = BrandCardShadow.none,
     this.color,
     this.onTap,
   });
@@ -52,7 +52,7 @@ class BrandCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedBorderColor =
-        borderColor ?? AppColors.outlineVariant.withValues(alpha: 0.16);
+        borderColor ?? AppColors.outlineVariant.withValues(alpha: 0.4);
     final boxShadow = switch (shadow) {
       BrandCardShadow.none => null,
       BrandCardShadow.light => AppColors.lightShadow,

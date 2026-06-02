@@ -28,9 +28,14 @@ abstract class AppRoutes {
   static const myApplications = '/offres/mes-candidatures';
   static const trainings = '/formations';
   static const trainingDetail = '/formations/:id';
+  static const trainingPlayer = '/formations/:id/parcours';
   static const messages = '/messages';
   static const conversation = '/messages/:id';
   static const notifications = '/notifications';
   static const settings = '/settings';
+  // ── IA ──────────────────────────────────────────────────
+  static const iaScoreProfil = '/ia/score-profil';
+  static const iaChatbot = '/ia/chatbot';
+  static const iaAuditCv = '/ia/audit-cv';
   static const error404 = '/404';
 }

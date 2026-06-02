@@ -3,73 +3,71 @@ import 'package:get/get.dart';
 
 import 'app_theme_controller.dart';
 
-/// Charte graphique OpporTune BF — Jobaway Green/White System
+/// Charte graphique OpporTune BF — Professional teal/neutral system
 /// Toutes les couleurs UI passent par ces tokens.
 class AppColors {
   AppColors._();
 
-  // ── Brand primary : vert forêt vibrant (la teinte de la landing) ───────
-  // C'est la couleur dominante. Utiliser sur les CTAs, indicateurs actifs,
-  // gradients de header. Doit communiquer l'énergie de la marque.
-  static const Color primary = Color(0xFF056E00);
-  static const Color primaryLight = Color(0xFF78EB54);
-  static const Color primaryMedium = Color(0xFF45A735);
-  // primaryDark conserve sa valeur historique (olive sombre) pour ne pas
-  // casser les 30+ references. Pour un vrai accent olive sémantique,
-  // utiliser le token `secondary` ci-dessous.
-  static const Color primaryDark = Color(0xFF26472B);
+  // ── Brand primary : vert vif naturel (proche du vert "landing") ───────
+  // Couleur dominante pour CTAs, icones circulaires, indicateurs actifs et
+  // headers. Vibrant et chaleureux, énergique mais accessible.
+  static const Color primary = Color(0xFF2BA55B);
+  static const Color primaryLight = Color(0xFFB7ECC9);
+  static const Color primaryMedium = Color(0xFF4FBE7C);
+  // Teinte la plus sombre de la famille — headers, dégradés profonds, ombres.
+  static const Color primaryDark = Color(0xFF1E7D44);
 
-  // ── Brand secondary : vert olive feutré (accent intérieur app) ─────────
+  // ── Brand secondary : accent institutionnel chaud ─────────────────────
   // Token sémantique introduit pour distinguer les usages "accent muté" des
   // surfaces qui doivent réellement pop avec le primary vibrant. Préférer
   // `secondary` quand l'intention est un accent calme (séparateurs, tags
   // discrets, badges informatifs) — laisser `primary` pour les pop.
-  static const Color secondary = Color(0xFF26472B);
-  static const Color secondaryDeep = Color(0xFF1B2F1F);
-  static const Color secondaryMid = Color(0xFF4F6E55);
+  static const Color secondary = Color(0xFFC9892B);
+  static const Color secondaryDeep = Color(0xFF5C3B14);
+  static const Color secondaryMid = Color(0xFFE0B15C);
   static Color get secondarySoft =>
-      _isDark ? const Color(0xFF1A2A1F) : const Color(0xFFEFF3EC);
+      _isDark ? const Color(0xFF2E2415) : const Color(0xFFFFF4DC);
 
   static bool get _isDark =>
       Get.isRegistered<AppThemeController>() &&
       Get.find<AppThemeController>().isDarkMode.value;
 
   static Color get background =>
-      _isDark ? const Color(0xFF0F1410) : const Color(0xFFFAF9F6);
+      _isDark ? const Color(0xFF0D1214) : const Color(0xFFF7F8FA);
   static Color get surfaceLow =>
-      _isDark ? const Color(0xFF171D18) : const Color(0xFFF4F3F0);
+      _isDark ? const Color(0xFF151B1E) : const Color(0xFFF1F5F4);
   static Color get inputFill =>
-      _isDark ? const Color(0xFF1D241F) : const Color(0xFFF2EFE9);
+      _isDark ? const Color(0xFF1B2326) : const Color(0xFFF3F6F6);
   static Color get surfaceCard =>
-      _isDark ? const Color(0xFF1A211C) : const Color(0xFFFFFFFF);
+      _isDark ? const Color(0xFF182023) : const Color(0xFFFFFFFF);
   static Color get surfaceContainer =>
-      _isDark ? const Color(0xFF202821) : const Color(0xFFEFEEEB);
+      _isDark ? const Color(0xFF202A2D) : const Color(0xFFEEF3F2);
   static Color get surfaceHigh =>
-      _isDark ? const Color(0xFF263026) : const Color(0xFFE9E8E5);
+      _isDark ? const Color(0xFF283436) : const Color(0xFFE5ECEB);
   static Color get surfaceHighest =>
-      _isDark ? const Color(0xFF303A31) : const Color(0xFFE3E2DF);
+      _isDark ? const Color(0xFF334144) : const Color(0xFFD8E2E1);
   static Color get surfaceSelected =>
-      _isDark ? const Color(0xFF18321F) : const Color(0xFFF2FBF0);
+      _isDark ? const Color(0xFF15322E) : const Color(0xFFE7F4F1);
   static Color get surfaceIconSoft =>
-      _isDark ? const Color(0xFF203720) : const Color(0xFFE8F5E3);
+      _isDark ? const Color(0xFF183631) : const Color(0xFFE5F2EF);
   static Color get surfaceSplashMid =>
-      _isDark ? const Color(0xFF141B15) : const Color(0xFFF8FFF8);
+      _isDark ? const Color(0xFF10191B) : const Color(0xFFF8FBFA);
   static Color get surfaceSplashBottom =>
-      _isDark ? const Color(0xFF101711) : const Color(0xFFEEF8EE);
+      _isDark ? const Color(0xFF0D1517) : const Color(0xFFEAF2F1);
 
   static Color get titleColor =>
-      _isDark ? const Color(0xFFF5F7F2) : const Color(0xFF111111);
+      _isDark ? const Color(0xFFF5F7F7) : const Color(0xFF111827);
   static Color get bodyColor =>
-      _isDark ? const Color(0xFFC7D0C4) : const Color(0xFF666666);
+      _isDark ? const Color(0xFFC8D2D0) : const Color(0xFF4B5563);
   static Color get hintColor =>
-      _isDark ? const Color(0xFF8F9B8E) : const Color(0xFF9E9E9E);
+      _isDark ? const Color(0xFF91A09D) : const Color(0xFF8A94A6);
   static Color get onDark =>
       _isDark ? const Color(0xFF0A0F0B) : const Color(0xFF1B1C1A);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  static const Color outlineVariant = Color(0xFFBECBB4);
+  static const Color outlineVariant = Color(0xFFD7DEE3);
   static const Color error = Color(0xFFBA1A1A);
-  static const Color success = Color(0xFF056E00);
+  static const Color success = Color(0xFF2F7D5B);
   static const Color warning = Color(0xFFB45309);
 
   static const Color successStrong = Color(0xFF087443);
@@ -111,14 +109,14 @@ class AppColors {
   static const Color paymentWave = Color(0xFF1D9BF0);
 
   static Color get profileGradientTop =>
-      _isDark ? const Color(0xFF1A211C) : const Color(0xFFFFFFFF);
+      _isDark ? const Color(0xFF182023) : const Color(0xFFFFFFFF);
   static Color get profileGradientMid =>
-      _isDark ? const Color(0xFF141A1F) : const Color(0xFFF4F7FB);
+      _isDark ? const Color(0xFF121A1F) : const Color(0xFFF4F7FB);
   static Color get profileGradientBottom =>
-      _isDark ? const Color(0xFF121A15) : const Color(0xFFF2FBF0);
+      _isDark ? const Color(0xFF0F1719) : const Color(0xFFEEF6F4);
 
-  static const Color recruiterStart = Color(0xFF90D880);
-  static const Color recruiterEnd = Color(0xFF6AB860);
+  static const Color recruiterStart = Color(0xFF2F8F83);
+  static const Color recruiterEnd = Color(0xFF136F63);
 
   static const Color socialGoogleBlue = Color(0xFF4285F4);
   static const Color socialGoogleGreen = Color(0xFF34A853);
@@ -130,15 +128,34 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF287A32), Color(0xFF1A5B24)]
-            : const [primaryLight, primaryMedium],
+            ? const [Color(0xFF2F8F83), Color(0xFF136F63)]
+            : const [primaryMedium, primary],
+      );
+
+  /// Header plein écran type Sank (paramètres, sous-pages).
+  static LinearGradient get headerBrandGradient => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _isDark
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primaryDark, primary, primaryMedium],
+        stops: const [0.0, 0.45, 1.0],
+      );
+
+  /// Cercles d'actions / grille services (dégradé plus saturé).
+  static LinearGradient get actionIconGradient => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _isDark
+            ? const [Color(0xFF2F8F83), Color(0xFF0B2F3A)]
+            : const [primaryMedium, primary, primaryDark],
       );
 
   static LinearGradient get recruiterGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF2D7B3A), Color(0xFF1E5B2C)]
+            ? const [Color(0xFF2F8F83), Color(0xFF11564F)]
             : const [recruiterStart, recruiterEnd],
       );
 
@@ -153,8 +170,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF102414), Color(0xFF17411F), Color(0xFF236C2B)]
-            : const [primary, primaryMedium, primaryLight],
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primaryDark, primary, primaryMedium],
       );
 
   // Per-section hero gradients — chaque grand espace de l'app gagne une
@@ -163,8 +180,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0F2A20), Color(0xFF12513A), Color(0xFF0CA6A6)]
-            : const [Color(0xFF14B488), primary, Color(0xFF0CA6A6)],
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -172,8 +189,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0E2545), Color(0xFF124E58), Color(0xFF1A6E48)]
-            : const [Color(0xFF2B7FFF), Color(0xFF1F9FBE), primary],
+            ? const [Color(0xFF0B2A34), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primaryMedium, primary, primaryDark],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -181,8 +198,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF1F1745), Color(0xFF34277A), Color(0xFF1D5C3A)]
-            : const [Color(0xFF7A5CFA), Color(0xFF4F46E5), primary],
+            ? const [Color(0xFF0E2B34), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primary, primaryMedium, secondary],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -190,8 +207,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF053A3D), Color(0xFF0A6E72), Color(0xFF1A6E48)]
-            : const [Color(0xFF0CA6A6), Color(0xFF14B488), primary],
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -199,8 +216,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0F2A20), Color(0xFF1A5B2C), Color(0xFF236C2B)]
-            : const [primaryMedium, primary, secondaryDeep],
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF2E2415)]
+            : const [primaryDark, primary, secondary],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -208,8 +225,8 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0F2A20), Color(0xFF1A5B2C), Color(0xFF26472B)]
-            : const [primary, primaryMedium, primaryDark],
+            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF2E2415)]
+            : const [primaryDark, primary, secondaryDeep],
         stops: const [0.0, 0.55, 1.0],
       );
 
@@ -217,7 +234,7 @@ class AppColors {
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
         colors: _isDark
-            ? const [Color(0xFF236C2B), Color(0xFF17411F)]
+            ? const [Color(0xFF1B7E73), Color(0xFF11564F)]
             : const [primaryMedium, primary],
       );
 

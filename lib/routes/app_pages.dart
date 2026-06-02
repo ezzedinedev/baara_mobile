@@ -1,53 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../app/modules/auth/bindings/candidate_login_binding.dart';
-import '../app/modules/auth/controllers/forgot_password_controller.dart';
-import '../app/modules/auth/views/candidate_login_screen.dart';
-import '../app/modules/auth/views/forgot_password_reset_screen.dart';
-import '../app/modules/auth/views/forgot_password_screen.dart';
-import '../app/modules/auth/bindings/recruiter_login_binding.dart';
-import '../app/modules/auth/views/recruiter_login_screen.dart';
-import '../app/modules/auth/bindings/register_profile_binding.dart';
-import '../app/modules/auth/views/register_profile_screen.dart';
-import '../app/modules/auth/controllers/otp_verification_controller.dart';
-import '../app/modules/auth/views/otp_verification_screen.dart';
-import '../app/modules/auth/bindings/register_binding.dart';
-import '../app/modules/auth/views/register_screen.dart';
-import '../app/modules/errors/views/error_404_screen.dart';
-import '../app/modules/home/bindings/home_binding.dart';
-import '../app/modules/home/views/home_screen.dart';
-import '../app/modules/landing/bindings/landing_binding.dart';
-import '../app/modules/landing/views/landing_screen.dart';
-import '../app/modules/notifications/views/notifications_screen.dart';
-import '../app/modules/profile_selection/bindings/profile_selection_binding.dart';
-import '../app/modules/profile_selection/views/profile_selection_screen.dart';
-import '../app/modules/splash/bindings/splash_binding.dart';
-import '../app/modules/splash/views/splash_screen.dart';
-import '../app/modules/offers/bindings/offer_detail_binding.dart';
-import '../app/modules/offers/bindings/offers_binding.dart';
-import '../app/modules/offers/views/my_applications_screen.dart';
-import '../app/modules/offers/views/offer_detail_screen.dart';
-import '../app/modules/offers/views/offers_screen.dart';
-import '../app/modules/trainings/bindings/training_detail_binding.dart';
-import '../app/modules/trainings/bindings/trainings_binding.dart';
-import '../app/modules/trainings/views/training_detail_screen.dart';
-import '../app/modules/trainings/views/trainings_screen.dart';
-import '../app/modules/messages/bindings/messages_binding.dart';
-import '../app/modules/messages/views/messages_screen.dart';
-import '../app/modules/profile/bindings/profile_binding.dart';
-import '../app/modules/profile/controllers/cv_builder_controller.dart';
-import '../app/modules/profile/views/cv_assistant_chat_screen.dart';
-import '../app/modules/profile/views/cv_builder_landing_screen.dart';
-import '../app/modules/profile/views/cv_import_screen.dart';
-import '../app/modules/profile/views/cv_manual_editor_screen.dart';
-import '../app/modules/profile/views/cv_preview_screen.dart';
-import '../app/modules/profile/views/cv_screen.dart';
-import '../app/modules/profile/views/portfolio_edit_screen.dart';
-import '../app/modules/profile/views/portfolio_screen.dart';
-import '../app/modules/profile/views/profile_edit_screen.dart';
-import '../app/modules/profile/views/profile_screen.dart';
 import 'app_routes.dart';
+import 'package:opportune_bf/app/features/errors/presentation/pages/error_404_screen.dart';
+
+// ── Startup ──
+import 'package:opportune_bf/app/features/startup/presentation/bindings/splash_binding.dart';
+import 'package:opportune_bf/app/features/startup/presentation/pages/splash_screen.dart';
+import 'package:opportune_bf/app/features/startup/presentation/bindings/landing_binding.dart';
+import 'package:opportune_bf/app/features/startup/presentation/pages/landing_screen.dart';
+import 'package:opportune_bf/app/features/startup/presentation/bindings/profile_selection_binding.dart';
+import 'package:opportune_bf/app/features/startup/presentation/pages/profile_selection_screen.dart';
+
+// ── Auth ──
+import 'package:opportune_bf/app/features/auth/presentation/bindings/candidate_login_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/candidate_login_screen.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/recruiter_login_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/recruiter_login_screen.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/register_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/register_screen.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/register_profile_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/register_profile_screen.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/otp_verification_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/otp_verification_screen.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/forgot_password_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/forgot_password_screen.dart';
+
+// ── Home ──
+import 'package:opportune_bf/app/features/home/presentation/bindings/home_binding.dart';
+import 'package:opportune_bf/app/features/home/presentation/pages/home_screen.dart';
+
+// ── Offres ──
+import 'package:opportune_bf/app/features/offers/presentation/bindings/offer_binding.dart';
+import 'package:opportune_bf/app/features/offers/presentation/pages/offer_list_screen.dart';
+import 'package:opportune_bf/app/features/offers/presentation/bindings/offer_detail_binding.dart';
+import 'package:opportune_bf/app/features/offers/presentation/pages/offer_detail_screen.dart';
+import 'package:opportune_bf/app/features/offers/presentation/pages/my_applications_screen.dart';
+
+// ── Formations ──
+import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_binding.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/pages/trainings_screen.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_detail_binding.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/pages/training_detail_screen.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_player_binding.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/pages/training_player_screen.dart';
+
+// ── Messaging ──
+import 'package:opportune_bf/app/features/messaging/presentation/bindings/messaging_binding.dart';
+import 'package:opportune_bf/app/features/messaging/presentation/pages/messages_screen.dart';
+import 'package:opportune_bf/app/features/messaging/presentation/pages/chat_thread_screen.dart';
+
+// ── Notifications ──
+import 'package:opportune_bf/app/features/notifications/presentation/bindings/notifications_binding.dart';
+import 'package:opportune_bf/app/features/notifications/presentation/pages/notifications_screen.dart';
+
+// ── Profile ──
+import 'package:opportune_bf/app/features/profile/presentation/bindings/profile_binding.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/profile_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/profile_edit_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/settings_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/bindings/cv_builder_binding.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_builder_landing_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_assistant_chat_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_import_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_manual_editor_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_preview_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_edit_screen.dart';
+
+// ── IA ──
+import 'package:opportune_bf/app/features/ia/presentation/bindings/ia_binding.dart';
+import 'package:opportune_bf/app/features/ia/presentation/pages/score_profil_screen.dart';
+import 'package:opportune_bf/app/features/ia/presentation/pages/chatbot_screen.dart';
+import 'package:opportune_bf/app/features/ia/presentation/pages/cv_audit_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -66,93 +92,93 @@ class AppPages {
       page: () => const ProfileSelectionScreen(),
       binding: ProfileSelectionBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.landing,
       page: () => const LandingScreen(),
       binding: LandingBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 380),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.candidateLogin,
       page: () => const CandidateLoginScreen(),
       binding: CandidateLoginBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.registerProfile,
       page: () => const RegisterProfileScreen(),
       binding: RegisterProfileBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.register,
       page: () => const RegisterScreen(),
       binding: RegisterBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.recruiterLogin,
       page: () => const RecruiterLoginScreen(),
       binding: RecruiterLoginBinding(),
       transition: Transition.downToUp,
-      transitionDuration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutQuart,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.otpVerification,
       page: () => const OtpVerificationScreen(),
       binding: OtpVerificationBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.forgotPassword,
       page: () => const ForgotPasswordScreen(),
       binding: ForgotPasswordBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.forgotPasswordReset,
-      page: () => const ForgotPasswordResetScreen(),
+      page: () => const ForgotPasswordScreen(), 
       binding: ForgotPasswordBinding(),
       transition: Transition.rightToLeft,
-      transitionDuration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.home,
       page: () => const HomeScreen(),
       binding: HomeBinding(),
       transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.offers,
-      page: () => const OffersScreen(),
-      binding: OffersBinding(),
+      page: () => const OfferListScreen(),
+      binding: OfferBinding(),
       transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
-    // ⚠️ Ordre important : la route statique `mes-candidatures` doit etre
-    // declaree AVANT la route dynamique `/offres/:id`, sinon GetX considere
-    // "mes-candidatures" comme un id d'offre → on tombe sur OfferDetailScreen
-    // qui affiche "Offre introuvable" (le backend renvoie 404 pour cet id).
     GetPage(
       name: AppRoutes.myApplications,
       page: () => const MyApplicationsScreen(),
-      binding: OffersBinding(),
+      binding: OfferBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -164,7 +190,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.trainings,
       page: () => const TrainingsScreen(),
-      binding: TrainingsBinding(),
+      binding: TrainingBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -174,15 +200,21 @@ class AppPages {
       transition: Transition.rightToLeft,
     ),
     GetPage(
+      name: AppRoutes.trainingPlayer,
+      page: () => const TrainingPlayerScreen(),
+      binding: TrainingPlayerBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
       name: AppRoutes.messages,
       page: () => const MessagesScreen(),
-      binding: MessagesBinding(),
+      binding: MessagingBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.conversation,
-      page: () => const MessagesScreen(),
-      binding: MessagesBinding(),
+      page: () => const ChatThreadScreen(),
+      binding: MessagingBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
@@ -196,6 +228,8 @@ class AppPages {
       page: () => const ProfileEditScreen(),
       binding: ProfileBinding(),
       transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.profilePreferences,
@@ -254,13 +288,35 @@ class AppPages {
     GetPage(
       name: AppRoutes.notifications,
       page: () => const NotificationsScreen(),
-      binding: HomeBinding(),
+      binding: NotificationsBinding(),
       transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
     ),
     GetPage(
       name: AppRoutes.settings,
-      page: () => const SizedBox(),
+      page: () => const SettingsScreen(),
       binding: ProfileBinding(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.iaScoreProfil,
+      page: () => const ScoreProfilScreen(),
+      binding: IaBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.iaChatbot,
+      page: () => const ChatbotScreen(),
+      binding: IaBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.iaAuditCv,
+      page: () => const CvAuditScreen(),
+      binding: IaBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(

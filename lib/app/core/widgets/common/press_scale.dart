@@ -24,7 +24,7 @@ class PressScale extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.scale = 0.97,
-    this.duration = const Duration(milliseconds: 130),
+    this.duration = const Duration(milliseconds: 220),
     this.haptic = true,
     this.enabled = true,
   });
@@ -85,8 +85,26 @@ class _PressScaleState extends State<PressScale>
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final reduceMotion =
+        mediaQuery?.disableAnimations == true ||
+        mediaQuery?.accessibleNavigation == true;
+
     if (!widget.enabled) {
       return widget.child;
+    }
+    if (reduceMotion) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap == null
+            ? null
+            : () {
+                if (widget.haptic) AppHaptics.tap();
+                widget.onTap!();
+              },
+        onLongPress: widget.onLongPress,
+        child: widget.child,
+      );
     }
     return Listener(
       onPointerDown: (_) => _press(),
@@ -104,7 +122,8 @@ class _PressScaleState extends State<PressScale>
         child: AnimatedBuilder(
           animation: _ctrl,
           builder: (_, child) {
-            final s = 1.0 - (_ctrl.value * (1.0 - widget.scale));
+            final eased = Curves.easeInOut.transform(_ctrl.value);
+            final s = 1.0 - (eased * (1.0 - widget.scale));
             return Transform.scale(scale: s, child: child);
           },
           child: widget.child,

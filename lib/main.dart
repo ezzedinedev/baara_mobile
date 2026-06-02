@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,20 +7,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-
 import 'app/bindings/initial_binding.dart';
+import 'app/core/constants/api_constants.dart';
 import 'app/core/services/fcm_service.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
-import 'app/modules/errors/views/error_404_screen.dart';
+import 'app/features/errors/presentation/pages/error_404_screen.dart';
+// import 'app/fonctionnalites/erreurs/vue/error_404_screen.dart';
 import 'app/translations/app_translations.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 
 Future<void> main() async {
-  // runZonedGuarded capture les erreurs async non-cantonnees a un widget
-  // (ex: Future qui throw sans .catchError). Indispensable pour que
-  // Crashlytics voie tous les crashes — sinon ces erreurs disparaissent.
   await runZonedGuarded<Future<void>>(_bootstrap, (error, stack) {
     if (Firebase.apps.isNotEmpty) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
@@ -45,10 +42,6 @@ Future<void> _bootstrap() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Firebase d'abord — un crash silencieux ici signifie que les fichiers
-  // google-services.json / GoogleService-Info.plist sont absents ou que
-  // le bundle ID ne correspond pas. On ne bloque pas le boot de l'app
-  // (mode degrade : pas de push notifs, mais le polling continue).
   try {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
@@ -57,13 +50,15 @@ Future<void> _bootstrap() async {
     debugPrint('[Firebase] init failed: $e');
   }
 
-  // Tous les services partagés (theme, token store, ApiProvider avec refresh)
-  // sont enregistrés dans InitialBinding pour rester organisés.
   await InitialBinding().dependencies();
 
-  // FcmService demande la permission, recupere le token, le pousse au
-  // backend et cable les handlers de messages. Doit etre apres
-  // InitialBinding (a besoin de ApiProvider) et apres Firebase.init.
+  if (kDebugMode) {
+    debugPrint('[API] baseUrl = ${ApiConstants.baseUrl}');
+    debugPrint(
+      '[API] candidats = ${ApiConstants.baseUrlCandidates.join(' | ')}',
+    );
+  }
+
   if (Firebase.apps.isNotEmpty) {
     final fcm = Get.put<FcmService>(FcmService(), permanent: true);
     unawaited(fcm.init());
@@ -72,18 +67,8 @@ Future<void> _bootstrap() async {
   runApp(const OpportuneBFApp());
 }
 
-/// Branche Crashlytics sur les 2 canaux d'erreur Flutter :
-/// - FlutterError.onError : erreurs framework (build, layout, etc.)
-/// - PlatformDispatcher.onError : erreurs async non rattrapees
-///
-/// `runZonedGuarded` (dans `main`) capture le 3e canal (top-level async).
-/// En debug : on les laisse aussi imprimer dans la console pour le dev.
 void _wireCrashlytics() {
   final crashlytics = FirebaseCrashlytics.instance;
-  // En debug, on peut desactiver l'envoi automatique pour ne pas polluer
-  // le dashboard Firebase avec des erreurs de dev. Decommenter si besoin :
-  // crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
-
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     crashlytics.recordFlutterFatalError(details);
@@ -112,6 +97,7 @@ class OpportuneBFApp extends StatelessWidget {
         initialRoute: AppRoutes.splash,
         getPages: AppPages.routes,
         defaultTransition: Transition.rightToLeft,
+        transitionDuration: const Duration(milliseconds: 260),
         // i18n : FR par defaut, EN disponible via la pref `language` du profil.
         translations: AppTranslations(),
         locale: const Locale('fr', 'FR'),

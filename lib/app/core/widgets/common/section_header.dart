@@ -31,9 +31,9 @@ class SectionHeader extends StatelessWidget {
           child: Text(
             title,
             style: AppTextStyles.titleLg.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 17,
-              letterSpacing: -0.2,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              letterSpacing: -0.3,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -60,8 +60,8 @@ class SectionHeader extends StatelessWidget {
                       actionLabel!,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                     const SizedBox(width: 2),

@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../fonctionnalites/offres/donnees/models/interview_details_model.dart';
+import '../../features/offers/data/models/interview_details_model.dart';
 
 /// Cible de navigation supportee — chaque cible mappe sur un deep link
 /// fourni par le backend (cf. `ApplicationApiController::buildInterviewPayload`).

@@ -176,6 +176,56 @@ class ApiProvider {
     );
   }
 
+  /// GET authentifié renvoyant le corps binaire brut (ex: PDF généré serveur).
+  /// Bascule sur les base-URL candidates en cas d'erreur réseau ; une réponse
+  /// HTTP non-2xx est renvoyée telle quelle via [ApiException].
+  Future<Uint8List> getBytes(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
+    final candidateBaseUrls = _orderedBaseUrls();
+    Exception? lastError;
+
+    for (final baseUrl in candidateBaseUrls) {
+      try {
+        final uri = _buildUri(baseUrl, endpoint);
+        final request = http.Request('GET', uri);
+        final authedHeaders =
+            await _withAuth(headers ?? const {'Accept': 'application/pdf'});
+        request.headers.addAll(authedHeaders);
+
+        _notifyRequest(request);
+        final streamed = await _client
+            .send(request)
+            .timeout(ApiConstants.connectTimeout);
+        final response = await http.Response.fromStream(streamed)
+            .timeout(ApiConstants.receiveTimeout);
+        _notifyResponse(response);
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          _lastWorkingBaseUrl = baseUrl;
+          return response.bodyBytes;
+        }
+        throw ApiException(
+          message: 'Téléchargement impossible (HTTP ${response.statusCode}).',
+          statusCode: response.statusCode,
+          endpoint: endpoint,
+        );
+      } on ApiException {
+        rethrow;
+      } on Exception catch (e) {
+        lastError = e;
+        _notifyError(e);
+      }
+    }
+
+    throw ApiException(
+      message: 'Téléchargement impossible.',
+      endpoint: endpoint,
+      previous: lastError,
+    );
+  }
+
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> payload, {
@@ -211,6 +261,41 @@ class ApiProvider {
       endpoint: endpoint,
       headers: headers ?? const {'Accept': 'application/json'},
     );
+  }
+
+  Future<Map<String, dynamic>> multipartPost(
+    String endpoint, {
+    required Map<String, String> fields,
+    required List<http.MultipartFile> files,
+    Map<String, String>? headers,
+  }) async {
+    final candidateBaseUrls = _orderedBaseUrls();
+    Exception? lastError;
+
+    for (final baseUrl in candidateBaseUrls) {
+      try {
+        final uri = _buildUri(baseUrl, endpoint);
+        final request = http.MultipartRequest('POST', uri);
+        final mergedHeaders = await _withAuth({
+          'Accept': 'application/json',
+          ...?headers,
+        });
+        request.headers.addAll(mergedHeaders);
+        request.fields.addAll(fields);
+        request.files.addAll(files);
+
+        _notifyRequest(request);
+        final streamedResponse = await request.send().timeout(ApiConstants.connectTimeout);
+        final response = await http.Response.fromStream(streamedResponse).timeout(ApiConstants.receiveTimeout);
+        _notifyResponse(response);
+        
+        _lastWorkingBaseUrl = baseUrl;
+        return _parseResponse(response);
+      } catch (e) {
+        lastError = e as Exception;
+      }
+    }
+    throw ApiException(message: 'Multipart upload failed', endpoint: endpoint, previous: lastError);
   }
 
   Future<Map<String, dynamic>> sendMultipart(

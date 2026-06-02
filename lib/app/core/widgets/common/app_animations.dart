@@ -8,7 +8,7 @@ class RevealOnMount extends StatefulWidget {
     super.key,
     required this.child,
     this.delay = Duration.zero,
-    this.duration = const Duration(milliseconds: 520),
+    this.duration = const Duration(milliseconds: 260),
     this.offsetY = 24,
   });
 
@@ -52,6 +52,12 @@ class _RevealOnMountState extends State<RevealOnMount>
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.maybeOf(context);
+    final reduceMotion =
+        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+
+    if (reduceMotion) return widget.child;
+
     return AnimatedBuilder(
       animation: _curve,
       builder: (context, child) {
@@ -61,7 +67,7 @@ class _RevealOnMountState extends State<RevealOnMount>
           child: Transform.translate(
             offset: Offset(0, widget.offsetY * (1 - t)),
             child: Transform.scale(
-              scale: 0.96 + 0.04 * t,
+              scale: 0.97 + 0.03 * t,
               child: child,
             ),
           ),

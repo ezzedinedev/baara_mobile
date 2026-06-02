@@ -40,6 +40,21 @@ class AuthTokenStore {
     throw Exception('Session introuvable. Veuillez vous reconnecter.');
   }
 
+  /// Retourne `null` si aucune session (sans lever d'exception).
+  Future<String?> readTokenOrNull() async {
+    try {
+      return await readToken();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Type d'utilisateur courant ('candidate' | 'recruiter'), `null` si absent.
+  Future<String?> readUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userTypeKey);
+  }
+
   Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);

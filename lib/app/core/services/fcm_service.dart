@@ -6,7 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_routes.dart';
-import '../../modules/home/controllers/home_controller.dart';
+import '../../features/home/presentation/controllers/home_controller.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
@@ -113,7 +113,7 @@ class FcmService extends GetxService {
       requestSoundPermission: false,
     );
     await _localNotif.initialize(
-      const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: (response) {
         // Tap sur le banner local en foreground → on parse le payload
         // qu'on a injecte (memes clefs que les data Firebase pour rester
@@ -162,23 +162,25 @@ class FcmService extends GetxService {
   }
 
   Future<void> _pushTokenToBackend(String token) async {
+    final auth = await _tokenStore.readTokenOrNull();
+    if (auth == null || auth.isEmpty) {
+      // Normal au boot avant login — sync via activateAfterLogin().
+      return;
+    }
     try {
-      final auth = await _tokenStore.readToken();
       await _apiProvider.putJson(
         ApiConstants.notificationsFcmToken,
         {
+          // Backend (NotificationApiController@updateFcmToken) ne valide que
+          // `fcm_token` ; ne pas envoyer de champ superflu.
           'fcm_token': token,
-          'platform': defaultTargetPlatform == TargetPlatform.iOS
-              ? 'ios'
-              : 'android',
         },
         headers: ApiConstants.authHeaders(auth),
       );
     } catch (e) {
-      // Echec silencieux : si on est offline ou non-authentifie, on
-      // re-tentera au prochain refresh / login. Pas de notification au
-      // user pour cette plomberie.
-      if (kDebugMode) debugPrint('[FCM] push token to backend failed: $e');
+      if (kDebugMode) {
+        debugPrint('[FCM] push token to backend failed: $e');
+      }
     }
   }
 
@@ -213,10 +215,10 @@ class FcmService extends GetxService {
     if (notif == null) return;
     final payload = _serializePayload(data);
     _localNotif.show(
-      message.hashCode,
-      notif.title,
-      notif.body,
-      const NotificationDetails(
+      id: message.hashCode,
+      title: notif.title,
+      body: notif.body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannelId,
           _androidChannelName,

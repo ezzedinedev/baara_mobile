@@ -13,6 +13,8 @@ class AppRadius {
   static const double lg = 20;
   static const double xl = 24;
   static const double xxl = 32;
+  /// Rayon du panneau blanc qui remonte sur le header (style Sank).
+  static const double sheetTop = 36;
   static const double pill = 999;
 }
 

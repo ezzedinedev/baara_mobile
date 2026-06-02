@@ -30,7 +30,10 @@ class ApiConstants {
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      // Emulateur Android -> localhost PC via 10.0.2.2
+      // Émulateur → PC :
+      // - `10.0.2.2:8000` si Laravel écoute sur 0.0.0.0 (scripts/start_laravel_for_emulator.ps1)
+      // - `127.0.0.1:8000` si `adb reverse tcp:8000 tcp:8000` (scripts/flutter_run_android_dev.ps1)
+      // `php artisan serve` seul (127.0.0.1) ne suffit PAS pour 10.0.2.2.
       return 'http://10.0.2.2:8000';
     }
 
@@ -96,9 +99,12 @@ class ApiConstants {
       if (apiBaseUrlOverride.trim().isNotEmpty)
         _sanitizeHost(apiBaseUrlOverride),
       if (webBaseUrl.trim().isNotEmpty) _sanitizeHost(webBaseUrl),
+      // Avec `adb reverse`, 127.0.0.1 sur le téléphone/émulateur = PC localhost.
+      if (kDebugMode && defaultTargetPlatform == TargetPlatform.android)
+        'http://127.0.0.1:8000',
       _sanitizeHost(_defaultHost),
-      if (kDebugMode) 'http://127.0.0.1:8000',
       if (kDebugMode) 'http://10.0.2.2:8000',
+      if (kDebugMode) 'http://127.0.0.1:8000',
     ];
 
     final uniqueHosts = <String>[];
@@ -133,11 +139,16 @@ class ApiConstants {
   static const String profilePreferences = '/profile/preferences';
   static const String profileCv = '/profile/cv';
   static const String profilePortfolio = '/profile/portfolio';
+  static String profilePortfolioItem(String id) => '/profile/portfolio/$id';
   static const String profileCvBuilder = '/profile/cv-builder';
   static const String profileCvBuilderPreview = '/profile/cv-builder/preview';
   static const String profileCvBuilderDownload = '/profile/cv-builder/download';
   static const String profileCvBuilderSelectTemplate =
       '/profile/cv-builder/select-template';
+  // Assistant conversationnel CV-builder (miroir mobile du web
+  // /mon-cv/assistant/message). cf. CvBuilderApiController@assistant.
+  static const String profileCvBuilderAssistant =
+      '/profile/cv-builder/assistant';
   // Import CV : analyze (parse PDF→fields stateless) + apply (persist).
   // L'endpoint legacy `/profile/cv/upload` n'existe pas côté backend.
   static const String profileCvImportAnalyze =
@@ -204,6 +215,10 @@ class ApiConstants {
   static const String aiProfileScore = '/ai/profile/score';
   static const String aiCvAudit = '/ai/cv/audit';
   static const String aiCvAdapt = '/ai/cv/adapt';
+  // Persiste l'adaptation IA du CV pour une offre (POST /ai/cv/adapt/apply).
+  static const String aiCvAdaptApply = '/ai/cv/adapt/apply';
+  // Réécriture IA d'une section/du CV (POST /ai/cv/rewrite).
+  static const String aiCvRewrite = '/ai/cv/rewrite';
   static const String aiCoverLetter = '/ai/cover-letter/generate';
   static const String aiMatchFeed = '/ai/match/feed';
   static const String aiChatSend = '/ai/chat/send';

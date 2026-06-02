@@ -71,7 +71,7 @@ class WavyContentHeader extends StatelessWidget {
                       color: AppColors.onPrimary,
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 4),

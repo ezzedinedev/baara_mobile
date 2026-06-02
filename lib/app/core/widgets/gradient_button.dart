@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'common/press_scale.dart';
 
 class GradientButton extends StatelessWidget {
   const GradientButton({
@@ -38,49 +39,48 @@ class GradientButton extends StatelessWidget {
       end: grad.end,
     );
 
-    return SizedBox(
-      width: width ?? double.infinity,
-      height: height,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: onPressed != null ? grad : disabledGradient,
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: onPressed != null
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryMedium.withValues(alpha: 0.30),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : const [],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: InkWell(
-            onTap: isLoading ? null : onPressed,
+    final enabled = onPressed != null && !isLoading;
+
+    return PressScale(
+      enabled: enabled,
+      onTap: enabled ? onPressed : null,
+      child: SizedBox(
+        width: width ?? double.infinity,
+        height: height,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: enabled ? grad : disabledGradient,
             borderRadius: BorderRadius.circular(borderRadius),
-            child: Center(
-              child: isLoading
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          textColor ?? AppColors.onPrimary,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      label,
-                      style: AppTextStyles.buttonLg.copyWith(
-                        fontSize: fontSize,
-                        color: textColor ?? AppColors.titleColor,
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryMedium.withValues(alpha: 0.28),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : const [],
+          ),
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        textColor ?? AppColors.onPrimary,
                       ),
                     ),
-            ),
+                  )
+                : Text(
+                    label,
+                    style: AppTextStyles.buttonLg.copyWith(
+                      fontSize: fontSize,
+                      color: textColor ?? AppColors.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
           ),
         ),
       ),

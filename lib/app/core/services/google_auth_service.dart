@@ -47,22 +47,18 @@ class GoogleAuthResult {
 /// `id_token` + `user_type` + `device_name` et retourne un token Sanctum.
 class GoogleAuthService {
   GoogleAuthService({GoogleSignIn? googleSignIn})
-      : _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              scopes: const ['email', 'profile'],
-            );
+      : _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final GoogleSignIn _googleSignIn;
 
   /// Ouvre la feuille Google et récupère un `id_token` signé.
   Future<GoogleAuthResult> signIn() async {
     try {
-      final account = await _googleSignIn.signIn();
-      if (account == null) {
-        return GoogleAuthResult.cancelled();
-      }
+      // Initialise si nécessaire (clientId/serverClientId facultatifs selon la plateforme)
+      await _googleSignIn.initialize();
 
-      final auth = await account.authentication;
+      final account = await _googleSignIn.authenticate();
+      final auth = account.authentication;
       final idToken = auth.idToken;
       if (idToken == null || idToken.isEmpty) {
         return GoogleAuthResult.failure(
@@ -77,6 +73,10 @@ class GoogleAuthService {
         avatarUrl: account.photoUrl,
       );
     } catch (e) {
+      if (e is GoogleSignInException &&
+          e.code == GoogleSignInExceptionCode.canceled) {
+        return GoogleAuthResult.cancelled();
+      }
       return GoogleAuthResult.failure(
         'Connexion Google échouée : ${e.toString()}',
       );
@@ -94,5 +94,8 @@ class GoogleAuthService {
     }
   }
 
-  Future<bool> isSignedIn() => _googleSignIn.isSignedIn();
+  Future<bool> isSignedIn() async {
+    final account = await _googleSignIn.attemptLightweightAuthentication();
+    return account != null;
+  }
 }
