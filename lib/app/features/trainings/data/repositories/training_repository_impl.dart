@@ -49,4 +49,20 @@ class TrainingRepositoryImpl implements ITrainingRepository {
     );
     return response['success'] == true;
   }
+
+  @override
+  Future<({bool success, String? message})> payTraining(
+    String trainingId, {
+    required String provider,
+    required String phone,
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.trainingPay(trainingId),
+      {'provider': provider, 'phone': phone},
+    );
+    return (
+      success: response['success'] == true,
+      message: response['message']?.toString(),
+    );
+  }
 }

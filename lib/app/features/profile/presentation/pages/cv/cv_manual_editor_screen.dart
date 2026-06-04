@@ -22,12 +22,34 @@ class CvManualEditorScreen extends GetView<CvEditorController> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          WavyContentHeader(
-            title: 'Éditeur de CV',
-            subtitle: 'Composez votre CV section par section',
-            height: 200,
-            gradient: AppColors.heroProfileGradient,
-            onLeadingTap: () => Get.back<void>(),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              child: Row(
+                children: [
+                  AppBackButton(onTap: () => Get.back<void>()),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Éditeur de CV',
+                          style: AppTextStyles.titleLg
+                              .copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          'Composez votre CV section par section',
+                          style: AppTextStyles.bodySm
+                              .copyWith(color: AppColors.hintColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           Expanded(
             child: Obx(() {

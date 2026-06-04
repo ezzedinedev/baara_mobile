@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_radius.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -11,13 +11,12 @@ import 'package:opportune_bf/routes/app_routes.dart';
 
 import '../../domain/entities/training.dart';
 import '../controllers/training_detail_controller.dart';
+import 'training_payment_screen.dart';
 
-/// Détail d'une formation (design riche d'origine restauré) : hero (cover
-/// image / fallback gradient violet-cyan + tags glass), bandeau prix +
-/// certification, grille de métadonnées, description, objectifs, prérequis,
-/// programme/modules, infos pratiques. La barre d'action en bas conserve la
-/// logique métier actuelle : "S'inscrire" (→ enroll) ou "Continuer la
-/// formation" (→ lecteur de parcours) si déjà inscrit.
+/// Détail d'une formation — design "MasterClass" restauré : hero banner violet
+/// + bouton play, onglets Contenu / Description, barre de progression et liste
+/// de leçons, CTA bas (S'inscrire / Commencer). La logique métier reste celle
+/// du [TrainingDetailController] (chargement, inscription, accès au parcours).
 class TrainingDetailScreen extends GetView<TrainingDetailController> {
   const TrainingDetailScreen({super.key});
 
@@ -63,395 +62,335 @@ class TrainingDetailScreen extends GetView<TrainingDetailController> {
   }
 }
 
-class _TrainingDetailContent extends StatelessWidget {
+enum _DetailTab { content, description }
+
+class _TrainingDetailContent extends StatefulWidget {
   const _TrainingDetailContent({required this.training});
 
   final Training training;
 
   @override
-  Widget build(BuildContext context) {
-    final isFree = training.price == null || training.price == 0;
+  State<_TrainingDetailContent> createState() => _TrainingDetailContentState();
+}
 
-    return RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () async =>
-          Get.find<TrainingDetailController>().load(),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        children: [
-          // ───────── HERO ─────────
-          RevealOnMount(
-            duration: const Duration(milliseconds: 540),
-            offsetY: 18,
-            child: _TrainingHero(training: training),
-          ),
-          const SizedBox(height: 18),
-          // ───────── Bandeau prix + certification ─────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: _PriceBanner(training: training, isFree: isFree),
-          ),
-          const SizedBox(height: 14),
-          // ───────── Métas (organisme / format / niveau / etc.) ─────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: _MetaGrid(training: training),
-          ),
-          const SizedBox(height: 22),
-          // ───────── Description ─────────
-          if (training.description.trim().isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _SectionTitle(
-                icon: IconlyLight.document,
-                title: 'À propos de la formation',
-                color: AppColors.categoryPurple,
-              ),
+class _TrainingDetailContentState extends State<_TrainingDetailContent> {
+  _DetailTab _tab = _DetailTab.content;
+
+  @override
+  Widget build(BuildContext context) {
+    final training = widget.training;
+    return SafeArea(
+      bottom: false,
+      child: AnimationLimiter(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 120),
+          children: AnimationConfiguration.toStaggeredList(
+            duration: const Duration(milliseconds: 320),
+            childAnimationBuilder: (child) => SlideAnimation(
+              verticalOffset: 18,
+              child: FadeInAnimation(child: child),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: BrandCard(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
-                shadow: BrandCardShadow.none,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    training.description,
-                    style: AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.bodyColor,
-                      height: 1.55,
+            children: [
+              _DetailTopBar(title: training.format),
+              const SizedBox(height: 12),
+              _CourseHeroBanner(training: training),
+              const SizedBox(height: 18),
+              Text(
+                training.title,
+                style: AppTextStyles.headlineLg.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Créé par ${training.providerName.isEmpty ? "—" : training.providerName}',
+                style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${training.modules.length} '
+                '${training.modules.length > 1 ? "leçons" : "leçon"}',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.hintColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _TabSwitcher(
+                current: _tab,
+                onChanged: (next) {
+                  AppHaptics.tap();
+                  setState(() => _tab = next);
+                },
+              ),
+              const SizedBox(height: 16),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: _tab == _DetailTab.content
+                    ? _ContentTab(key: const ValueKey('content'), training: training)
+                    : _DescriptionTab(
+                        key: const ValueKey('description'), training: training),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailTopBar extends StatelessWidget {
+  const _DetailTopBar({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AppBackButton(onTap: () => Navigator.of(context).maybePop()),
+        const Spacer(),
+        Text(
+          title.isEmpty ? 'Formation' : title,
+          style: AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const Spacer(),
+        _CircleIconButton(
+          icon: Icons.notifications_none_rounded,
+          onTap: () => AppHaptics.tap(),
+        ),
+      ],
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceCard,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Icon(icon, color: AppColors.titleColor, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+/// Banner hero — gradient violet, titre cours, bouton play central, pastilles
+/// format décoratives.
+class _CourseHeroBanner extends StatelessWidget {
+  const _CourseHeroBanner({required this.training});
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCover = training.coverUrl.trim().isNotEmpty;
+    return AspectRatio(
+      aspectRatio: 16 / 10,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.categoryPurple,
+              AppColors.categoryPurpleDeep,
+              AppColors.categoryCyan,
+            ],
+            stops: [0.0, 0.55, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.categoryPurpleDeep.withValues(alpha: 0.32),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            if (hasCover)
+              Positioned.fill(
+                child: Image.network(
+                  training.coverUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            if (hasCover)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.categoryPurple.withValues(alpha: 0.55),
+                        AppColors.categoryPurpleDeep.withValues(alpha: 0.50),
+                        AppColors.categoryCyan.withValues(alpha: 0.40),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 22),
-          ],
-          // ───────── Objectifs ─────────
-          if (training.objectives.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _SectionTitle(
-                icon: IconlyLight.tick_square,
-                title: 'Objectifs pédagogiques',
-                color: AppColors.successStrong,
+            const Positioned.fill(child: CustomPaint(painter: TopoPainter())),
+            Positioned(
+              top: -40,
+              right: -30,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.onPrimary.withValues(alpha: 0.08),
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _BulletList(
-                items: training.objectives,
-                color: AppColors.successStrong,
-                icon: IconlyBold.tick_square,
+            Positioned(
+              bottom: -50,
+              left: -20,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.onPrimary.withValues(alpha: 0.06),
+                ),
               ),
             ),
-            const SizedBox(height: 22),
-          ],
-          // ───────── Prérequis ─────────
-          if (training.requirements.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _SectionTitle(
-                icon: IconlyLight.info_square,
-                title: 'Prérequis',
-                color: AppColors.categoryOrange,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: _BulletList(
-                items: training.requirements,
-                color: AppColors.categoryOrange,
-                icon: IconlyBold.info_square,
-              ),
-            ),
-            const SizedBox(height: 22),
-          ],
-          // ───────── Programme / modules ─────────
-          if (training.modules.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Row(
-                children: [
-                  const _SectionTitle(
-                    icon: IconlyLight.paper,
-                    title: 'Programme',
-                    color: AppColors.categoryBlue,
+            Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.onPrimary.withValues(alpha: 0.20),
+                  border: Border.all(
+                    color: AppColors.onPrimary.withValues(alpha: 0.36),
+                    width: 1.4,
                   ),
-                  const Spacer(),
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: AppColors.onPrimary,
+                  size: 38,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 90,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '${training.modules.length} module${training.modules.length > 1 ? 's' : ''}',
-                    style: AppTextStyles.labelSm.copyWith(
-                      color: AppColors.hintColor,
-                      fontSize: 11,
-                      letterSpacing: 0.6,
+                    _bannerTitle.toUpperCase(),
+                    style: AppTextStyles.titleLg.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                      height: 1.15,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Programme professionnel',
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.onPrimary.withValues(alpha: 0.85),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Column(
-                children: List.generate(training.modules.length, (i) {
-                  final module = training.modules[i];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: i == training.modules.length - 1 ? 0 : 8,
-                    ),
-                    child: _ModuleTile(index: i + 1, module: module),
-                  );
-                }),
+            const Positioned(
+              left: 16,
+              bottom: 16,
+              right: 16,
+              child: Row(
+                children: [
+                  _HeroFormatPill(
+                    icon: Icons.signal_wifi_off_rounded,
+                    label: 'OFFLINE',
+                  ),
+                  SizedBox(width: 8),
+                  _HeroFormatPill(
+                    icon: Icons.devices_other_rounded,
+                    label: 'HYBRIDE',
+                  ),
+                  SizedBox(width: 8),
+                  _HeroFormatPill(
+                    icon: Icons.public_rounded,
+                    label: 'ONLINE',
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 22),
           ],
-          // ───────── Date / langue / contact ─────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: _InfoStrip(training: training),
-          ),
-          const SizedBox(height: 120),
-        ],
+        ),
       ),
     );
   }
-}
 
-class _TrainingHero extends StatelessWidget {
-  const _TrainingHero({required this.training});
-
-  final Training training;
-
-  @override
-  Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    final hasCover = training.coverUrl.trim().isNotEmpty;
-    return SizedBox(
-      width: double.infinity,
-      height: 280 + topPadding,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Image ou fallback gradient violet → cyan.
-          if (hasCover)
-            KenBurnsImage(image: NetworkImage(training.coverUrl))
-          else
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.categoryPurple,
-                    AppColors.categoryPurpleDeep,
-                    AppColors.categoryCyan,
-                  ],
-                  stops: [0.0, 0.55, 1.0],
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  IconlyBold.paper,
-                  color: AppColors.onPrimary,
-                  size: 72,
-                ),
-              ),
-            ),
-          // Voile d'image pour la lisibilité du texte.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: AppColors.imageScrim,
-                stops: AppColors.imageScrimStops,
-              ),
-            ),
-          ),
-          // Top bar : back + bookmark.
-          Positioned(
-            top: topPadding + 8,
-            left: 12,
-            right: 12,
-            child: Row(
-              children: [
-                WavyHeaderLeadingButton(
-                  onTap: () {
-                    AppHaptics.tap();
-                    Navigator.of(context).maybePop();
-                  },
-                ),
-                const Spacer(),
-                if (training.isBookmarked)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.onPrimary.withValues(alpha: 0.20),
-                      borderRadius: AppRadius.pill,
-                      border: Border.all(
-                        color: AppColors.onPrimary.withValues(alpha: 0.30),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          IconlyBold.bookmark,
-                          size: 14,
-                          color: AppColors.onPrimary,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          'Sauvegardée',
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.onPrimary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Titre + méta posés sur le voile bas.
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 22,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (training.level.isNotEmpty)
-                      _GlassTag(
-                        icon: IconlyLight.chart,
-                        label: training.level,
-                      ),
-                    if (training.format.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      _GlassTag(
-                        icon: IconlyLight.video,
-                        label: training.format,
-                      ),
-                    ],
-                    const Spacer(),
-                    if (training.rating > 0)
-                      _GlassTag(
-                        icon: IconlyBold.star,
-                        iconColor: AppColors.warning,
-                        label: training.rating.toStringAsFixed(1),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  training.title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.displayMd.copyWith(
-                    color: AppColors.onPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        training.providerName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.titleMd.copyWith(
-                          color: AppColors.onPrimary.withValues(alpha: 0.92),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    if (training.sector.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.onPrimary.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          training.sector,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.onPrimary.withValues(alpha: 0.85),
-                            fontSize: 11,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  String get _bannerTitle {
+    final raw = training.title.trim();
+    if (raw.isEmpty) return 'Formation';
+    final firstLine = raw.split('\n').first;
+    return firstLine.length > 28
+        ? firstLine.substring(0, 28).trimRight()
+        : firstLine;
   }
 }
 
-class _GlassTag extends StatelessWidget {
-  const _GlassTag({
-    required this.icon,
-    required this.label,
-    this.iconColor,
-  });
-
+class _HeroFormatPill extends StatelessWidget {
+  const _HeroFormatPill({required this.icon, required this.label});
   final IconData icon;
   final String label;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.onPrimary.withValues(alpha: 0.22),
-        borderRadius: AppRadius.pill,
-        border: Border.all(
-          color: AppColors.onPrimary.withValues(alpha: 0.32),
-        ),
+        color: AppColors.onPrimary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.onPrimary.withValues(alpha: 0.32)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: iconColor ?? AppColors.onPrimary),
-          const SizedBox(width: 5),
+          Icon(icon, color: AppColors.onPrimary, size: 13),
+          const SizedBox(width: 6),
           Text(
             label,
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onPrimary,
-              fontSize: 10,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
+              letterSpacing: 0.6,
+              fontSize: 10,
             ),
           ),
         ],
@@ -460,107 +399,458 @@ class _GlassTag extends StatelessWidget {
   }
 }
 
-class _PriceBanner extends StatelessWidget {
-  const _PriceBanner({required this.training, required this.isFree});
-
-  final Training training;
-  final bool isFree;
+class _TabSwitcher extends StatelessWidget {
+  const _TabSwitcher({required this.current, required this.onChanged});
+  final _DetailTab current;
+  final ValueChanged<_DetailTab> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final color = isFree ? AppColors.successStrong : AppColors.categoryOrange;
-    final softBg = isFree
-        ? AppColors.successSoft
-        : AppColors.categoryOrange.withValues(alpha: 0.12);
-    final hasCert = training.certificationLabel.isNotEmpty &&
-        !training.certificationLabel.toLowerCase().contains('aucun') &&
-        !training.certificationLabel.toLowerCase().contains('non');
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [softBg, softBg.withValues(alpha: 0.55)],
+    return Row(
+      children: [
+        Expanded(
+          child: _TabButton(
+            label: 'Contenu',
+            selected: current == _DetailTab.content,
+            onTap: () => onChanged(_DetailTab.content),
+          ),
         ),
-        borderRadius: AppRadius.lg,
-        border: Border.all(color: color.withValues(alpha: 0.30)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _TabButton(
+            label: 'Description',
+            selected: current == _DetailTab.description,
+            onTap: () => onChanged(_DetailTab.description),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  const _TabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 48,
+          decoration: BoxDecoration(
+            gradient: selected
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.categoryPurple,
+                      AppColors.categoryPurpleDeep,
+                    ],
+                  )
+                : null,
+            color: selected ? null : AppColors.surfaceLow,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color:
+                          AppColors.categoryPurpleDeep.withValues(alpha: 0.32),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: AppTextStyles.titleMd.copyWith(
+              color: selected ? AppColors.onPrimary : AppColors.bodyColor,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
       ),
-      child: Row(
+    );
+  }
+}
+
+class _ContentTab extends StatelessWidget {
+  const _ContentTab({super.key, required this.training});
+
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TrainingDetailController>();
+
+    if (training.modules.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: EmptyState(
+          icon: Icons.video_library_outlined,
+          title: 'Aucune leçon disponible',
+          subtitle:
+              'Cette formation ne contient pas encore de modules. Revenez plus tard.',
+        ),
+      );
+    }
+
+    return Obx(() {
+      final isEnrolled = controller.isEnrolled;
+      final completed = training.modules.where((m) => m.isCompleted).length;
+      final total = training.modules.length;
+      final percent = total == 0 ? 0 : (completed / total * 100).round();
+      final ratio = total == 0 ? 0.0 : completed / total;
+
+      return Column(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.18),
-              borderRadius: AppRadius.md,
+          if (isEnrolled) ...[
+            _ProgressCard(
+              percent: percent,
+              ratio: ratio.clamp(0.0, 1.0),
+              completed: completed,
+              total: total,
             ),
-            child: Icon(
-              isFree ? IconlyBold.shield_done : IconlyBold.wallet,
-              color: color,
-              size: 22,
+            const SizedBox(height: 14),
+          ],
+          ...List.generate(training.modules.length, (index) {
+            final lesson = training.modules[index];
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: index == training.modules.length - 1 ? 0 : 12,
+              ),
+              child: _LessonRow(
+                index: index + 1,
+                lesson: lesson,
+                isLocked: !isEnrolled,
+                onTap: () {
+                  AppHaptics.tap();
+                  if (!isEnrolled) {
+                    AppToast.info(
+                      'Inscription requise',
+                      'Inscrivez-vous à la formation pour accéder aux leçons.',
+                    );
+                    return;
+                  }
+                  Get.toNamed<void>(
+                    AppRoutes.trainingPlayer.replaceFirst(':id', training.id),
+                  );
+                },
+              ),
+            );
+          }),
+        ],
+      );
+    });
+  }
+}
+
+class _ProgressCard extends StatelessWidget {
+  const _ProgressCard({
+    required this.percent,
+    required this.ratio,
+    required this.completed,
+    required this.total,
+  });
+
+  final int percent;
+  final double ratio;
+  final int completed;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+        ),
+        boxShadow: AppColors.lightShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Progression',
+                style: AppTextStyles.titleMd.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$percent%',
+                style: AppTextStyles.titleMd.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 8,
+              backgroundColor: AppColors.surfaceHigh,
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isFree ? 'Formation gratuite' : 'Tarif',
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: color,
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  training.priceLabel,
-                  style: AppTextStyles.titleLg.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            '$completed sur $total leçon(s) terminée(s)',
+            style: AppTextStyles.bodySm,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LessonRow extends StatelessWidget {
+  const _LessonRow({
+    required this.index,
+    required this.lesson,
+    required this.isLocked,
+    required this.onTap,
+  });
+
+  final int index;
+  final TrainingModule lesson;
+  final bool isLocked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = AppColors.categoryPurple;
+    final subtitle =
+        lesson.duration > 0 ? '${lesson.duration} min' : lesson.typeLabel;
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.18),
             ),
           ),
-          if (hasCert) ...[
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.successDark.withValues(alpha: 0.10),
-                borderRadius: AppRadius.pill,
-                border: Border.all(
-                  color: AppColors.successDark.withValues(alpha: 0.30),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  lesson.isCompleted
+                      ? Icons.check_rounded
+                      : isLocked
+                          ? Icons.lock_outline_rounded
+                          : Icons.play_arrow_rounded,
+                  color: accent,
+                  size: 22,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    IconlyLight.shield_done,
-                    size: 13,
-                    color: AppColors.successDark,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lesson.title.isEmpty
+                          ? 'Leçon ${index.toString().padLeft(2, '0')}'
+                          : lesson.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleMd.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.bodyColor,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (lesson.isCompleted)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.successSoft,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Certifiée',
+                  child: Text(
+                    'Terminé',
                     style: AppTextStyles.labelSm.copyWith(
-                      color: AppColors.successDark,
-                      fontSize: 10,
+                      color: AppColors.successStrong,
                       fontWeight: FontWeight.w800,
+                      fontSize: 10,
                     ),
                   ),
-                ],
-              ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DescriptionTab extends StatelessWidget {
+  const _DescriptionTab({super.key, required this.training});
+
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _StatusChipsRow(training: training),
+        const SizedBox(height: 16),
+        _DetailSection(
+          title: 'Description',
+          icon: Icons.notes_rounded,
+          color: AppColors.categoryBlue,
+          child: Text(
+            training.description.isEmpty
+                ? 'Description non fournie.'
+                : training.description,
+            style: AppTextStyles.bodyMd.copyWith(
+              height: 1.5,
+              color: AppColors.bodyColor,
             ),
-          ],
-        ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _MetaGrid(training: training),
+        const SizedBox(height: 14),
+        _BulletSection(
+          title: 'Objectifs',
+          icon: Icons.flag_outlined,
+          color: AppColors.successDark,
+          items: training.objectives.isEmpty
+              ? const ['Objectifs non précisés.']
+              : training.objectives,
+        ),
+        const SizedBox(height: 14),
+        _BulletSection(
+          title: 'Prérequis',
+          icon: Icons.rule_rounded,
+          color: AppColors.categoryPurple,
+          items: training.requirements.isEmpty
+              ? const ['Prérequis non précisés.']
+              : training.requirements,
+        ),
+        const SizedBox(height: 14),
+        _DetailSection(
+          title: 'Contact',
+          icon: Icons.business_outlined,
+          color: AppColors.categoryPink,
+          child: Text(
+            training.providerName.isEmpty ? '—' : training.providerName,
+            style: AppTextStyles.titleMd.copyWith(color: AppColors.titleColor),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusChipsRow extends StatelessWidget {
+  const _StatusChipsRow({required this.training});
+
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        if (training.status.isNotEmpty)
+          _StatusChip(
+            text: training.status,
+            background: AppColors.successSoft,
+            textColor: AppColors.primary,
+          ),
+        if (training.level.isNotEmpty)
+          _StatusChip(
+            text: training.level,
+            background: AppColors.categoryBlueSoft,
+            textColor: AppColors.categoryBlue,
+          ),
+        if (training.format.isNotEmpty)
+          _StatusChip(
+            text: training.format,
+            background: AppColors.warningSoft,
+            textColor: AppColors.warning,
+          ),
+      ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.text,
+    required this.background,
+    required this.textColor,
+  });
+
+  final String text;
+  final Color background;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: AppTextStyles.labelSm.copyWith(
+          color: textColor,
+          letterSpacing: 0.2,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -573,444 +863,350 @@ class _MetaGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tiles = <Widget>[
-      _MetaTile(
-        icon: IconlyLight.profile,
-        label: 'Organisme',
-        value: training.providerName,
-        color: AppColors.categoryPurple,
-      ),
-      _MetaTile(
-        icon: IconlyLight.video,
-        label: 'Format',
-        value: training.format,
-        color: AppColors.categoryBlue,
-      ),
-      _MetaTile(
-        icon: IconlyLight.chart,
-        label: 'Niveau',
-        value: training.level,
-        color: AppColors.categoryOrange,
-      ),
-      _MetaTile(
-        icon: IconlyLight.time_circle,
-        label: 'Durée',
-        value: training.durationLabel,
+    final items = <_MetaEntry>[
+      _MetaEntry(
+        icon: IconlyLight.paper,
         color: AppColors.categoryCyan,
+        title: 'Modules',
+        value: '${training.modules.length} module(s)',
       ),
-      _MetaTile(
-        icon: IconlyLight.message,
-        label: 'Langue',
-        value: training.languageLabel,
+      _MetaEntry(
+        icon: IconlyLight.time_circle,
         color: AppColors.categoryPink,
+        title: 'Durée',
+        value: training.durationLabel,
       ),
-      _MetaTile(
+      _MetaEntry(
+        icon: IconlyLight.calendar,
+        color: AppColors.categoryPurple,
+        title: 'Début',
+        value: training.startDateLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.time_square,
+        color: AppColors.warning,
+        title: 'Limite',
+        value: training.deadlineLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.location,
+        color: AppColors.categoryBlue,
+        title: 'Lieu',
+        value: training.location,
+      ),
+      _MetaEntry(
+        icon: Icons.public_outlined,
+        color: AppColors.categoryGray,
+        title: 'Langue',
+        value: training.languageLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.wallet,
+        color: AppColors.categoryOrange,
+        title: 'Prix',
+        value: training.priceLabel,
+      ),
+      _MetaEntry(
+        icon: IconlyLight.shield_done,
+        color: AppColors.successDark,
+        title: 'Certificat',
+        value: training.certificationLabel,
+      ),
+      _MetaEntry(
         icon: IconlyLight.profile,
-        label: 'Inscrits',
+        color: AppColors.primaryMedium,
+        title: 'Inscrits',
         value: '${training.enrolledCount}',
-        color: AppColors.successStrong,
+      ),
+      _MetaEntry(
+        icon: IconlyBold.star,
+        color: AppColors.warning,
+        title: 'Note',
+        value: training.rating.toStringAsFixed(1),
       ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 10.0;
-        final tileWidth = (constraints.maxWidth - spacing) / 2;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: tiles
-              .map((t) => SizedBox(width: tileWidth, child: t))
-              .toList(),
-        );
-      },
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        mainAxisExtent: 96,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => _MetaTile(entry: items[index]),
     );
   }
+}
+
+class _MetaEntry {
+  const _MetaEntry({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String value;
 }
 
 class _MetaTile extends StatelessWidget {
-  const _MetaTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _MetaTile({required this.entry});
 
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
+  final _MetaEntry entry;
 
   @override
   Widget build(BuildContext context) {
-    return BrandCard(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      radius: 14,
-      borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
-      shadow: BrandCardShadow.none,
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: AppRadius.sm,
-            ),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.hintColor,
-                    fontSize: 9,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value.isEmpty ? '—' : value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleMd.copyWith(
-                    color: AppColors.titleColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.icon,
-    required this.title,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String title;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            borderRadius: AppRadius.sm,
-          ),
-          child: Icon(icon, color: color, size: 16),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: AppTextStyles.headlineSm.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BulletList extends StatelessWidget {
-  const _BulletList({
-    required this.items,
-    required this.color,
-    required this.icon,
-  });
-
-  final List<String> items;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: BrandCard(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
-        shadow: BrandCardShadow.none,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(items.length, (i) {
-            return Padding(
-              padding:
-                  EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Icon(icon, size: 16, color: color),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      items[i],
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.bodyColor,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModuleTile extends StatelessWidget {
-  const _ModuleTile({required this.index, required this.module});
-
-  final int index;
-  final TrainingModule module;
-
-  String _formatDuration(int minutes) {
-    if (minutes <= 0) return '';
-    if (minutes < 60) return '$minutes min';
-    final h = minutes ~/ 60;
-    final m = minutes % 60;
-    return m == 0 ? '${h}h' : '${h}h${m.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final duration = _formatDuration(module.duration);
-    final isCompleted = module.isCompleted;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isCompleted
-              ? AppColors.successStrong.withValues(alpha: 0.30)
-              : AppColors.outlineVariant.withValues(alpha: 0.18),
+          color: AppColors.outlineVariant.withValues(alpha: 0.18),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isCompleted
-                    ? [
-                        AppColors.successStrong,
-                        AppColors.successStrong.withValues(alpha: 0.7),
-                      ]
-                    : [
-                        AppColors.categoryBlue,
-                        AppColors.categoryBlue.withValues(alpha: 0.7),
-                      ],
-              ),
-              borderRadius: AppRadius.sm,
+              color: entry.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            alignment: Alignment.center,
-            child: isCompleted
-                ? const Icon(
-                    IconlyBold.tick_square,
-                    color: AppColors.onPrimary,
-                    size: 16,
-                  )
-                : Text(
-                    '$index',
-                    style: AppTextStyles.titleMd.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
+            child: Icon(entry.icon, color: entry.color, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  module.title.isEmpty ? 'Module $index' : module.title,
+                  entry.title.toUpperCase(),
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.hintColor,
+                    fontSize: 9,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  entry.value.isEmpty ? '—' : entry.value,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleMd.copyWith(
-                    fontWeight: FontWeight.w800,
+                    color: AppColors.titleColor,
                     fontSize: 13,
+                    height: 1.2,
                   ),
                 ),
-                if (module.description.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    module.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.bodyColor,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
-          if (duration.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
-                borderRadius: AppRadius.pill,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    IconlyLight.time_circle,
-                    size: 11,
-                    color: AppColors.hintColor,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    duration,
-                    style: AppTextStyles.labelSm.copyWith(
-                      color: AppColors.bodyColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _InfoStrip extends StatelessWidget {
-  const _InfoStrip({required this.training});
+class _DetailSection extends StatelessWidget {
+  const _DetailSection({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.child,
+  });
 
-  final Training training;
+  final String title;
+  final IconData icon;
+  final Color color;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    if (training.startDateLabel.isNotEmpty &&
-        !training.startDateLabel.toLowerCase().contains('non')) {
-      rows.add(_InfoRow(
-        icon: IconlyLight.calendar,
-        color: AppColors.categoryBlue,
-        label: training.startDateLabel,
-      ));
-    }
-    if (training.deadlineLabel.isNotEmpty &&
-        !training.deadlineLabel.toLowerCase().contains('pas de')) {
-      rows.add(_InfoRow(
-        icon: IconlyLight.time_circle,
-        color: AppColors.warning,
-        label: training.deadlineLabel,
-      ));
-    }
-    if (training.location.isNotEmpty) {
-      rows.add(_InfoRow(
-        icon: IconlyLight.location,
-        color: AppColors.categoryCyan,
-        label: training.location,
-      ));
-    }
-    if (training.contactLabel.isNotEmpty &&
-        !training.contactLabel.toLowerCase().contains('non')) {
-      rows.add(_InfoRow(
-        icon: IconlyLight.message,
-        color: AppColors.categoryPurple,
-        label: training.contactLabel,
-      ));
-    }
-
-    if (rows.isEmpty) return const SizedBox.shrink();
-
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      child: BrandCard(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        borderColor: AppColors.outlineVariant.withValues(alpha: 0.18),
-        shadow: BrandCardShadow.none,
-        child: Column(
-          children: List.generate(rows.length, (i) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: i == rows.length - 1 ? 0 : 10),
-              child: rows[i],
-            );
-          }),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.18),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(title, style: AppTextStyles.titleLg),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
+class _BulletSection extends StatelessWidget {
+  const _BulletSection({
+    required this.title,
     required this.icon,
     required this.color,
-    required this.label,
+    required this.items,
   });
 
+  final String title;
   final IconData icon;
   final Color color;
-  final String label;
+  final List<String> items;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            borderRadius: AppRadius.sm,
-          ),
-          child: Icon(icon, size: 14, color: color),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodyMd.copyWith(
-              color: AppColors.bodyColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
+    return _DetailSection(
+      title: title,
+      icon: icon,
+      color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: items
+            .map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: AppTextStyles.bodyMd.copyWith(
+                          height: 1.45,
+                          color: AppColors.bodyColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(growable: false),
+      ),
     );
+  }
+}
+
+/// Barre d'action bas : "Commencer/Revoir" si inscrit, "Suivre" si gratuit,
+/// message paiement si payant (le paiement en ligne n'est pas encore câblé).
+class _EnrollBottomBar extends StatelessWidget {
+  const _EnrollBottomBar({required this.training});
+
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TrainingDetailController>();
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+        child: Obx(() {
+          final isEnrolling = controller.isEnrolling.value;
+          final isEnrolled = controller.isEnrolled;
+          final hasModules = training.modules.isNotEmpty;
+          final completedAll =
+              hasModules && training.modules.every((m) => m.isCompleted);
+          final isPaid = training.price != null && training.price! > 0;
+
+          final label = isEnrolled
+              ? (!hasModules
+                  ? 'AUCUNE LEÇON DISPONIBLE'
+                  : completedAll
+                      ? 'REVOIR LA FORMATION'
+                      : 'COMMENCER MAINTENANT')
+              : (isPaid
+                  ? "S'INSCRIRE • ${training.priceLabel}"
+                  : 'SUIVRE LA FORMATION');
+
+          final disabled = isEnrolling || (isEnrolled && !hasModules);
+
+          return GradientButton(
+            label: label,
+            isLoading: isEnrolling,
+            textColor: AppColors.onPrimary,
+            height: 52,
+            borderRadius: 14,
+            onPressed: disabled
+                ? null
+                : () => _onPressed(context, controller, isEnrolled, isPaid),
+          );
+        }),
+      ),
+    );
+  }
+
+  Future<void> _onPressed(
+    BuildContext context,
+    TrainingDetailController controller,
+    bool isEnrolled,
+    bool isPaid,
+  ) async {
+    AppHaptics.tap();
+
+    if (isEnrolled) {
+      Get.toNamed<void>(
+        AppRoutes.trainingPlayer.replaceFirst(':id', training.id),
+      );
+      return;
+    }
+
+    if (isPaid) {
+      Get.to<void>(() => TrainingPaymentScreen(training: training));
+      return;
+    }
+
+    final success = await controller.enroll();
+    if (success) {
+      AppToast.success(
+        'Inscription confirmée',
+        'Vous êtes inscrit à "${training.title}".',
+      );
+    } else {
+      AppToast.error(
+        'Inscription impossible',
+        'Veuillez réessayer dans quelques instants.',
+      );
+    }
   }
 }
 
@@ -1037,156 +1233,42 @@ class _MinimalBackBar extends StatelessWidget {
   }
 }
 
-/// Barre d'action en bas — conserve la logique métier actuelle :
-///   • si l'utilisateur est inscrit → "Continuer la formation" qui ouvre le
-///     lecteur de parcours ([AppRoutes.trainingPlayer]).
-///   • sinon → "S'inscrire à la formation" qui appelle [enroll] et affiche un
-///     toast de succès / d'erreur.
-class _EnrollBottomBar extends StatelessWidget {
-  const _EnrollBottomBar({required this.training});
-
-  final Training training;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<TrainingDetailController>();
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          border: Border(
-            top: BorderSide(
-              color: AppColors.outlineVariant.withValues(alpha: 0.18),
-            ),
-          ),
-          boxShadow: AppColors.lightShadow,
-        ),
-        child: Obx(() {
-          final isEnrolling = controller.isEnrolling.value;
-          final isEnrolled = controller.isEnrolled || training.isEnrolled;
-
-          if (isEnrolled) {
-            return FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.successSoft,
-                foregroundColor: AppColors.successStrong,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.md,
-                  side: BorderSide(
-                    color: AppColors.successStrong.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-              onPressed: () {
-                AppHaptics.tap();
-                Get.toNamed<void>(
-                  AppRoutes.trainingPlayer.replaceFirst(':id', training.id),
-                );
-              },
-              icon: const Icon(IconlyBold.tick_square, size: 20),
-              label: Text(
-                'Continuer la formation',
-                style: AppTextStyles.buttonLg.copyWith(
-                  color: AppColors.successStrong,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            );
-          }
-
-          return FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
-              minimumSize: const Size.fromHeight(52),
-              shape: const RoundedRectangleBorder(
-                borderRadius: AppRadius.md,
-              ),
-            ),
-            onPressed: isEnrolling
-                ? null
-                : () async {
-                    AppHaptics.tap();
-                    final success = await controller.enroll();
-                    if (success) {
-                      AppToast.success(
-                        'Inscription confirmée',
-                        'Vous êtes inscrit à "${training.title}".',
-                      );
-                      // Accès immédiat au parcours après inscription.
-                      Get.toNamed<void>(
-                        AppRoutes.trainingPlayer
-                            .replaceFirst(':id', training.id),
-                      );
-                    } else {
-                      AppToast.error(
-                        'Inscription impossible',
-                        'Veuillez réessayer dans quelques instants.',
-                      );
-                    }
-                  },
-            icon: isEnrolling
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppColors.onPrimary),
-                    ),
-                  )
-                : const Icon(IconlyBold.bookmark, size: 20),
-            label: Text(
-              isEnrolling ? 'Inscription…' : "S'inscrire à la formation",
-              style: AppTextStyles.buttonLg.copyWith(
-                color: AppColors.onPrimary,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.3,
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
 /// Skeleton plein écran pendant le chargement initial du détail formation.
 class _TrainingDetailSkeleton extends StatelessWidget {
   const _TrainingDetailSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      children: const [
-        SkeletonBox(width: double.infinity, height: 280, radius: 0),
-        SizedBox(height: 18),
-        Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: SkeletonBox(height: 64, radius: 18),
-        ),
-        SizedBox(height: 14),
-        Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: Row(
+    return SafeArea(
+      bottom: false,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        physics: const NeverScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 42),
+          SizedBox(height: 12),
+          AspectRatio(
+            aspectRatio: 16 / 10,
+            child: SkeletonBox(width: double.infinity, radius: 24),
+          ),
+          SizedBox(height: 18),
+          SkeletonBox(width: 220, height: 24, radius: 8),
+          SizedBox(height: 10),
+          SkeletonBox(width: 140, height: 14, radius: 8),
+          SizedBox(height: 18),
+          Row(
             children: [
-              Expanded(child: SkeletonBox(height: 60, radius: 14)),
-              SizedBox(width: 10),
-              Expanded(child: SkeletonBox(height: 60, radius: 14)),
+              Expanded(child: SkeletonBox(height: 48, radius: 14)),
+              SizedBox(width: 12),
+              Expanded(child: SkeletonBox(height: 48, radius: 14)),
             ],
           ),
-        ),
-        SizedBox(height: 22),
-        Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-          child: SkeletonBox(height: 140, radius: 18),
-        ),
-      ],
+          SizedBox(height: 16),
+          SkeletonBox(height: 70, radius: 16),
+          SizedBox(height: 12),
+          SkeletonBox(height: 70, radius: 16),
+        ],
+      ),
     );
   }
 }

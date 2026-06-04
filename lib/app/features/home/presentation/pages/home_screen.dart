@@ -333,19 +333,39 @@ class _HomeBottomNav extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => NavigationBar(
-        selectedIndex: controller.currentTabIndex.value,
-        onDestinationSelected: (index) {
-          AppHaptics.tap();
-          controller.changeTab(index);
-        },
-        backgroundColor: AppColors.surfaceCard,
-        indicatorColor: AppColors.surfaceSelected,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        height: 64,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        destinations: const [
+      () => NavigationBarTheme(
+        data: NavigationBarThemeData(
+          // État actif clairement visible : icône + label en vert marque.
+          iconTheme: WidgetStateProperty.resolveWith(
+            (states) => IconThemeData(
+              color: states.contains(WidgetState.selected)
+                  ? AppColors.primary
+                  : AppColors.hintColor,
+            ),
+          ),
+          labelTextStyle: WidgetStateProperty.resolveWith(
+            (states) => AppTextStyles.labelSm.copyWith(
+              color: states.contains(WidgetState.selected)
+                  ? AppColors.primary
+                  : AppColors.hintColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: controller.currentTabIndex.value,
+          onDestinationSelected: (index) {
+            AppHaptics.tap();
+            controller.changeTab(index);
+          },
+          backgroundColor: AppColors.surfaceCard,
+          // Pastille indicatrice teintée marque (au lieu d'un gris quasi invisible).
+          indicatorColor: AppColors.primary.withValues(alpha: 0.16),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+          destinations: const [
           NavigationDestination(
             icon: Icon(IconlyLight.home),
             selectedIcon: Icon(IconlyBold.home),
@@ -372,6 +392,7 @@ class _HomeBottomNav extends GetView<HomeController> {
             label: 'Profil',
           ),
         ],
+        ),
       ),
     );
   }

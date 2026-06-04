@@ -7,6 +7,7 @@ import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:opportune_bf/routes/app_routes.dart';
 
 import '../controllers/profile_controller.dart';
 
@@ -127,6 +128,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: cityController,
                         icon: IconlyLight.location,
                       ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ParcoursTile(
+                        onTap: () {
+                          AppHaptics.tap();
+                          Get.toNamed(AppRoutes.profileParcours);
+                        },
+                      ),
                       const SizedBox(height: AppSpacing.xxl),
                       Obx(() => AuthCtaButton(
                             label: 'Mettre à jour mon profil',
@@ -177,6 +185,67 @@ class _ProfileInitials extends StatelessWidget {
             color: AppColors.onPrimary,
             fontSize: 42,
             fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Entrée vers l'éditeur de parcours (expériences & formations).
+class _ParcoursTile extends StatelessWidget {
+  const _ParcoursTile({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(IconlyLight.work, color: AppColors.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Expériences & formations',
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ajoutez ou modifiez votre parcours',
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.hintColor),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.outlineVariant),
+            ],
           ),
         ),
       ),

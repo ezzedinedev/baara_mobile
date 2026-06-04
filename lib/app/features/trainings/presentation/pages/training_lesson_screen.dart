@@ -550,46 +550,55 @@ class _MediaErrorPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = onLight ? AppColors.onPrimary : AppColors.bodyColor;
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.warning.withValues(alpha: 0.14),
+    // SingleChildScrollView + mainAxisSize.min : ne déborde jamais, même dans
+    // une boîte média 16:9 étroite.
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warning.withValues(alpha: 0.14),
+              ),
+              child: Icon(icon, color: AppColors.warning, size: 24),
             ),
-            child: Icon(icon, color: AppColors.warning, size: 28),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.titleMd.copyWith(
-              fontWeight: FontWeight.w800,
-              color: onLight ? AppColors.onPrimary : AppColors.titleColor,
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.titleMd.copyWith(
+                fontWeight: FontWeight.w800,
+                color: onLight ? AppColors.onPrimary : AppColors.titleColor,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySm.copyWith(color: textColor, height: 1.4),
-          ),
-          const SizedBox(height: 14),
-          TextButton.icon(
-            onPressed: () {
-              AppHaptics.tap();
-              onRetry();
-            },
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Réessayer'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  AppTextStyles.bodySm.copyWith(color: textColor, height: 1.35),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () {
+                AppHaptics.tap();
+                onRetry();
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Réessayer'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -670,7 +679,8 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
               ? _MediaErrorPane(
                   icon: Icons.videocam_off_rounded,
                   title: 'Lecture impossible',
-                  message: _error!.replaceFirst('Exception: ', ''),
+                  message:
+                      'La vidéo n\'a pas pu être lue. Vérifiez votre connexion puis réessayez.',
                   onLight: true,
                   onRetry: () {
                     setState(() => _error = null);

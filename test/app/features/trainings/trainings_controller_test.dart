@@ -25,6 +25,14 @@ class _FakeTrainingRepository implements ITrainingRepository {
     required Set<String> completedModuleIds,
   }) async =>
       true;
+
+  @override
+  Future<({bool success, String? message})> payTraining(
+    String trainingId, {
+    required String provider,
+    required String phone,
+  }) async =>
+      (success: true, message: null);
 }
 
 Training _training(String id, String title) {

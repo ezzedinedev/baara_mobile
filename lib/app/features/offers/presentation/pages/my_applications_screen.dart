@@ -50,7 +50,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
           WavyContentHeader(
             title: 'Mes candidatures',
             subtitle: 'Suivez l\'avancement de vos postulations',
-            height: 200,
+            height: 230,
             gradient: AppColors.heroOffersGradient,
             onLeadingTap: () => Get.back(),
           ),

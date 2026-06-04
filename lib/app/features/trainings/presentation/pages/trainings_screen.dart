@@ -50,44 +50,21 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: ScrollToTopFab(controller: _scrollController),
-      body: Column(
-        children: [
-          RevealOnMount(
-            duration: const Duration(milliseconds: 540),
-            offsetY: 18,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                WavyContentHeader(
-                  title: 'Formations',
-                  subtitle: 'Parcours pour renforcer votre employabilité.',
-                  gradient: AppColors.heroTrainingsGradient,
-                  showLeading: false,
-                  actions: [
-                    WavyHeaderActionButton(
-                      icon: IconlyLight.filter,
-                      onTap: () {
-                        AppHaptics.tap();
-                      },
-                    ),
-                  ],
-                ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: -28,
-                  child: AppSearchBar(
-                    controller: _searchController,
-                    hint: 'Rechercher une formation, organisme...',
-                    onChanged: (v) => _query.value = v,
-                  ),
-                ),
-              ],
-            ),
+      body: SankTabShell(
+        title: 'Formations',
+        subtitle: 'Parcours pour renforcer votre employabilité.',
+        headerActions: [
+          AppIconButton(
+            icon: IconlyLight.filter,
+            onTap: () => AppHaptics.tap(),
           ),
-          const SizedBox(height: 36),
-          Expanded(
-            child: Obx(() {
+        ],
+        headerChild: AppSearchBar(
+          controller: _searchController,
+          hint: 'Rechercher une formation, organisme...',
+          onChanged: (v) => _query.value = v,
+        ),
+        body: Obx(() {
               final isLoading = controller.isLoading.value;
               _query.value; // dépendance réactive pour le filtre local.
               final trainings = controller.trainings
@@ -204,8 +181,6 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
                 ),
               );
             }),
-          ),
-        ],
       ),
     );
   }

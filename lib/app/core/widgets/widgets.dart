@@ -21,6 +21,7 @@ export 'common/confirm_sheet.dart';
 export 'common/press_scale.dart';
 export 'common/sank_sheet_scaffold.dart';
 export 'common/app_icon_button.dart';
+export 'common/app_back_button.dart';
 export 'common/action_tile.dart';
 export 'common/soft_circle_icon.dart';
 export 'common/app_toast.dart';

@@ -19,12 +19,30 @@ class CvBuilderLandingScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          WavyContentHeader(
-            title: 'Créer mon CV',
-            subtitle: 'Choisissez la méthode qui vous convient',
-            height: 200,
-            gradient: AppColors.heroProfileGradient,
-            onLeadingTap: () => Get.back(),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              child: Row(
+                children: [
+                  AppBackButton(onTap: () => Get.back<void>()),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Créer mon CV',
+                            style: AppTextStyles.titleLg
+                                .copyWith(fontWeight: FontWeight.w800)),
+                        Text('Choisissez la méthode qui vous convient',
+                            style: AppTextStyles.bodySm
+                                .copyWith(color: AppColors.hintColor)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           Expanded(
             child: ListView(

@@ -14,6 +14,8 @@ abstract class AppRoutes {
   static const home = '/accueil';
   static const profile = '/profile';
   static const profileEdit = '/profile/edit';
+  static const profileParcours = '/profile/parcours';
+  static const profileDocuments = '/profile/documents';
   static const profilePreferences = '/profile/preferences';
   static const profileCv = '/profile/cv';
   static const profileCvBuilder = '/profile/cv-builder';

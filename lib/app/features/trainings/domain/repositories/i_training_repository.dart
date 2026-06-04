@@ -13,4 +13,12 @@ abstract class ITrainingRepository {
     String trainingId, {
     required Set<String> completedModuleIds,
   });
+
+  /// Paiement (mobile money) d'une formation payante.
+  /// [provider] ∈ {orange, moov, wave}. Retourne le succès + message backend.
+  Future<({bool success, String? message})> payTraining(
+    String trainingId, {
+    required String provider,
+    required String phone,
+  });
 }

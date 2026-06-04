@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
-import '../../utils/haptics.dart';
-import 'app_icon_button.dart';
+import 'app_back_button.dart';
 
 /// Sous-page (paramètres, édition profil…) : bandeau vert uni + feuille blanche.
 class SankSheetScaffold extends StatelessWidget {
@@ -42,15 +41,7 @@ class SankSheetScaffold extends StatelessWidget {
                 child: Row(
                   children: [
                     if (showBack)
-                      AppIconButton(
-                        onBrandHeader: true,
-                        icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: onBack ??
-                            () {
-                              AppHaptics.tap();
-                              Navigator.of(context).maybePop();
-                            },
-                      )
+                      AppBackButton(onDark: true, onTap: onBack)
                     else
                       const SizedBox(width: 42),
                     Expanded(

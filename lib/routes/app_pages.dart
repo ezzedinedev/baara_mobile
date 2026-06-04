@@ -56,8 +56,12 @@ import 'package:opportune_bf/app/features/notifications/presentation/pages/notif
 
 // ── Profile ──
 import 'package:opportune_bf/app/features/profile/presentation/bindings/profile_binding.dart';
+import 'package:opportune_bf/app/features/profile/presentation/bindings/documents_binding.dart';
+import 'package:opportune_bf/app/features/profile/presentation/bindings/parcours_editor_binding.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/profile_edit_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/documents_screen.dart';
+import 'package:opportune_bf/app/features/profile/presentation/pages/parcours_editor_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/settings_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/bindings/cv_builder_binding.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_screen.dart';
@@ -230,6 +234,18 @@ class AppPages {
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 260),
       curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.profileDocuments,
+      page: () => const DocumentsScreen(),
+      binding: DocumentsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.profileParcours,
+      page: () => const ParcoursEditorScreen(),
+      binding: ParcoursEditorBinding(),
+      transition: Transition.rightToLeft,
     ),
     GetPage(
       name: AppRoutes.profilePreferences,

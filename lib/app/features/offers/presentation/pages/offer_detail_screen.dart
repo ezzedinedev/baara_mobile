@@ -6,6 +6,7 @@ import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../controllers/offer_detail_controller.dart';
+import '../widgets/offer_boost_badge.dart';
 import '../../domain/entities/offer.dart';
 
 class OfferDetailScreen extends GetView<OfferDetailController> {
@@ -39,8 +40,6 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildAiMatchBanner(),
-                        const SizedBox(height: 24),
                         _buildMainInfo(offer),
                         const SizedBox(height: 32),
                         _buildSectionTitle('À propos de l\'offre'),
@@ -79,21 +78,19 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
       pinned: true,
       backgroundColor: AppColors.primary,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-        onPressed: () => Get.back(),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: AppBackButton(onDark: true, onTap: () => Get.back<void>()),
       ),
+      leadingWidth: 60,
       actions: [
-        Obx(() => IconButton(
-          icon: const Icon(
-            IconlyLight.bookmark,
-            color: Colors.white,
-          ),
-            onPressed: () {
-              AppHaptics.tap();
-              controller.toggleSave();
-            },
-        )),
+        IconButton(
+          icon: const Icon(IconlyLight.bookmark, color: Colors.white),
+          onPressed: () {
+            AppHaptics.tap();
+            controller.toggleSave();
+          },
+        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -123,62 +120,17 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
     );
   }
 
-  Widget _buildAiMatchBanner() {
-    return Obx(() {
-      if (controller.isAiLoading.value) {
-        return const SkeletonBox(height: 60, radius: 16);
-      }
-
-      final score = controller.aiMatchScore.value;
-      if (score == null) return const SizedBox.shrink();
-
-      final percentage = (score.score * 100).toInt();
-      final Color scoreColor = percentage > 70 ? AppColors.success : (percentage > 40 ? AppColors.warning : AppColors.error);
-
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: scoreColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scoreColor.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: scoreColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(IconlyBold.discovery, color: scoreColor, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Match IA : $percentage%',
-                    style: AppTextStyles.titleMd.copyWith(color: scoreColor, fontWeight: FontWeight.w900),
-                  ),
-                  Text(
-                    'Basé sur votre profil et vos compétences.',
-                    style: AppTextStyles.bodySm.copyWith(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: scoreColor),
-          ],
-        ),
-      );
-    });
-  }
-
   Widget _buildMainInfo(Offer offer) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (offer.isBoosted && offer.boostTier > 0) ...[
+          OfferBoostBadge(
+            tier: offer.boostTier,
+            label: offer.boostLabel ?? 'À la une',
+          ),
+          const SizedBox(height: 10),
+        ],
         Text(
           offer.title,
           style: AppTextStyles.displayMd.copyWith(fontSize: 24, height: 1.2),
@@ -189,11 +141,17 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 16),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            _InfoTile(icon: IconlyLight.location, label: offer.location),
-            const SizedBox(width: 16),
-            const _InfoTile(icon: IconlyLight.calendar, label: 'Publié il y a 2j'),
+            _InfoPill(icon: IconlyLight.location, label: offer.location),
+            if (offer.contractType.isNotEmpty)
+              _InfoPill(icon: IconlyLight.work, label: offer.contractType),
+            if (offer.salary.isNotEmpty)
+              _InfoPill(icon: IconlyLight.wallet, label: offer.salary),
+            if (offer.isRemote)
+              _InfoPill(icon: IconlyLight.location, label: 'Télétravail'),
           ],
         ),
       ],
@@ -262,19 +220,36 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
   }
 }
 
-class _InfoTile extends StatelessWidget {
+class _InfoPill extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _InfoTile({required this.icon, required this.label});
+  const _InfoPill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppColors.hintColor),
-        const SizedBox(width: 6),
-        Text(label, style: AppTextStyles.bodySm.copyWith(fontWeight: FontWeight.w600)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLow,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: AppTextStyles.bodySm.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.bodyColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
