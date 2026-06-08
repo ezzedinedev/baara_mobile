@@ -1,17 +1,12 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../core/constants/api_constants.dart';
 import '../core/network/api_provider.dart';
 import '../core/services/auth_token_store.dart';
+import '../core/services/realtime_service.dart';
 import '../core/theme/app_theme_controller.dart';
 import '../../routes/app_routes.dart';
 
-/// Initial binding : enregistre les services partagés (theme controller,
-/// token store, ApiProvider avec refresh) avant le `runApp`.
-///
-/// Tous les `Get.put(..., permanent: true)` qui doivent vivre tant que
-/// l'app tourne passent par ici. Garde `main.dart` minimal.
 class InitialBinding extends Bindings {
   @override
   Future<void> dependencies() async {
@@ -43,11 +38,13 @@ class InitialBinding extends Bindings {
       },
     );
     Get.put(apiProvider, permanent: true);
+
+    // Service temps réel (Reverb). Enregistré ici pour toujours être
+    // trouvable (start au home, stop au logout) ; ne se connecte qu'une
+    // fois une session présente.
+    Get.put(RealtimeService(), permanent: true);
   }
 
-  /// Refresh token via POST /auth/refresh : on poste avec le token courant
-  /// dans Authorization, le backend renvoie un nouveau token Sanctum qu'on
-  /// remplace dans le secure storage. En cas d'echec → null → onAuthFailed.
   Future<String?> _refreshToken(
     ApiProvider provider,
     AuthTokenStore tokenStore,

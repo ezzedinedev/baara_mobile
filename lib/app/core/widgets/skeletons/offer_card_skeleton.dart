@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import 'skeleton_box.dart';
 
-/// Skeleton aligne sur le _OfferCard v2 : avatar + posted + titre + bandeau
-/// salaire + meta-chips + skills + footer.
+
+
 class OfferCardSkeleton extends StatelessWidget {
   const OfferCardSkeleton({super.key, this.height = 280});
 

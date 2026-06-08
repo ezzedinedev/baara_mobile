@@ -1,6 +1,7 @@
 import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import '../../domain/entities/offer.dart';
+import '../../domain/entities/matched_offer.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 import '../models/offer_model.dart';
 import '../models/application_model.dart';
@@ -83,6 +84,35 @@ class OfferRepositoryImpl implements IOfferRepository {
       }
       return [];
     } catch (e) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MatchedOffer>> getMatchedOffers({int limit = 20}) async {
+    try {
+      final response =
+          await _apiProvider.getJson('${ApiConstants.aiMatchFeed}?limit=$limit');
+      if (response['success'] != true) return [];
+      final data = response['data'] as Map<String, dynamic>? ?? const {};
+      final offers = data['offers'] as List? ?? const [];
+      return offers
+          .whereType<Map<String, dynamic>>()
+          .map((j) {
+            final raw = (j['match_score'] as num?)?.toDouble() ?? 0;
+            final score = (raw <= 1 ? raw * 100 : raw).round().clamp(0, 100);
+            return MatchedOffer(
+              id: j['id']?.toString() ?? '',
+              title: j['title']?.toString() ?? '',
+              company: j['company_name']?.toString() ?? '',
+              location: j['location']?.toString() ?? '',
+              score: score,
+              explanation: j['match_explanation']?.toString() ?? '',
+            );
+          })
+          .where((m) => m.id.isNotEmpty)
+          .toList();
+    } catch (_) {
       return [];
     }
   }

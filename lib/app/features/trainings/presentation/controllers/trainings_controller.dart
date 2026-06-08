@@ -15,13 +15,41 @@ class TrainingsController extends GetxController {
 
   final searchQuery = ''.obs;
 
+  // ── Filtres (client-side) ──────────────────────────────────────────────
+  final activeFormat = RxnString();
+  final activeLevel = RxnString();
+  final freeOnly = false.obs;
+
+  bool get hasActiveFilter =>
+      activeFormat.value != null || activeLevel.value != null || freeOnly.value;
+
+  void clearFilters() {
+    activeFormat.value = null;
+    activeLevel.value = null;
+    freeOnly.value = false;
+  }
+
+  bool _isFree(Training t) =>
+      (t.price != null && t.price! <= 0) ||
+      t.priceLabel.toLowerCase().contains('gratuit');
+
   List<Training> get filteredTrainings {
     final query = searchQuery.value.trim().toLowerCase();
-    if (query.isEmpty) return trainings;
     return trainings.where((t) {
-      return t.title.toLowerCase().contains(query) ||
-          t.providerName.toLowerCase().contains(query) ||
-          t.sector.toLowerCase().contains(query);
+      if (activeFormat.value != null && t.format != activeFormat.value) {
+        return false;
+      }
+      if (activeLevel.value != null && t.level != activeLevel.value) {
+        return false;
+      }
+      if (freeOnly.value && !_isFree(t)) return false;
+      if (query.isNotEmpty) {
+        final match = t.title.toLowerCase().contains(query) ||
+            t.providerName.toLowerCase().contains(query) ||
+            t.sector.toLowerCase().contains(query);
+        if (!match) return false;
+      }
+      return true;
     }).toList();
   }
 

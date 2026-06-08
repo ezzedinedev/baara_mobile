@@ -105,11 +105,14 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 40),
-                  BrandAvatar(
-                    seed: offer.company,
-                    label: offer.company,
-                    size: 80,
-                    imageUrl: offer.companyLogo,
+                  Hero(
+                    tag: 'offer-logo-${offer.id}',
+                    child: BrandAvatar(
+                      seed: offer.company,
+                      label: offer.company,
+                      size: 80,
+                      imageUrl: offer.companyLogo,
+                    ),
                   ),
                 ],
               ),
@@ -263,8 +266,10 @@ class _SkillChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.1)),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.12),
+        ),
       ),
       child: Text(
         label,

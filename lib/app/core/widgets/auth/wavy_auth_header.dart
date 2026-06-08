@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 import '../common/app_icon_button.dart';
 import '../common/wavy_decorations.dart';
 
-/// Header auth avec un dégradé primaire + texture topographique + séparateur
-/// en vague vers le contenu blanc en dessous. Utilisé par la landing page,
-/// sign up, et les écrans de login.
-///
 /// [height] contrôle la hauteur totale (landing = ~60% écran, sign up = ~35%).
 /// [showLeading] affiche une flèche retour à gauche.
 /// [title]/[subtitle] sont affichés centrés au sein du header (s'ils sont

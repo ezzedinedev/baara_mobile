@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:opportune_bf/app/features/offers/data/models/application_model.dart';
 import 'package:opportune_bf/app/features/offers/data/models/upcoming_interview_model.dart';
 import 'package:opportune_bf/app/features/offers/domain/entities/offer.dart';
+import 'package:opportune_bf/app/features/offers/domain/entities/matched_offer.dart';
 import 'package:opportune_bf/app/features/offers/domain/repositories/i_offer_repository.dart';
 import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_detail_controller.dart';
 
@@ -16,6 +17,9 @@ class _FakeOfferRepository implements IOfferRepository {
 
   @override
   Future<List<Offer>> getFeaturedOffers() async => [];
+
+  @override
+  Future<List<MatchedOffer>> getMatchedOffers({int limit = 20}) async => [];
 
   @override
   Future<bool> saveOffer(String offerId) async => true;

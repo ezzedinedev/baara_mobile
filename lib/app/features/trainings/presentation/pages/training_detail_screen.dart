@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -13,8 +14,8 @@ import '../../domain/entities/training.dart';
 import '../controllers/training_detail_controller.dart';
 import 'training_payment_screen.dart';
 
-/// Détail d'une formation — design "MasterClass" restauré : hero banner violet
-/// + bouton play, onglets Contenu / Description, barre de progression et liste
+/// Détail d'une formation — design "MasterClass" : hero banner aux couleurs de
+/// marque + bouton play, onglets Contenu / Description, barre de progression et liste
 /// de leçons, CTA bas (S'inscrire / Commencer). La logique métier reste celle
 /// du [TrainingDetailController] (chargement, inscription, accès au parcours).
 class TrainingDetailScreen extends GetView<TrainingDetailController> {
@@ -83,7 +84,8 @@ class _TrainingDetailContentState extends State<_TrainingDetailContent> {
       bottom: false,
       child: AnimationLimiter(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 120),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 120),
           children: AnimationConfiguration.toStaggeredList(
             duration: const Duration(milliseconds: 320),
             childAnimationBuilder: (child) => SlideAnimation(
@@ -158,40 +160,10 @@ class _DetailTopBar extends StatelessWidget {
           style: AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
         ),
         const Spacer(),
-        _CircleIconButton(
-          icon: Icons.notifications_none_rounded,
-          onTap: () => AppHaptics.tap(),
-        ),
+        // Espace équilibré (largeur du bouton retour) pour garder le titre
+        // centré, sans contrôle décoratif inutile.
+        const SizedBox(width: 42),
       ],
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceCard,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.18),
-            ),
-          ),
-          child: Icon(icon, color: AppColors.titleColor, size: 22),
-        ),
-      ),
     );
   }
 }
@@ -213,16 +185,16 @@ class _CourseHeroBanner extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.categoryPurple,
-              AppColors.categoryPurpleDeep,
-              AppColors.categoryCyan,
+              AppColors.primaryDark,
+              AppColors.primary,
+              AppColors.primaryMedium,
             ],
             stops: [0.0, 0.55, 1.0],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.categoryPurpleDeep.withValues(alpha: 0.32),
+              color: AppColors.primaryDark.withValues(alpha: 0.32),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),
@@ -233,10 +205,13 @@ class _CourseHeroBanner extends StatelessWidget {
           children: [
             if (hasCover)
               Positioned.fill(
-                child: Image.network(
-                  training.coverUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                child: Hero(
+                  tag: 'training-cover-${training.id}',
+                  child: Image.network(
+                    training.coverUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
             if (hasCover)
@@ -247,9 +222,9 @@ class _CourseHeroBanner extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppColors.categoryPurple.withValues(alpha: 0.55),
-                        AppColors.categoryPurpleDeep.withValues(alpha: 0.50),
-                        AppColors.categoryCyan.withValues(alpha: 0.40),
+                        AppColors.primaryDark.withValues(alpha: 0.60),
+                        AppColors.primary.withValues(alpha: 0.48),
+                        AppColors.primaryMedium.withValues(alpha: 0.38),
                       ],
                     ),
                   ),
@@ -307,7 +282,11 @@ class _CourseHeroBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _bannerTitle.toUpperCase(),
+                    training.title.trim().isEmpty
+                        ? 'FORMATION'
+                        : training.title.trim().toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.titleLg.copyWith(
                       color: AppColors.onPrimary,
                       fontWeight: FontWeight.w800,
@@ -353,15 +332,6 @@ class _CourseHeroBanner extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String get _bannerTitle {
-    final raw = training.title.trim();
-    if (raw.isEmpty) return 'Formation';
-    final firstLine = raw.split('\n').first;
-    return firstLine.length > 28
-        ? firstLine.substring(0, 28).trimRight()
-        : firstLine;
   }
 }
 
@@ -455,8 +425,8 @@ class _TabButton extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppColors.categoryPurple,
-                      AppColors.categoryPurpleDeep,
+                      AppColors.primary,
+                      AppColors.primaryDark,
                     ],
                   )
                 : null,
@@ -465,8 +435,7 @@ class _TabButton extends StatelessWidget {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color:
-                          AppColors.categoryPurpleDeep.withValues(alpha: 0.32),
+                      color: AppColors.primaryDark.withValues(alpha: 0.30),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -642,7 +611,7 @@ class _LessonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = AppColors.categoryPurple;
+    const accent = AppColors.primary;
     final subtitle =
         lesson.duration > 0 ? '${lesson.duration} min' : lesson.typeLabel;
     return Material(
@@ -770,7 +739,7 @@ class _DescriptionTab extends StatelessWidget {
         _BulletSection(
           title: 'Prérequis',
           icon: Icons.rule_rounded,
-          color: AppColors.categoryPurple,
+          color: AppColors.secondary,
           items: training.requirements.isEmpty
               ? const ['Prérequis non précisés.']
               : training.requirements,
@@ -878,7 +847,7 @@ class _MetaGrid extends StatelessWidget {
       ),
       _MetaEntry(
         icon: IconlyLight.calendar,
-        color: AppColors.categoryPurple,
+        color: AppColors.secondary,
         title: 'Début',
         value: training.startDateLabel,
       ),
@@ -934,7 +903,7 @@ class _MetaGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        mainAxisExtent: 96,
+        mainAxisExtent: 106,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) => _MetaTile(entry: items[index]),
@@ -973,32 +942,33 @@ class _MetaTile extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: entry.color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(entry.icon, color: entry.color, size: 18),
+            child: Icon(entry.icon, color: entry.color, size: 19),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   entry.title.toUpperCase(),
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.hintColor,
-                    fontSize: 9,
-                    letterSpacing: 1.1,
+                    fontSize: 9.5,
+                    letterSpacing: 1.0,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   entry.value.isEmpty ? '—' : entry.value,
                   maxLines: 2,
@@ -1139,7 +1109,8 @@ class _EnrollBottomBar extends StatelessWidget {
     final controller = Get.find<TrainingDetailController>();
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
         child: Obx(() {
           final isEnrolling = controller.isEnrolling.value;
           final isEnrolled = controller.isEnrolled;
@@ -1242,14 +1213,15 @@ class _TrainingDetailSkeleton extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xxl),
         physics: const NeverScrollableScrollPhysics(),
         children: const [
           SizedBox(height: 42),
           SizedBox(height: 12),
           AspectRatio(
             aspectRatio: 16 / 10,
-            child: SkeletonBox(width: double.infinity, radius: 24),
+            child: SkeletonBox(width: double.infinity, radius: AppRadius.xl),
           ),
           SizedBox(height: 18),
           SkeletonBox(width: 220, height: 24, radius: 8),

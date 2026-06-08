@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-/// Bottom sheet de confirmation moderne — remplace `showDialog<bool>` /
-/// `AlertDialog` pour toute action destructive ou validation forte.
-/// Drag handle + icone halo + titre + message + 2 CTA (Annuler / Confirmer).
+
 Future<bool?> showConfirmSheet({
   required BuildContext context,
   required IconData icon,

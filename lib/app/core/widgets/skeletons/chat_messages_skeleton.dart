@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'skeleton_box.dart';
 
-/// Skeleton d'une conversation : bulles alternées gauche/droite, largeurs
-/// variées pour un rendu naturel. Remplace un spinner plein écran pendant le
-/// chargement des messages (chat recruteur, assistant IA).
+
 class ChatMessagesSkeleton extends StatelessWidget {
   const ChatMessagesSkeleton({super.key, this.itemCount = 7});
 

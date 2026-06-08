@@ -49,6 +49,11 @@ import 'package:opportune_bf/app/features/trainings/presentation/pages/training_
 import 'package:opportune_bf/app/features/messaging/presentation/bindings/messaging_binding.dart';
 import 'package:opportune_bf/app/features/messaging/presentation/pages/messages_screen.dart';
 import 'package:opportune_bf/app/features/messaging/presentation/pages/chat_thread_screen.dart';
+import 'package:opportune_bf/app/features/community/presentation/bindings/community_binding.dart';
+import 'package:opportune_bf/app/features/community/presentation/pages/community_feed_screen.dart';
+import 'package:opportune_bf/app/features/community/presentation/pages/community_profile_screen.dart';
+import 'package:opportune_bf/app/features/community/presentation/pages/community_search_screen.dart';
+import 'package:opportune_bf/app/features/community/presentation/pages/community_connections_screen.dart';
 
 // ── Notifications ──
 import 'package:opportune_bf/app/features/notifications/presentation/bindings/notifications_binding.dart';
@@ -222,6 +227,30 @@ class AppPages {
       transition: Transition.rightToLeft,
     ),
     GetPage(
+      name: AppRoutes.community,
+      page: () => const CommunityFeedScreen(),
+      binding: CommunityBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.communityProfile,
+      page: () => const CommunityProfileScreen(),
+      binding: CommunityBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.communitySearch,
+      page: () => const CommunitySearchScreen(),
+      binding: CommunityBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.communityConnections,
+      page: () => const CommunityConnectionsScreen(),
+      binding: CommunityBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
       name: AppRoutes.profile,
       page: () => const ProfileScreen(),
       binding: ProfileBinding(),
@@ -245,12 +274,6 @@ class AppPages {
       name: AppRoutes.profileParcours,
       page: () => const ParcoursEditorScreen(),
       binding: ParcoursEditorBinding(),
-      transition: Transition.rightToLeft,
-    ),
-    GetPage(
-      name: AppRoutes.profilePreferences,
-      page: () => const SizedBox(),
-      binding: ProfileBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(

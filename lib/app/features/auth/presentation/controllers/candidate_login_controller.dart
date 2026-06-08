@@ -19,6 +19,10 @@ class CandidateLoginController extends GetxController {
 
   final isLoading = false.obs;
   final errorMsg = ''.obs;
+  final _loginAttempts = 0.obs;
+  final _loginCooldown = false.obs;
+  static const int _maxAttempts = 5;
+  static const Duration _cooldownDuration = Duration(seconds: 30);
 
   @override
   void onClose() {
@@ -28,6 +32,10 @@ class CandidateLoginController extends GetxController {
   }
 
   Future<void> loginWithEmail() async {
+    if (_loginCooldown.value) {
+      errorMsg.value = 'Trop de tentatives. Réessayez dans 30s.';
+      return;
+    }
     final form = formKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -35,9 +43,18 @@ class CandidateLoginController extends GetxController {
       isLoading.value = true;
       errorMsg.value = '';
       await _authRepository.loginWithEmail(emailCtrl.text.trim(), passwordCtrl.text);
+      _loginAttempts.value = 0;
       Get.offAllNamed(AppRoutes.home);
     } catch (e) {
+      _loginAttempts.value++;
       errorMsg.value = userFacingError(e);
+      if (_loginAttempts.value >= _maxAttempts) {
+        _loginCooldown.value = true;
+        _loginAttempts.value = 0;
+        Future.delayed(_cooldownDuration, () {
+          _loginCooldown.value = false;
+        });
+      }
     } finally {
       isLoading.value = false;
     }

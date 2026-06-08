@@ -188,11 +188,6 @@ class FcmService extends GetxService {
     final data = message.data;
     final shortType = _shortenType(data['notifiable_type']?.toString());
     final targetId = data['notifiable_id']?.toString();
-
-    // Real-time chat sans WebSocket : si le push concerne une
-    // conversation, on declenche immediatement les refresh in-app
-    // (inbox + thread) pour mettre a jour la liste, le badge non-lus
-    // et le thread actif. Donne un feel WhatsApp avec FCM only.
     var suppressBanner = false;
     if (shortType == 'conversation' &&
         targetId != null &&
@@ -201,9 +196,6 @@ class FcmService extends GetxService {
       final home = Get.find<HomeController>();
       // Inbox : reload pour MAJ unreadCounters + lastMessage des cards.
       home.loadConversations();
-      // Thread actif : si l'utilisateur est DANS la conversation
-      // concernee, on recharge ses messages et on supprime le banner
-      // (pas la peine de le notifier — il voit deja l'ecran).
       if (home.activeConversationId.value == targetId) {
         home.loadConversationThread(targetId);
         suppressBanner = true;
@@ -231,10 +223,6 @@ class FcmService extends GetxService {
       payload: payload,
     );
   }
-
-  /// Reduit "App\\Models\\Conversation" → "conversation". Duplique de
-  /// `_shortenTargetType` cote messaging_methods (volontairement, pour
-  /// que FcmService reste autonome de la logique HomeController).
   String? _shortenType(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     final tail = raw.split('\\').last.toLowerCase();
@@ -244,20 +232,12 @@ class FcmService extends GetxService {
   void _handleNotificationTap(RemoteMessage message) {
     _routeFromPayload(message.data);
   }
-
-  /// Routage commun : memes regles que `_navigateToTarget` cote
-  /// notifications_screen — duplique ici parce que ce code peut s'executer
-  /// avant que l'ecran des notifs n'ait ete monte. Garde la logique
-  /// minimale : on ouvre la route, l'ecran cible recharge ce qu'il faut.
   void _routeFromPayload(Map<String, dynamic> data) {
     final id = data['notifiable_id']?.toString();
     if (id == null || id.isEmpty) return;
     final shortType = _shortenType(data['notifiable_type']?.toString());
     switch (shortType) {
       case 'conversation':
-        // Pas d'overlay messaging direct ici : on bascule sur l'app et
-        // le HomeController prendra l'id depuis un canal de comm dedie.
-        // Pour l'instant on ouvre juste la liste messagerie.
         Get.toNamed(AppRoutes.home);
         break;
       case 'application':

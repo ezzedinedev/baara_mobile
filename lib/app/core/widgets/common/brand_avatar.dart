@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-
+import '../../constants/api_constants.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-/// Avatar circulaire avec gradient stable basé sur un `seed`. Affiche les
-/// initiales de `label` en fallback. Si `imageUrl` est fourni, tente de le
-/// charger ; en cas d'échec, retombe sur le gradient + initiales.
+
 class BrandAvatar extends StatelessWidget {
   const BrandAvatar({
     super.key,
@@ -33,6 +31,7 @@ class BrandAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.avatarGradientForSeed(seed);
+    final resolved = ApiConstants.resolveMediaUrl(imageUrl);
     return Container(
       width: size,
       height: size,
@@ -45,10 +44,10 @@ class BrandAvatar extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
-      child: imageUrl != null && imageUrl!.isNotEmpty
+      child: resolved != null && resolved.isNotEmpty
           ? ClipOval(
               child: Image.network(
-                imageUrl!,
+                resolved,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,

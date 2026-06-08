@@ -30,22 +30,13 @@ class ApiConstants {
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      // Émulateur → PC :
-      // - `10.0.2.2:8000` si Laravel écoute sur 0.0.0.0 (scripts/start_laravel_for_emulator.ps1)
-      // - `127.0.0.1:8000` si `adb reverse tcp:8000 tcp:8000` (scripts/flutter_run_android_dev.ps1)
-      // `php artisan serve` seul (127.0.0.1) ne suffit PAS pour 10.0.2.2.
       return 'http://10.0.2.2:8000';
     }
 
     return 'http://127.0.0.1:8000';
   }
 
-  /// Hosts dev locaux autorises a utiliser http (cleartext) meme en release —
-  /// indispensable pour tester un build release contre un Laravel local
-  /// (USB tunnel via `adb reverse`, emulateur Android, hotspot LAN…). En
-  /// production le baseUrl par defaut est `productionBaseUrl` qui est en
-  /// https — ce bypass concerne uniquement les overrides explicites via
-  /// `--dart-define=API_BASE_URL=...`.
+
   static bool _isLocalDevHost(String host) {
     if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
       return true;
@@ -94,12 +85,31 @@ class ApiConstants {
 
   static String get baseUrl => '$resolvedHost/api/v1';
 
+
+  /// donc les hôtes locaux vers [resolvedHost] (le MÊME hôte que l'API), et on
+
+  static String? resolveMediaUrl(String? url) {
+    if (url == null) return null;
+    final u = url.trim();
+    if (u.isEmpty) return null;
+    if (u.startsWith('/')) return '$resolvedHost$u';
+    final uri = Uri.tryParse(u);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return u;
+    const localHosts = {'127.0.0.1', 'localhost', '10.0.2.2', '0.0.0.0'};
+    if (localHosts.contains(uri.host)) {
+      final base = Uri.parse(resolvedHost);
+      return uri
+          .replace(scheme: base.scheme, host: base.host, port: base.port)
+          .toString();
+    }
+    return u;
+  }
+
   static List<String> get baseUrlCandidates {
     final hosts = <String>[
       if (apiBaseUrlOverride.trim().isNotEmpty)
         _sanitizeHost(apiBaseUrlOverride),
       if (webBaseUrl.trim().isNotEmpty) _sanitizeHost(webBaseUrl),
-      // Avec `adb reverse`, 127.0.0.1 sur le téléphone/émulateur = PC localhost.
       if (kDebugMode && defaultTargetPlatform == TargetPlatform.android)
         'http://127.0.0.1:8000',
       _sanitizeHost(_defaultHost),
@@ -238,6 +248,66 @@ class ApiConstants {
   // PUT cet endpoint au boot pour enregistrer/refresh le token FCM du
   // device courant cote backend (cf. NotificationApiController@updateFcmToken).
   static const String notificationsFcmToken = '/notifications/fcm-token';
+
+  // ─────────── Communauté / réseau professionnel ───────────
+  // Backend : Api/V1/CommunityApiController, préfixe /community.
+  static const String communityFeed = '/community/feed';
+  static const String communitySuggestions = '/community/suggestions';
+  static const String communitySearch = '/community/search';
+  static const String communityPosts = '/community/posts';
+  static String communityPost(String id) => '/community/posts/$id';
+  static String communityPostReact(String id) => '/community/posts/$id/react';
+  static String communityPostRepost(String id) => '/community/posts/$id/repost';
+  static String communityPostReport(String id) => '/community/posts/$id/report';
+  static String communityPostComments(String id) => '/community/posts/$id/comments';
+  static String communityComment(String id) => '/community/comments/$id';
+  static String communityUserFollow(String id) => '/community/users/$id/follow';
+  static String communityUserConnect(String id) => '/community/users/$id/connect';
+  static const String communityConnections = '/community/connections';
+  static String communityConnectionRespond(String id) =>
+      '/community/connections/$id/respond';
+  static String communityUser(String id) => '/community/users/$id';
+
+  // ─────────── Temps réel (Laravel Reverb / protocole Pusher) ───────────
+  // Endpoint d'auth des canaux privés (Sanctum) : POST {socket_id, channel_name}
+  // + Bearer token. cf. routes/api.php → api.v1.broadcasting.auth.
+  static String get broadcastingAuthUrl => '$baseUrl/broadcasting/auth';
+
+  // Clé applicative Reverb (= REVERB_APP_KEY backend). À surcharger en prod via
+  // --dart-define=REVERB_APP_KEY=...  (défaut = clé de dev locale).
+  static const String reverbAppKey = String.fromEnvironment(
+    'REVERB_APP_KEY',
+    defaultValue: 'r2isgakfkwfkjt14gupd',
+  );
+
+  // Hôte du daemon Reverb. Vide => dérivé de l'hôte API (même machine que
+  // Laravel), ce qui gère automatiquement 10.0.2.2 (émulateur) vs 127.0.0.1.
+  static const String _reverbHostOverride = String.fromEnvironment(
+    'REVERB_HOST',
+    defaultValue: '',
+  );
+
+  static String get reverbHost {
+    if (_reverbHostOverride.trim().isNotEmpty) return _reverbHostOverride.trim();
+    final uri = Uri.tryParse(resolvedHost);
+    return uri?.host ?? '127.0.0.1';
+  }
+
+  // Port : 8080 en dev (daemon `php artisan reverb:start`), 443 en prod (wss
+  // derrière un proxy TLS). Surcharge possible via --dart-define=REVERB_PORT.
+  static const int _reverbPortOverride =
+      int.fromEnvironment('REVERB_PORT', defaultValue: 0);
+
+  static int get reverbPort {
+    if (_reverbPortOverride > 0) return _reverbPortOverride;
+    return kDebugMode ? 8080 : 443;
+  }
+
+  // TLS désactivé en dev (ws), activé en prod (wss).
+  static const bool _reverbTlsOverride =
+      bool.fromEnvironment('REVERB_TLS', defaultValue: false);
+
+  static bool get reverbUseTls => _reverbTlsOverride || !kDebugMode;
 
   // Formulaire web Laravel pour l'inscription entreprise.
   // Emulateur Android -> 10.0.2.2 redirige vers le localhost PC.

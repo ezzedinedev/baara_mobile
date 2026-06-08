@@ -17,6 +17,14 @@ import 'package:opportune_bf/app/features/messaging/data/repositories/messaging_
 import 'package:opportune_bf/app/features/messaging/domain/repositories/i_messaging_repository.dart';
 import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
 
+import 'package:opportune_bf/app/features/community/data/repositories/community_repository_impl.dart';
+import 'package:opportune_bf/app/features/community/domain/repositories/i_community_repository.dart';
+import 'package:opportune_bf/app/features/community/presentation/controllers/community_controller.dart';
+
+import 'package:opportune_bf/app/features/notifications/data/repositories/notification_repository_impl.dart';
+import 'package:opportune_bf/app/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:opportune_bf/app/features/notifications/presentation/controllers/notifications_controller.dart';
+
 import 'package:opportune_bf/app/features/home/presentation/controllers/home_controller.dart';
 
 class HomeBinding extends Bindings {
@@ -39,5 +47,14 @@ class HomeBinding extends Bindings {
     // TAB: Messaging
     Get.lazyPut<IMessagingRepository>(() => MessagingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => MessagesController(Get.find<IMessagingRepository>()));
+
+    // SECTION: Communauté (aperçu sur l'accueil + écran dédié /communaute)
+    Get.lazyPut<ICommunityRepository>(() => CommunityRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut(() => CommunityController(Get.find<ICommunityRepository>()));
+
+    // Notifications : badge non-lus sur la cloche de l'accueil (controller
+    // partagé avec l'écran /notifications).
+    Get.lazyPut<INotificationRepository>(() => NotificationRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut(() => NotificationsController(Get.find<INotificationRepository>()));
   }
 }

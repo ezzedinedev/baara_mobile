@@ -34,9 +34,17 @@ class Validators {
     if (value.length < minLength) {
       return 'Minimum $minLength caracteres';
     }
-    if (!RegExp(r'[A-Za-z]').hasMatch(value) ||
-        !RegExp(r'\d').hasMatch(value)) {
-      return 'Ajoutez au moins une lettre et un chiffre';
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+      return 'Ajoutez une majuscule';
+    }
+    if (!RegExp(r'[a-z]').hasMatch(value)) {
+      return 'Ajoutez une minuscule';
+    }
+    if (!RegExp(r'\d').hasMatch(value)) {
+      return 'Ajoutez un chiffre';
+    }
+    if (!RegExp(r'[^a-zA-Z0-9]').hasMatch(value)) {
+      return 'Ajoutez un caractere special';
     }
     return null;
   }

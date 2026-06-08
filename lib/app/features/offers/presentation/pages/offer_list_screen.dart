@@ -13,43 +13,67 @@ import '../widgets/offer_boost_badge.dart';
 import '../../domain/entities/offer.dart';
 
 class OfferListScreen extends GetView<OfferController> {
-  const OfferListScreen({super.key});
+  const OfferListScreen({super.key, this.embedded = false});
+
+  /// Quand `true`, rend seulement le corps (sans en-tête SankTabShell) pour
+  /// être hébergé dans le hub Opportunités.
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth > 600;
-          
-          return SankTabShell(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isTablet = constraints.maxWidth > 600;
+
+        final body = Obx(() {
+          if (controller.isLoading.value && controller.offers.isEmpty) {
+            return _buildSkeletons(isTablet);
+          }
+          if (controller.filteredOffers.isEmpty && !controller.isLoading.value) {
+            return _buildEmptyState();
+          }
+          return _buildList(isTablet);
+        });
+
+        if (embedded) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: AppSearchBar(
+                  controller: TextEditingController(),
+                  hint: 'Métier, entreprise, ville...',
+                  onChanged: (v) => controller.searchQuery.value = v,
+                ),
+              ),
+              Expanded(child: body),
+            ],
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SankTabShell(
             title: 'Offres',
             subtitle: 'Opportunités sélectionnées pour votre profil.',
             headerActions: [
               AppIconButton(
                 icon: IconlyLight.filter,
-                onTap: () => AppHaptics.tap(),
+                onTap: () {
+                  AppHaptics.tap();
+                  openOffersFilter(context, controller);
+                },
               ),
             ],
             headerChild: AppSearchBar(
               controller: TextEditingController(),
               hint: 'Métier, entreprise, ville...',
+              onChanged: (v) => controller.searchQuery.value = v,
             ),
-            body: Obx(() {
-                  if (controller.isLoading.value && controller.offers.isEmpty) {
-                    return _buildSkeletons(isTablet);
-                  }
-
-                  if (controller.offers.isEmpty && !controller.isLoading.value) {
-                    return _buildEmptyState();
-                  }
-
-                  return _buildList(isTablet);
-                }),
-          );
-        },
-      ),
+            body: body,
+          ),
+        );
+      },
     );
   }
 
@@ -68,6 +92,8 @@ class OfferListScreen extends GetView<OfferController> {
   }
 
   Widget _buildEmptyState() {
+    final filtered = controller.hasActiveFilter ||
+        controller.searchQuery.value.trim().isNotEmpty;
     return RefreshIndicator(
       onRefresh: () => controller.loadOffers(refresh: true),
       color: AppColors.primary,
@@ -77,10 +103,18 @@ class OfferListScreen extends GetView<OfferController> {
             height: 400,
             child: EmptyState(
               icon: IconlyLight.work,
-              title: 'Aucune offre',
-              subtitle: 'Ajustez vos filtres ou revenez plus tard',
-              actionLabel: 'Actualiser',
-              onAction: () => controller.loadOffers(refresh: true),
+              title: filtered ? 'Aucun résultat' : 'Aucune offre',
+              subtitle: filtered
+                  ? 'Aucune offre ne correspond à ta recherche.'
+                  : 'Reviens plus tard pour de nouvelles opportunités.',
+              actionLabel: filtered ? 'Réinitialiser' : 'Actualiser',
+              onAction: filtered
+                  ? () {
+                      AppHaptics.tap();
+                      controller.clearFilters();
+                      controller.searchQuery.value = '';
+                    }
+                  : () => controller.loadOffers(refresh: true),
             ),
           ),
         ],
@@ -89,6 +123,7 @@ class OfferListScreen extends GetView<OfferController> {
   }
 
   Widget _buildList(bool isTablet) {
+    final items = controller.filteredOffers;
     return RefreshIndicator(
       onRefresh: () => controller.loadOffers(refresh: true),
       color: AppColors.primary,
@@ -101,14 +136,14 @@ class OfferListScreen extends GetView<OfferController> {
             crossAxisSpacing: 12,
             childAspectRatio: isTablet ? 1.3 : 2.3,
           ),
-          itemCount: controller.offers.length + (controller.hasNextPage.value ? 1 : 0),
+          itemCount: items.length + (controller.hasNextPage.value ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index == controller.offers.length) {
+            if (index == items.length) {
               controller.loadOffers();
               return const Center(child: CircularProgressIndicator());
             }
 
-            final offer = controller.offers[index];
+            final offer = items[index];
             return AnimationConfiguration.staggeredGrid(
               position: index,
               duration: const Duration(milliseconds: 260),
@@ -135,6 +170,36 @@ class OfferListScreen extends GetView<OfferController> {
   }
 }
 
+/// Ouvre le sheet de filtres des offres (type de contrat + télétravail),
+/// construit à partir des contrats réellement présents, et applique les choix
+/// au controller. Partagé par l'écran Offres et le hub Opportunités.
+Future<void> openOffersFilter(
+    BuildContext context, OfferController controller) async {
+  final contracts = controller.offers
+      .map((o) => o.contractType)
+      .where((c) => c.trim().isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort();
+  final groups = <FilterGroup>[
+    if (contracts.isNotEmpty)
+      FilterGroup(key: 'contract', label: 'Type de contrat', options: contracts),
+    const FilterGroup(key: 'remote', label: 'Lieu', options: ['Télétravail']),
+  ];
+  final result = await showFilterSheet(
+    context: context,
+    groups: groups,
+    selected: {
+      'contract': controller.activeContract.value,
+      'remote': controller.remoteOnly.value ? 'Télétravail' : null,
+    },
+  );
+  if (result != null) {
+    controller.activeContract.value = result['contract'];
+    controller.remoteOnly.value = result['remote'] == 'Télétravail';
+  }
+}
+
 class _OfferCard extends StatelessWidget {
   final Offer offer;
   final VoidCallback onTap;
@@ -145,17 +210,9 @@ class _OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<OfferController>();
     
-    return PressScale(
+    return AppCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.1)),
-          boxShadow: AppColors.lightShadow,
-        ),
-        child: Column(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (offer.isBoosted && offer.boostTier > 0) ...[
@@ -167,11 +224,14 @@ class _OfferCard extends StatelessWidget {
             ],
             Row(
               children: [
-                BrandAvatar(
-                  seed: offer.company,
-                  label: offer.company,
-                  imageUrl: offer.companyLogo,
-                  size: 48,
+                Hero(
+                  tag: 'offer-logo-${offer.id}',
+                  child: BrandAvatar(
+                    seed: offer.company,
+                    label: offer.company,
+                    imageUrl: offer.companyLogo,
+                    size: 48,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -235,7 +295,6 @@ class _OfferCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

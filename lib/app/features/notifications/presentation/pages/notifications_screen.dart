@@ -82,18 +82,15 @@ class NotificationsScreen extends GetView<NotificationsController> {
                   child: SlideAnimation(
                     verticalOffset: 18,
                     child: FadeInAnimation(
-                child: PressScale(
+                child: AppCard(
                   onTap: () {
                     AppHaptics.tap();
                     controller.markAsRead(notification.id);
                   },
-                  child: BrandCard(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    radius: AppRadius.xl,
-                    borderColor: notification.isRead
-                        ? AppColors.outlineVariant.withValues(alpha: 0.14)
-                        : AppColors.primary.withValues(alpha: 0.24),
-                    child: Row(
+                  borderColor: notification.isRead
+                      ? null
+                      : AppColors.primary.withValues(alpha: 0.40),
+                  child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SoftCircleIcon(
@@ -138,7 +135,6 @@ class NotificationsScreen extends GetView<NotificationsController> {
                       ],
                     ),
                   ),
-                ),
                     ),
                   ),
                 );

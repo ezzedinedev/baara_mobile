@@ -5,6 +5,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'package:opportune_bf/app/core/services/auth_token_store.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
@@ -362,10 +364,10 @@ class _LessonTypePill extends StatelessWidget {
 }
 
 Color _lessonColor(TrainingModule lesson) {
-  if (lesson.isVideo) return AppColors.categoryPurpleDeep;
+  if (lesson.isVideo) return AppColors.primary;
   if (lesson.isPdf) return AppColors.errorBright;
   if (lesson.isImage) return AppColors.successDark;
-  return AppColors.categoryCyan;
+  return AppColors.secondary;
 }
 
 /// Sélectionne le bon lecteur selon le type de leçon, en dégradant proprement
@@ -382,6 +384,20 @@ class _LessonMedia extends StatelessWidget {
     if (lesson.isText) {
       // Leçon article : contenu dans la carte description, pas de média.
       return const SizedBox.shrink();
+    }
+
+    // YouTube : détecté par l'URL quel que soit le content_type backend, lu
+    // avec le vrai lecteur YouTube (plein écran natif).
+    final ytId = _youtubeId(url);
+    if (ytId != null && ytId.isNotEmpty) {
+      return _InlineYoutubePlayer(videoId: ytId);
+    }
+
+    // Word / PowerPoint / Excel : rendus via la visionneuse Office en ligne
+    // (le viewer PDF natif ne sait pas les lire). Fichiers servis en URL
+    // publique → le viewer Microsoft peut les récupérer.
+    if (_isOfficeUrl(url)) {
+      return _InlineOfficeViewer(url: url);
     }
 
     if (lesson.isLink) {
@@ -402,6 +418,78 @@ class _LessonMedia extends StatelessWidget {
 
     // Type inconnu mais URL présente : on tente la visionneuse PDF.
     return _InlinePdfPlayer(url: url);
+  }
+}
+
+/// Vrai pour une URL de document Office (Word / PowerPoint / Excel).
+/// Vérifie aussi que le domaine est cohérent avec le viewer Microsoft.
+bool _isOfficeUrl(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return false;
+  final path = uri.path.toLowerCase();
+  final isOfficeExt = path.endsWith('.doc') ||
+      path.endsWith('.docx') ||
+      path.endsWith('.ppt') ||
+      path.endsWith('.pptx') ||
+      path.endsWith('.xls') ||
+      path.endsWith('.xlsx');
+  if (!isOfficeExt) return false;
+  return uri.scheme == 'https';
+}
+
+/// Ouvre [child] en plein écran (fond sombre, bouton fermer en haut à droite).
+void _openFullscreen(BuildContext context, Widget child) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(child: child),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.black54,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Petit bouton « plein écran » posé en surimpression sur un média inline.
+class _FullscreenButton extends StatelessWidget {
+  const _FullscreenButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Material(
+        color: Colors.black54,
+        shape: const CircleBorder(),
+        child: IconButton(
+          tooltip: 'Plein écran',
+          icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 22),
+          onPressed: () {
+            AppHaptics.tap();
+            onTap();
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -748,16 +836,28 @@ class _InlinePdfPlayerState extends State<_InlinePdfPlayer> {
                     message: _error!,
                     onRetry: () => setState(() => _error = null),
                   )
-                : SfPdfViewer.network(
-                    widget.url,
-                    headers: _headers,
-                    canShowScrollHead: false,
-                    canShowScrollStatus: true,
-                    enableDoubleTapZooming: true,
-                    onDocumentLoadFailed: (details) {
-                      if (!mounted) return;
-                      setState(() => _error = details.description);
-                    },
+                : Stack(
+                    children: [
+                      Positioned.fill(
+                        child: SfPdfViewer.network(
+                          widget.url,
+                          headers: _headers,
+                          canShowScrollHead: false,
+                          canShowScrollStatus: true,
+                          enableDoubleTapZooming: true,
+                          onDocumentLoadFailed: (details) {
+                            if (!mounted) return;
+                            setState(() => _error = details.description);
+                          },
+                        ),
+                      ),
+                      _FullscreenButton(
+                        onTap: () => _openFullscreen(
+                          context,
+                          SfPdfViewer.network(widget.url, headers: _headers),
+                        ),
+                      ),
+                    ],
                   ),
       ),
     );
@@ -792,6 +892,19 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
     });
   }
 
+  Widget _photoView() => PhotoView(
+        imageProvider: NetworkImage(widget.url, headers: _headers),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 4,
+        backgroundDecoration: const BoxDecoration(color: Colors.black),
+        loadingBuilder: (context, event) =>
+            const _MediaLoadingFill(icon: Icons.image_outlined),
+        errorBuilder: (_, __, ___) => Center(
+          child: Icon(Icons.broken_image_outlined,
+              color: AppColors.hintColor, size: 42),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -801,22 +914,181 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
         color: AppColors.surfaceHigh,
         child: !_ready
             ? const _MediaLoadingFill(icon: Icons.image_outlined)
-            : PhotoView(
-                imageProvider: NetworkImage(widget.url, headers: _headers),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 4,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                loadingBuilder: (context, event) =>
-                    const _MediaLoadingFill(icon: Icons.image_outlined),
-                errorBuilder: (_, __, ___) => Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: AppColors.hintColor,
-                    size: 42,
+            : Stack(
+                children: [
+                  Positioned.fill(child: _photoView()),
+                  _FullscreenButton(
+                    onTap: () => _openFullscreen(context, _photoView()),
                   ),
-                ),
+                ],
               ),
       ),
+    );
+  }
+}
+
+/// Extrait l'identifiant vidéo d'une URL YouTube (watch / youtu.be / embed /
+/// shorts). Renvoie `null` si l'URL n'est pas YouTube.
+String? _youtubeId(String url) {
+  final reg = RegExp(
+    r'(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})',
+    caseSensitive: false,
+  );
+  final m = reg.firstMatch(url);
+  return m?.group(1);
+}
+
+/// Lecteur YouTube intégré (youtube_player_flutter). Plein écran natif géré
+/// par [YoutubePlayerBuilder] (rotation paysage + retour).
+class _InlineYoutubePlayer extends StatefulWidget {
+  const _InlineYoutubePlayer({required this.videoId});
+  final String videoId;
+
+  @override
+  State<_InlineYoutubePlayer> createState() => _InlineYoutubePlayerState();
+}
+
+class _InlineYoutubePlayerState extends State<_InlineYoutubePlayer> {
+  late final YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.videoId,
+      autoPlay: false,
+      params: const YoutubePlayerParams(showFullscreenButton: true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: YoutubePlayer(
+        controller: _controller,
+        aspectRatio: 16 / 9,
+      ),
+    );
+  }
+}
+
+/// Visionneuse Office (Word / PowerPoint / Excel) via le viewer Microsoft en
+/// ligne, rendu dans un WebView. Bouton plein écran. Requiert une URL de
+/// fichier publiquement accessible (le viewer Microsoft la récupère).
+class _InlineOfficeViewer extends StatelessWidget {
+  const _InlineOfficeViewer({required this.url});
+  final String url;
+
+  static String _viewerUrl(String docUrl) =>
+      'https://view.officeapps.live.com/op/embed.aspx?src='
+      '${Uri.encodeComponent(docUrl)}';
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        height: 520,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(child: _OfficeWebView(viewerUrl: _viewerUrl(url))),
+            _FullscreenButton(
+              onTap: () => _openFullscreen(
+                context,
+                _OfficeWebView(viewerUrl: _viewerUrl(url)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// WebView qui charge le viewer Office en ligne, avec skeleton tant que la
+/// page n'est pas prête et panneau d'erreur si le chargement échoue.
+class _OfficeWebView extends StatefulWidget {
+  const _OfficeWebView({required this.viewerUrl});
+  final String viewerUrl;
+
+  @override
+  State<_OfficeWebView> createState() => _OfficeWebViewState();
+}
+
+class _OfficeWebViewState extends State<_OfficeWebView> {
+  late final WebViewController _controller;
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (request) {
+            if (!request.url.startsWith('https://view.officeapps.live.com')) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) {
+            if (mounted) setState(() => _loading = false);
+          },
+          onWebResourceError: (_) {
+            if (mounted) {
+              setState(() {
+                _loading = false;
+                _error = true;
+              });
+            }
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.viewerUrl));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error) {
+      return _MediaErrorPane(
+        icon: Icons.description_outlined,
+        title: 'Document illisible',
+        message:
+            'Ce document n\'a pas pu être affiché. Vérifie ta connexion puis réessaie.',
+        onRetry: () {
+          setState(() {
+            _error = false;
+            _loading = true;
+          });
+          _controller.loadRequest(Uri.parse(widget.viewerUrl));
+        },
+      );
+    }
+    return Stack(
+      children: [
+        Positioned.fill(child: WebViewWidget(controller: _controller)),
+        if (_loading)
+          const Positioned.fill(
+            child: _MediaLoadingFill(icon: Icons.description_outlined),
+          ),
+      ],
     );
   }
 }

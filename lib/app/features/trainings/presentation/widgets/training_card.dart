@@ -68,15 +68,18 @@ class TrainingCard extends StatelessWidget {
               children: [
                 // Fond : couverture serveur avec fallback gracieux, ou pattern
                 // de marque directement quand aucune URL n'est fournie.
-                if (hasCover)
-                  CachedNetworkImage(
-                    imageUrl: training.coverUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => const _BrandFallback(light: true),
-                    errorWidget: (_, __, ___) => const _BrandFallback(),
-                  )
-                else
-                  const _BrandFallback(),
+                Hero(
+                  tag: 'training-cover-${training.id}',
+                  child: hasCover
+                      ? CachedNetworkImage(
+                          imageUrl: training.coverUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              const _BrandFallback(light: true),
+                          errorWidget: (_, __, ___) => const _BrandFallback(),
+                        )
+                      : const _BrandFallback(),
+                ),
 
                 // Voile dégradé : assombrit haut + bas pour la lisibilité du
                 // badge, du titre et des stats quelle que soit l'image.

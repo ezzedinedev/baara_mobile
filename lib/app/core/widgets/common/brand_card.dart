@@ -1,33 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 
-/// Card de surface standard de l'app : fond `surfaceCard`, bord
-/// `outlineVariant` discret, radius par defaut `lg`, ombre `lightShadow`.
-///
-/// Wrapper sur `Container` qui couvre 80% des "cards" repetees dans le
-/// projet. Si [onTap] est fourni, la card devient pressable avec ripple
-/// `InkWell` (et le clipping est fait au bon endroit pour preserver
-/// l'effet ripple).
-///
-/// Variantes :
-///   - [radius]      : par defaut `AppRadius.lg`. Mettre `AppRadius.xl` ou
-///                     `AppRadius.pill` selon le besoin.
-///   - [padding]     : par defaut `EdgeInsets.all(14)`. Override pour cards
-///                     plus aerees.
-///   - [borderColor] : override de la couleur de bordure (par defaut
-///                     `outlineVariant.withAlpha(0.16)`).
-///   - [shadow]      : `light` (defaut), `ambient` (plus marquee, pour
-///                     unread/selected), `none`.
-///
-/// Exemple :
-/// ```dart
-/// BrandCard(
-///   onTap: () => print('tap'),
-///   child: const Text('Hello'),
-/// )
-/// ```
+
 class BrandCard extends StatelessWidget {
   const BrandCard({
     super.key,

@@ -5,6 +5,7 @@ import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -22,15 +23,10 @@ class MessagesScreen extends GetView<MessagesController> {
       body: SankTabShell(
         title: 'Messages',
         subtitle: 'Vos discussions avec les recruteurs.',
-        headerActions: [
-          AppIconButton(
-            icon: IconlyLight.edit,
-            onTap: () => AppHaptics.tap(),
-          ),
-        ],
         headerChild: AppSearchBar(
           controller: TextEditingController(),
           hint: 'Rechercher une discussion...',
+          onChanged: (v) => controller.searchQuery.value = v,
         ),
         body: Obx(() {
           if (controller.isLoadingConversations.value &&
@@ -68,6 +64,18 @@ class MessagesScreen extends GetView<MessagesController> {
   }
 
   Widget _buildList() {
+    final items = controller.filteredConversations;
+    if (items.isEmpty) {
+      return const Center(
+        child: EmptyState(
+          icon: IconlyLight.search,
+          title: 'Aucun résultat',
+          subtitle: 'Aucune discussion ne correspond à ta recherche.',
+        ),
+      );
+    }
+    final showLoadMore = controller.searchQuery.value.trim().isEmpty &&
+        controller.hasMoreConversations.value;
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () => controller.loadConversations(),
@@ -75,11 +83,10 @@ class MessagesScreen extends GetView<MessagesController> {
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
           physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: controller.conversations.length +
-              (controller.hasMoreConversations.value ? 1 : 0),
-          separatorBuilder: (_, __) => const SizedBox(height: 1),
+          itemCount: items.length + (showLoadMore ? 1 : 0),
+          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
-            if (index >= controller.conversations.length) {
+            if (index >= items.length) {
               controller.loadMoreConversations();
               return const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
@@ -95,12 +102,12 @@ class MessagesScreen extends GetView<MessagesController> {
                 ),
               );
             }
-            final conv = controller.conversations[index];
+            final conv = items[index];
             return AnimationConfiguration.staggeredList(
               position: index,
-              duration: const Duration(milliseconds: 260),
+              duration: AppMotion.base,
               child: SlideAnimation(
-                verticalOffset: 18,
+                verticalOffset: AppMotion.listSlideOffset,
                 child: FadeInAnimation(
                   child: _ConversationTile(conversation: conv),
                 ),
@@ -119,15 +126,13 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PressScale(
+    return AppCard(
       onTap: () {
         AppHaptics.tap();
         Get.toNamed(AppRoutes.conversation.replaceFirst(':id', conversation.id));
       },
-      child: BrandCard(
-        padding: EdgeInsets.zero,
-        radius: AppRadius.xl,
-        child: ListTile(
+      padding: EdgeInsets.zero,
+      child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onTap: null,
@@ -195,7 +200,6 @@ class _ConversationTile extends StatelessWidget {
           ),
         ),
         ),
-      ),
     );
   }
 

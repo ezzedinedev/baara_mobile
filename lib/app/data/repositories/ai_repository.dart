@@ -2,24 +2,14 @@ import '../../core/constants/api_constants.dart';
 import '../../core/network/api_provider.dart';
 import '../models/ai_models.dart';
 
-/// Repository transverse pour les appels IA.
-///
-/// Centralise les appels vers `/api/v1/ai/*` et assure la conversion
-/// des réponses JSON vers des modèles typés pour garantir la robustesse
-/// de l'UI et faciliter la maintenance.
+
+
+
 class AiRepository {
   const AiRepository({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
 
   final ApiProvider _apiProvider;
-
-  // ──────────────────────────────────────────────────────────────────
-  // Matching offres ↔ candidat
-  // ──────────────────────────────────────────────────────────────────
-  //
-  // Pas de score par offre : `POST /offers/{id}/match` côté backend est un
-  // alias de `apply`/`swipe` (il CRÉE une candidature). Le scoring se fait
-  // uniquement en masse via [matchFeed] (`/ai/match/feed`).
 
   /// Feed "Pour vous" — top N offres pertinentes.
   Future<AiMatchFeedResponse> matchFeed({int limit = 20, bool rerank = true}) async {
@@ -83,9 +73,6 @@ class AiRepository {
     return _unwrapMap(response);
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Audit qualité CV — section par section
-  // ──────────────────────────────────────────────────────────────────
 
   /// Audit qualité du CV courant.
   Future<AiCvAudit> cvAudit() async {
@@ -96,9 +83,6 @@ class AiRepository {
     return AiCvAudit.fromJson(_unwrapMap(response));
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Score profil intelligent
-  // ──────────────────────────────────────────────────────────────────
 
   /// Score décomposé du profil candidat.
   Future<AiProfileScore> profileScore() async {
@@ -109,9 +93,7 @@ class AiRepository {
     return AiProfileScore.fromJson(_unwrapMap(response));
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // Chatbot contextuel
-  // ──────────────────────────────────────────────────────────────────
+
 
   /// Envoie un message au chatbot.
   Future<AiChatResponse> chatSend({

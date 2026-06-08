@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
-import 'app/core/constants/api_constants.dart';
 import 'app/core/services/fcm_service.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
@@ -20,6 +19,11 @@ import 'routes/app_routes.dart';
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(_bootstrap, (error, stack) {
+    final msg = error.toString().toLowerCase();
+    if (msg.contains('auth_token') || msg.contains('bearer')) {
+      debugPrint('[Crash] Error with potential credentials suppressed from Crashlytics');
+      return;
+    }
     if (Firebase.apps.isNotEmpty) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     } else {
@@ -52,12 +56,9 @@ Future<void> _bootstrap() async {
 
   await InitialBinding().dependencies();
 
-  if (kDebugMode) {
-    debugPrint('[API] baseUrl = ${ApiConstants.baseUrl}');
-    debugPrint(
-      '[API] candidats = ${ApiConstants.baseUrlCandidates.join(' | ')}',
-    );
-  }
+  // Les logs API sont volontairement commentés en release
+  // (ils fuient la topologie réseau). En debug, seul le path est logué
+  // via LoggingInterceptor dans api_provider.dart.
 
   if (Firebase.apps.isNotEmpty) {
     final fcm = Get.put<FcmService>(FcmService(), permanent: true);

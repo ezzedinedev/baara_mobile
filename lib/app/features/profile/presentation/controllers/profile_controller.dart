@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:opportune_bf/app/core/services/auth_token_store.dart';
+import 'package:opportune_bf/app/core/services/realtime_service.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
@@ -112,6 +113,9 @@ class ProfileController extends GetxController {
   }
 
   Future<void> logout() async {
+    if (Get.isRegistered<RealtimeService>()) {
+      await Get.find<RealtimeService>().stop();
+    }
     try {
       await _repository.logout();
     } catch (_) {}

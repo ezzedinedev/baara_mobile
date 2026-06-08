@@ -25,7 +25,8 @@ class MessagingRepositoryImpl implements IMessagingRepository {
     );
     if (response['success'] == true) {
       final data = response['data'];
-      final List<dynamic> items = data is List ? data : (data['data'] ?? []);
+      if (data == null) return [];
+      final List<dynamic> items = data is List ? data : (data['data'] as List<dynamic>? ?? []);
       return items
           .map((json) => ConversationModel.fromJson(
                 json as Map<String, dynamic>,
@@ -43,8 +44,9 @@ class MessagingRepositoryImpl implements IMessagingRepository {
     );
     if (response['success'] == true) {
       final data = response['data'];
-      final List<dynamic> items = data is List ? data : (data['data'] ?? []);
-      return items.map((json) => MessageModel.fromJson(json)).toList();
+      if (data == null) return [];
+      final List<dynamic> items = data is List ? data : (data['data'] as List<dynamic>? ?? []);
+      return items.map((json) => MessageModel.fromJson(json as Map<String, dynamic>)).toList();
     }
     return [];
   }

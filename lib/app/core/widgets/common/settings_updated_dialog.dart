@@ -5,8 +5,9 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
-/// Dialogue de confirmation "Settings Updated!" style UI 2026.
-/// Design ultra-moderne, sombre, avec illustration circulaire et bouton large.
+
+
+
 class SettingsUpdatedDialog extends StatefulWidget {
   const SettingsUpdatedDialog({super.key});
 

@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/i_messaging_repository.dart';
@@ -11,6 +13,19 @@ class MessagesController extends GetxController {
 
   final conversations = <Conversation>[].obs;
   final activeMessages = <Message>[].obs;
+
+  // Recherche locale dans l'inbox (titre + dernier message).
+  final searchQuery = ''.obs;
+
+  List<Conversation> get filteredConversations {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return conversations;
+    return conversations
+        .where((c) =>
+            c.title.toLowerCase().contains(q) ||
+            c.lastMessage.toLowerCase().contains(q))
+        .toList();
+  }
   final isLoadingConversations = false.obs;
   final isLoadingMoreConversations = false.obs;
   final hasMoreConversations = false.obs;
@@ -40,8 +55,8 @@ class MessagesController extends GetxController {
       // Pas de méta de pagination renvoyée : si on reçoit une page pleine, on
       // suppose qu'il peut y en avoir d'autres.
       hasMoreConversations.value = result.length >= _convPerPage;
-    } catch (_) {
-      // Gérer l'erreur
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] loadConversations error: $e');
     } finally {
       isLoadingConversations.value = false;
     }
@@ -63,7 +78,8 @@ class MessagesController extends GetxController {
       _convPage += 1;
       conversations.addAll(result);
       hasMoreConversations.value = result.length >= _convPerPage;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] loadMoreConversations error: $e');
     } finally {
       isLoadingMoreConversations.value = false;
     }
@@ -76,7 +92,8 @@ class MessagesController extends GetxController {
       final result = await _repository.getMessages(conversationId);
       activeMessages.assignAll(result);
       await _repository.markAsRead(conversationId);
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] loadMessages error: $e');
     } finally {
       isLoadingMessages.value = false;
     }
@@ -90,7 +107,9 @@ class MessagesController extends GetxController {
       isSending.value = true;
       final msg = await _repository.sendMessage(convId, text);
       activeMessages.add(msg);
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] sendMessage error: $e');
+      AppToast.error('Erreur', "Le message n'a pas pu être envoyé.");
     } finally {
       isSending.value = false;
     }

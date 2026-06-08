@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
 import '../../domain/entities/offer.dart';
+import '../../domain/entities/matched_offer.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
 class OfferController extends GetxController {
@@ -28,6 +29,54 @@ class OfferController extends GetxController {
   // Candidatures (IDs des offres postulées)
   final appliedOfferIds = <String>{}.obs;
   final isApplyingToOfferId = RxnString();
+
+  // ── Recherche + filtres (client-side, sur les offres déjà chargées) ────
+  final searchQuery = ''.obs;
+  final activeContract = RxnString();
+  final remoteOnly = false.obs;
+
+  bool get hasActiveFilter =>
+      activeContract.value != null || remoteOnly.value;
+
+  /// Offres visibles après recherche + filtres. La liste s'appuie dessus ;
+  /// le deck swipe (Découverte) garde l'ensemble complet.
+  List<Offer> get filteredOffers {
+    final q = searchQuery.value.trim().toLowerCase();
+    return offers.where((o) {
+      if (activeContract.value != null &&
+          o.contractType != activeContract.value) {
+        return false;
+      }
+      if (remoteOnly.value && !o.isRemote) return false;
+      if (q.isNotEmpty) {
+        final match = o.title.toLowerCase().contains(q) ||
+            o.company.toLowerCase().contains(q) ||
+            o.location.toLowerCase().contains(q);
+        if (!match) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  void clearFilters() {
+    activeContract.value = null;
+    remoteOnly.value = false;
+  }
+
+  // ── Recommandations IA (match feed) ────────────────────────────────────
+  final matchedOffers = <MatchedOffer>[].obs;
+  final isLoadingMatches = false.obs;
+
+  Future<void> loadMatchedOffers() async {
+    if (isLoadingMatches.value) return;
+    try {
+      isLoadingMatches.value = true;
+      matchedOffers.assignAll(await _repository.getMatchedOffers(limit: 12));
+    } catch (_) {
+    } finally {
+      isLoadingMatches.value = false;
+    }
+  }
 
   // ── Deck swipe (Accueil) ──────────────────────────────────────────────
   // Pile de cartes type Tinder : drag horizontal, badges PASSER/INTÉRESSÉ,

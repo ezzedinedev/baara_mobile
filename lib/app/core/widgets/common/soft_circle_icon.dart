@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 
-/// Icône dans un cercle pastel — pattern listes Paramètres / Sank Money.
+/// Icône dans un cercle pastel — pattern listes Paramètres
 class SoftCircleIcon extends StatelessWidget {
   const SoftCircleIcon({
     super.key,

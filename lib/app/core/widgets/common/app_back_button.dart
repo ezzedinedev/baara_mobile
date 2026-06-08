@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/haptics.dart';
 
-/// Bouton retour unifié de l'app : pastille ronde + chevron.
-/// - [onDark] = true : posé sur un header coloré/sombre (cercle translucide
-///   clair + chevron blanc) — identique aux wavy headers.
-/// - [onDark] = false : sur fond clair (carte blanche + chevron foncé).
+
+
 class AppBackButton extends StatelessWidget {
   const AppBackButton({super.key, this.onTap, this.onDark = false});
 

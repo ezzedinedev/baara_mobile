@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
+import 'package:opportune_bf/app/core/services/realtime_service.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../controllers/messages_controller.dart';
 import '../../domain/entities/message.dart';
@@ -23,6 +24,13 @@ class ChatThreadScreen extends GetView<MessagesController> {
     if (convId != null && controller.activeConversationId.value != convId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.loadMessages(convId);
+      });
+    }
+
+    // Abonne le canal temps réel de cette conversation (messages live).
+    if (convId != null && Get.isRegistered<RealtimeService>()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.find<RealtimeService>().setActiveConversation(convId);
       });
     }
 
@@ -143,15 +151,6 @@ class ChatThreadScreen extends GetView<MessagesController> {
         top: false,
         child: Row(
           children: [
-            PressScale(
-              onTap: () => AppHaptics.tap(),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.surfaceLow, shape: BoxShape.circle),
-                child: Icon(IconlyLight.plus, color: AppColors.bodyColor, size: 20),
-              ),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

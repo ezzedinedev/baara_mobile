@@ -1,28 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
 enum AppToastVariant { success, error, info, warning }
 
-/// Toasts de marque OpporTune BF.
-///
-/// Card premium qui glisse depuis le haut :
-///   - Pastille icône + halo doux (icône bounce-in via elasticOut)
-///   - Titre + message avec hiérarchie typo
-///   - Mini bouton ✕ à droite pour close manuel
-///   - Barre de progression animée en bas (countdown auto-dismiss)
-///   - Gradient de fond très léger teinté par la variante
-///   - Glow shadow tinté + light shadow pour la profondeur
-///
-/// Usage simple :
-/// ```dart
-/// AppToast.success('Candidature envoyée');
-/// AppToast.warning('Déjà postulé', 'Vous avez déjà candidaté à cette offre.');
-/// AppToast.error('Erreur réseau', 'Vérifiez votre connexion.');
-/// ```
+
 class AppToast {
   AppToast._();
 

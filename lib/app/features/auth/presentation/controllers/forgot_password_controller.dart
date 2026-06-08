@@ -19,6 +19,10 @@ class ForgotPasswordController extends GetxController {
   final step = 1.obs;
   final isLoading = false.obs;
   final errorMsg = ''.obs;
+  int _otpAttempts = 0;
+  bool _otpCooldown = false;
+  static const int _maxOtpAttempts = 3;
+  static const Duration _otpCooldownDuration = Duration(seconds: 30);
 
   /// Étape 1 : envoie le code de réinitialisation au téléphone.
   Future<void> requestReset() async {
@@ -32,6 +36,7 @@ class ForgotPasswordController extends GetxController {
       errorMsg.value = '';
       await _authRepository.forgotPassword(phone);
       step.value = 2;
+      _otpAttempts = 0;
       AppToast.success(
         'Code envoyé',
         'Un code de réinitialisation a été envoyé au $phone.',
@@ -45,6 +50,10 @@ class ForgotPasswordController extends GetxController {
 
   /// Étape 2 : valide le code et applique le nouveau mot de passe.
   Future<void> confirmReset() async {
+    if (_otpCooldown) {
+      errorMsg.value = 'Trop de tentatives. Réessayez dans 30s.';
+      return;
+    }
     final otp = otpCtrl.text.trim();
     final pwd = passwordCtrl.text;
     if (otp.length != 6) {
@@ -67,13 +76,22 @@ class ForgotPasswordController extends GetxController {
         otp: otp,
         password: pwd,
       );
+      _otpAttempts = 0;
       Get.offAllNamed(AppRoutes.candidateLogin);
       AppToast.success(
         'Mot de passe réinitialisé',
         'Connectez-vous avec votre nouveau mot de passe.',
       );
     } catch (e) {
+      _otpAttempts++;
       errorMsg.value = userFacingError(e);
+      if (_otpAttempts >= _maxOtpAttempts) {
+        _otpCooldown = true;
+        _otpAttempts = 0;
+        Future.delayed(_otpCooldownDuration, () {
+          _otpCooldown = false;
+        });
+      }
     } finally {
       isLoading.value = false;
     }

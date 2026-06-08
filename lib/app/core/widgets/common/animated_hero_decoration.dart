@@ -1,13 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 
-/// Couche decorative cinematique pour les heros wavy.
-/// Empile : (1) bokeh d'orbes lumineuses qui derivent, (2) anneaux topo
-/// concentriques en rotation lente, (3) poussiere d'etoiles scintillantes.
-/// Tout pilote par un seul AnimationController (12s loop) pour rester sobre
-/// en perfs. Le widget se positionne en `Positioned.fill` derriere le contenu.
+
 class AnimatedHeroDecoration extends StatefulWidget {
   const AnimatedHeroDecoration({
     super.key,
@@ -15,12 +10,8 @@ class AnimatedHeroDecoration extends StatefulWidget {
     this.intensity = 1.0,
   });
 
-  /// Teinte des orbes / anneaux. Defaut : `onPrimary` (sur les heros sombres).
   final Color? tintColor;
-
-  /// 0..1 : module l'opacite generale (utile sur fond clair).
   final double intensity;
-
   @override
   State<AnimatedHeroDecoration> createState() => _AnimatedHeroDecorationState();
 }
@@ -75,7 +66,7 @@ class _HeroDecorationPainter extends CustomPainter {
   final Color tint;
   final double intensity;
 
-  // 4 orbes — trajectoires + tailles plus marquees pour un effet visible.
+
   static const _orbs = <_OrbConfig>[
     _OrbConfig(
       seedAngle: 0.0,
@@ -123,7 +114,6 @@ class _HeroDecorationPainter extends CustomPainter {
     ),
   ];
 
-  // Anneaux topo : 4 spots, chacun avec rotation lente.
   static const _ringSpots = <_RingSpotConfig>[
     _RingSpotConfig(
       cx: 0.25,
@@ -167,8 +157,7 @@ class _HeroDecorationPainter extends CustomPainter {
     _drawSparkles(canvas, size);
   }
 
-  /// Rayon de lumière diagonal qui traverse le hero — l'effet "premium"
-  /// qu'on voit sur les heros Apple/Stripe. Position et opacité animées.
+
   void _drawSweepBeam(Canvas canvas, Size size) {
     // 2 balayages decalles dans le temps.
     for (int i = 0; i < 2; i++) {

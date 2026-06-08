@@ -1,6 +1,5 @@
 import '../network/api_provider.dart';
 
-/// Convertit une exception technique en message lisible pour l'utilisateur.
 String userFacingError(Object error) {
   if (error is ApiException) {
     final code = error.statusCode;
@@ -35,14 +34,11 @@ String userFacingError(Object error) {
     return 'Connexion impossible. Vérifiez votre réseau ou réessayez dans un instant.';
   }
 
-  // Les erreurs runtime (TypeError, NoSuchMethodError, cast…) sont des bugs
-  // techniques : on ne montre JAMAIS leur message brut à l'utilisateur.
+
   if (error is Error) {
     return 'Une erreur inattendue est survenue. Réessayez dans un instant.';
   }
 
-  // Exceptions applicatives : on nettoie le préfixe technique et on affiche
-  // le message métier (déjà rédigé pour l'utilisateur).
   final cleaned = text
       .replaceFirst(RegExp(r'^ApiException:\s*'), '')
       .replaceFirst(RegExp(r'^Exception:\s*'), '')

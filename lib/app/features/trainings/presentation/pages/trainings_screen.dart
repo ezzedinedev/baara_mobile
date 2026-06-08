@@ -4,11 +4,11 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 
-import '../../domain/entities/training.dart';
 import '../controllers/trainings_controller.dart';
 import '../widgets/training_card.dart';
 
@@ -18,7 +18,11 @@ import '../widgets/training_card.dart';
 /// et bouton "remonter en haut". Les items réutilisent la carte partagée
 /// [TrainingCard]. États : skeletons au chargement, vide et erreur.
 class TrainingsScreen extends StatefulWidget {
-  const TrainingsScreen({super.key});
+  const TrainingsScreen({super.key, this.embedded = false});
+
+  /// Quand `true`, rend seulement le corps (recherche + liste) sans l'en-tête
+  /// SankTabShell — pour être hébergé dans le hub Opportunités.
+  final bool embedded;
 
   @override
   State<TrainingsScreen> createState() => _TrainingsScreenState();
@@ -28,7 +32,6 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
   final TrainingsController controller = Get.find<TrainingsController>();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  final RxString _query = ''.obs;
 
   @override
   void dispose() {
@@ -37,16 +40,26 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
     super.dispose();
   }
 
-  bool _matchesQuery(Training training) {
-    final q = _query.value.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    return training.title.toLowerCase().contains(q) ||
-        training.providerName.toLowerCase().contains(q) ||
-        training.level.toLowerCase().contains(q);
-  }
+  Widget _searchBar() => AppSearchBar(
+        controller: _searchController,
+        hint: 'Rechercher une formation, organisme...',
+        onChanged: (v) => controller.searchQuery.value = v,
+      );
 
   @override
   Widget build(BuildContext context) {
+    final body = _list(context);
+    if (widget.embedded) {
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: _searchBar(),
+          ),
+          Expanded(child: body),
+        ],
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: ScrollToTopFab(controller: _scrollController),
@@ -56,20 +69,22 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         headerActions: [
           AppIconButton(
             icon: IconlyLight.filter,
-            onTap: () => AppHaptics.tap(),
+            onTap: () {
+              AppHaptics.tap();
+              openTrainingsFilter(context, controller);
+            },
           ),
         ],
-        headerChild: AppSearchBar(
-          controller: _searchController,
-          hint: 'Rechercher une formation, organisme...',
-          onChanged: (v) => _query.value = v,
-        ),
-        body: Obx(() {
+        headerChild: _searchBar(),
+        body: body,
+      ),
+    );
+  }
+
+  Widget _list(BuildContext context) {
+    return Obx(() {
               final isLoading = controller.isLoading.value;
-              _query.value; // dépendance réactive pour le filtre local.
-              final trainings = controller.trainings
-                  .where(_matchesQuery)
-                  .toList(growable: false);
+              final trainings = controller.filteredTrainings;
               final errorMessage = controller.errorMessage.value;
 
               if (isLoading && trainings.isEmpty) {
@@ -158,9 +173,9 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
                         final training = trainings[index];
                         return AnimationConfiguration.staggeredList(
                           position: index,
-                          duration: const Duration(milliseconds: 320),
+                          duration: AppMotion.base,
                           child: SlideAnimation(
-                            verticalOffset: 18,
+                            verticalOffset: AppMotion.listSlideOffset,
                             child: FadeInAnimation(
                               child: TrainingCard(
                                 training: training,
@@ -180,8 +195,46 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
                   ),
                 ),
               );
-            }),
-      ),
-    );
+            });
+  }
+}
+
+/// Ouvre le sheet de filtres des formations (format / niveau / tarif), construit
+/// à partir des valeurs réellement présentes, et applique au controller.
+/// Partagé par l'écran Formations et le hub Opportunités.
+Future<void> openTrainingsFilter(
+    BuildContext context, TrainingsController controller) async {
+  final formats = controller.trainings
+      .map((t) => t.format)
+      .where((f) => f.trim().isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort();
+  final levels = controller.trainings
+      .map((t) => t.level)
+      .where((l) => l.trim().isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort();
+  final groups = <FilterGroup>[
+    if (formats.isNotEmpty)
+      FilterGroup(key: 'format', label: 'Format', options: formats),
+    if (levels.isNotEmpty)
+      FilterGroup(key: 'level', label: 'Niveau', options: levels),
+    const FilterGroup(key: 'price', label: 'Tarif', options: ['Gratuites']),
+  ];
+  final result = await showFilterSheet(
+    context: context,
+    groups: groups,
+    selected: {
+      'format': controller.activeFormat.value,
+      'level': controller.activeLevel.value,
+      'price': controller.freeOnly.value ? 'Gratuites' : null,
+    },
+  );
+  if (result != null) {
+    controller.activeFormat.value = result['format'];
+    controller.activeLevel.value = result['level'];
+    controller.freeOnly.value = result['price'] == 'Gratuites';
   }
 }

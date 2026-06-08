@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Rayons de coin centralisés pour la charte OpporTune BF.
-/// Privilégier ces constantes à `BorderRadius.circular(...)` ad-hoc.
+
 class AppRadius {
   AppRadius._();
 

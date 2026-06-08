@@ -19,8 +19,9 @@ class AuthTokenStore {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
-    await prefs.setString(_userTypeKey, userType);
     await _secureStorage.write(key: _tokenKey, value: token);
+    await _secureStorage.write(key: _userTypeKey, value: userType);
+    await prefs.setString(_userTypeKey, userType);
   }
 
   Future<String> readToken() async {
@@ -51,8 +52,15 @@ class AuthTokenStore {
 
   /// Type d'utilisateur courant ('candidate' | 'recruiter'), `null` si absent.
   Future<String?> readUserType() async {
+    final secure = await _secureStorage.read(key: _userTypeKey);
+    if (secure != null && secure.isNotEmpty) return secure;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userTypeKey);
+    final legacy = prefs.getString(_userTypeKey);
+    if (legacy != null && legacy.isNotEmpty) {
+      await _secureStorage.write(key: _userTypeKey, value: legacy);
+      return legacy;
+    }
+    return null;
   }
 
   Future<void> clearSession() async {
@@ -60,6 +68,7 @@ class AuthTokenStore {
     await prefs.remove(_tokenKey);
     await prefs.remove(_userTypeKey);
     await _secureStorage.delete(key: _tokenKey);
+    await _secureStorage.delete(key: _userTypeKey);
     // Purge le cache disque pour eviter qu'un nouvel utilisateur sur ce
     // device voie les donnees (offres, candidatures, conversations) de
     // l'utilisateur precedent au prochain login.

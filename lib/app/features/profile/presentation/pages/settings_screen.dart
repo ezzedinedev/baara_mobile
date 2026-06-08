@@ -42,6 +42,16 @@ class SettingsBody extends StatefulWidget {
 
 class _SettingsBodyState extends State<SettingsBody> {
   bool _notifications = true;
+  bool _networkActivity = false;
+
+  // Préférences de notification granulaires (clés backend existantes).
+  final _notifPrefs = <String, bool>{
+    'offer_updates': true,
+    'application_updates': true,
+    'match_alerts': true,
+    'message_alerts': true,
+    'training_updates': true,
+  };
 
   /// Persiste une préférence côté backend (PUT /profile/preferences).
   Future<bool> _persistPref(Map<String, dynamic> prefs) async {
@@ -102,20 +112,8 @@ class _SettingsBodyState extends State<SettingsBody> {
                       icon: Icons.notifications_rounded,
                       color: AppColors.categoryOrange,
                       title: 'Notifications',
-                      trailing: Switch.adaptive(
-                        value: _notifications,
-                        activeThumbColor: AppColors.onPrimary,
-                        activeTrackColor: AppColors.successSwitch,
-                        onChanged: (v) async {
-                          AppHaptics.tap();
-                          setState(() => _notifications = v);
-                          final ok =
-                              await _persistPref({'notifications_enabled': v});
-                          if (!ok && mounted) {
-                            setState(() => _notifications = !v);
-                          }
-                        },
-                      ),
+                      valueLabel: _notifications ? 'Activées' : 'Désactivées',
+                      onTap: () => _openNotifications(context),
                     ),
                     Obx(
                       () => _HeaderRow(
@@ -139,6 +137,40 @@ class _SettingsBodyState extends State<SettingsBody> {
                           ? 'English'
                           : 'Français',
                       onTap: () => _pickLanguage(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                const _GroupLabel('Communauté & réseau'),
+                _Group(
+                  rows: [
+                    _HeaderRow(
+                      icon: Icons.groups_rounded,
+                      color: AppColors.primary,
+                      title: 'Mon fil communauté',
+                      onTap: () {
+                        AppHaptics.tap();
+                        Get.toNamed(AppRoutes.community);
+                      },
+                    ),
+                    _HeaderRow(
+                      icon: Icons.diversity_3_rounded,
+                      color: AppColors.secondary,
+                      title: 'Activité du réseau',
+                      subtitle: 'Abonnés, mentions et publications',
+                      trailing: Switch.adaptive(
+                        value: _networkActivity,
+                        activeThumbColor: AppColors.onPrimary,
+                        activeTrackColor: AppColors.successSwitch,
+                        onChanged: (v) async {
+                          AppHaptics.tap();
+                          setState(() => _networkActivity = v);
+                          final ok = await _persistPref({'team_activity': v});
+                          if (!ok && mounted) {
+                            setState(() => _networkActivity = !v);
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -192,6 +224,103 @@ class _SettingsBodyState extends State<SettingsBody> {
               ],
             ),
           );
+  }
+
+  /// Feuille de notifications granulaire — un interrupteur maître + les
+  /// canaux (offres, candidatures, suggestions IA, messages, formations).
+  /// Chaque bascule persiste immédiatement via PUT /profile/preferences.
+  Future<void> _openNotifications(BuildContext context) async {
+    AppHaptics.tap();
+    const channels = <String, ({IconData icon, Color color, String label})>{
+      'offer_updates': (icon: Icons.work_outline_rounded, color: AppColors.categoryBlue, label: 'Nouvelles offres'),
+      'application_updates': (icon: Icons.assignment_turned_in_outlined, color: AppColors.successDark, label: 'Suivi des candidatures'),
+      'match_alerts': (icon: Icons.auto_awesome_rounded, color: AppColors.secondary, label: 'Suggestions IA'),
+      'message_alerts': (icon: Icons.chat_bubble_outline_rounded, color: AppColors.primary, label: 'Messages'),
+      'training_updates': (icon: Icons.school_outlined, color: AppColors.categoryOrange, label: 'Formations'),
+    };
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.outlineVariant,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Notifications',
+                    style: AppTextStyles.titleLg
+                        .copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Activer les notifications',
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w700)),
+                  value: _notifications,
+                  activeThumbColor: AppColors.onPrimary,
+                  activeTrackColor: AppColors.successSwitch,
+                  onChanged: (v) async {
+                    AppHaptics.tap();
+                    setSheet(() => _notifications = v);
+                    setState(() => _notifications = v);
+                    final ok = await _persistPref({'notifications_enabled': v});
+                    if (!ok) {
+                      setSheet(() => _notifications = !v);
+                      if (mounted) setState(() => _notifications = !v);
+                    }
+                  },
+                ),
+                const Divider(height: 1),
+                for (final entry in channels.entries)
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    secondary: _SquareIcon(
+                        icon: entry.value.icon, color: entry.value.color),
+                    title: Text(entry.value.label,
+                        style: AppTextStyles.titleMd
+                            .copyWith(fontWeight: FontWeight.w600)),
+                    value: _notifications && (_notifPrefs[entry.key] ?? true),
+                    activeThumbColor: AppColors.onPrimary,
+                    activeTrackColor: AppColors.successSwitch,
+                    onChanged: !_notifications
+                        ? null
+                        : (v) async {
+                            AppHaptics.tap();
+                            setSheet(() => _notifPrefs[entry.key] = v);
+                            setState(() => _notifPrefs[entry.key] = v);
+                            final ok = await _persistPref({entry.key: v});
+                            if (!ok) {
+                              setSheet(() => _notifPrefs[entry.key] = !v);
+                              if (mounted) {
+                                setState(() => _notifPrefs[entry.key] = !v);
+                              }
+                            }
+                          },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _pickLanguage(BuildContext context) async {
@@ -396,6 +525,7 @@ class _HeaderRow extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.title,
+    this.subtitle,
     this.trailing,
     this.valueLabel,
     this.onTap,
@@ -406,6 +536,7 @@ class _HeaderRow extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String title;
+  final String? subtitle;
   final Widget? trailing;
   final String? valueLabel;
   final VoidCallback? onTap;
@@ -423,12 +554,26 @@ class _HeaderRow extends StatelessWidget {
             _SquareIcon(icon: icon, color: color),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                title,
-                style: AppTextStyles.titleMd.copyWith(
-                  color: titleColor ?? AppColors.titleColor,
-                  fontWeight: FontWeight.w800,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.titleMd.copyWith(
+                      color: titleColor ?? AppColors.titleColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.hintColor, fontSize: 12),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (trailing != null)

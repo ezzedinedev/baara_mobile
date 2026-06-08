@@ -38,25 +38,15 @@ class GoogleAuthResult {
       GoogleAuthResult._(error: error);
 }
 
-/// Wrapper autour de `google_sign_in` pour centraliser :
-/// - la configuration (scopes demandés)
-/// - la récupération du `id_token` (ce qui sera envoyé au backend)
-/// - la déconnexion lors du logout
-///
-/// Le backend Laravel devra exposer `POST /api/v1/auth/google` qui prend
-/// `id_token` + `user_type` + `device_name` et retourne un token Sanctum.
 class GoogleAuthService {
   GoogleAuthService({GoogleSignIn? googleSignIn})
       : _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final GoogleSignIn _googleSignIn;
 
-  /// Ouvre la feuille Google et récupère un `id_token` signé.
   Future<GoogleAuthResult> signIn() async {
     try {
-      // Initialise si nécessaire (clientId/serverClientId facultatifs selon la plateforme)
       await _googleSignIn.initialize();
-
       final account = await _googleSignIn.authenticate();
       final auth = account.authentication;
       final idToken = auth.idToken;
@@ -83,9 +73,7 @@ class GoogleAuthService {
     }
   }
 
-  /// À appeler lors d'un logout applicatif pour nettoyer la session Google
-  /// côté device (évite qu'une re-connexion reprenne le même compte sans
-  /// laisser le choix à l'utilisateur).
+  
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();

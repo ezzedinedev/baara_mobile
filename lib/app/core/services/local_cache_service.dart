@@ -1,20 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Cache disque generique pour le pattern stale-while-revalidate.
-///
-/// Stocke des payloads JSON (Map ou List) par cle, avec un timestamp
-/// indiquant la fraicheur. Les controllers s'en servent pour hydrater
-/// les ecrans **immediatement** au mount avec la derniere version connue,
-/// puis revalident en background — feel WhatsApp/Instagram, pas de
-/// spinner sur les ecrans deja visites.
-///
-/// Pas de TTL strict : on garde le cache jusqu'a ce qu'une nouvelle
-/// reponse backend le remplace, ou que l'utilisateur logout (`clearAll`).
-/// Les donnees obsoletes sont preferables a un ecran blanc.
+
 class LocalCacheService {
   LocalCacheService._();
 

@@ -1,32 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'app_theme_controller.dart';
 
-/// Charte graphique OpporTune BF — Professional teal/neutral system
-/// Toutes les couleurs UI passent par ces tokens.
+
+
 class AppColors {
   AppColors._();
-
-  // ── Brand primary : vert vif naturel (proche du vert "landing") ───────
-  // Couleur dominante pour CTAs, icones circulaires, indicateurs actifs et
-  // headers. Vibrant et chaleureux, énergique mais accessible.
-  static const Color primary = Color(0xFF2BA55B);
+  static const Color primary = Color(0xFF0E8A4D);
   static const Color primaryLight = Color(0xFFB7ECC9);
-  static const Color primaryMedium = Color(0xFF4FBE7C);
-  // Teinte la plus sombre de la famille — headers, dégradés profonds, ombres.
-  static const Color primaryDark = Color(0xFF1E7D44);
-
-  // ── Brand secondary : accent institutionnel chaud ─────────────────────
-  // Token sémantique introduit pour distinguer les usages "accent muté" des
-  // surfaces qui doivent réellement pop avec le primary vibrant. Préférer
-  // `secondary` quand l'intention est un accent calme (séparateurs, tags
-  // discrets, badges informatifs) — laisser `primary` pour les pop.
-  static const Color secondary = Color(0xFFC9892B);
-  static const Color secondaryDeep = Color(0xFF5C3B14);
-  static const Color secondaryMid = Color(0xFFE0B15C);
+  static const Color primaryMedium = Color(0xFF2BA55B);
+  static const Color primaryDark = Color(0xFF0A5E36);
+  static const Color secondary = Color(0xFF2BA55B);
+  static const Color secondaryDeep = Color(0xFF0A5E36);
+  static const Color secondaryMid = Color(0xFF4FBE7C);
   static Color get secondarySoft =>
-      _isDark ? const Color(0xFF2E2415) : const Color(0xFFFFF4DC);
+      _isDark ? const Color(0xFF183631) : const Color(0xFFE5F2EF);
 
   static bool get _isDark =>
       Get.isRegistered<AppThemeController>() &&
@@ -131,8 +119,6 @@ class AppColors {
             ? const [Color(0xFF2F8F83), Color(0xFF136F63)]
             : const [primaryMedium, primary],
       );
-
-  /// Header plein écran type Sank (paramètres, sous-pages).
   static LinearGradient get headerBrandGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -141,8 +127,6 @@ class AppColors {
             : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.45, 1.0],
       );
-
-  /// Cercles d'actions / grille services (dégradé plus saturé).
   static LinearGradient get actionIconGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -173,9 +157,6 @@ class AppColors {
             ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
             : const [primaryDark, primary, primaryMedium],
       );
-
-  // Per-section hero gradients — chaque grand espace de l'app gagne une
-  // teinte distinctive tout en restant ancre dans la charte primaire.
   static LinearGradient get heroAccueilGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -259,23 +240,10 @@ class AppColors {
         ),
       ];
 
-  // ── Image scrim ────────────────────────────────────────────────────────
-  // Voile noir transparent pour assombrir le bas d'une image (lisibilité
-  // des badges/CTA posés dessus) — sans masquer le contenu visuel principal.
-  // À utiliser avec `stops: [0.55, 0.85, 1.0]` côté widget pour limiter le
-  // voile au tiers bas. Light mode : 25% bas ; dark mode : plus fort.
   static List<Color> get imageScrim => _isDark
       ? const [Color(0x00000000), Color(0x55000000), Color(0xB3000000)]
       : const [Color(0x00000000), Color(0x22000000), Color(0x66000000)];
-
-  /// Stops par défaut pour `imageScrim` — concentre le voile dans le bas
-  /// pour ne pas écraser le sujet de l'image.
   static const List<double> imageScrimStops = [0.55, 0.85, 1.0];
-
-  // ── Avatar palette ────────────────────────────────────────────────────
-  // Gradients pour avatars sans photo (initiales). Choisis pour rester
-  // distinguables et accessibles côté contraste avec onPrimary blanc dessus.
-  // Index par hash(seed) % length pour stabilité visuelle.
   static const List<List<Color>> avatarPalette = [
     [Color(0xFF14B488), Color(0xFF0CA6A6)],
     [Color(0xFF7A5CFA), Color(0xFF4F46E5)],
@@ -285,8 +253,6 @@ class AppColors {
     [primary, primaryMedium],
   ];
 
-  /// Renvoie la paire de couleurs d'avatar pour un identifiant donné.
-  /// Pure fonction — même seed → même gradient.
   static List<Color> avatarGradientForSeed(String seed) {
     if (seed.isEmpty) return avatarPalette.first;
     final hash = seed.codeUnits.fold<int>(0, (acc, c) => (acc + c) & 0xFFFF);

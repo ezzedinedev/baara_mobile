@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
@@ -15,20 +15,27 @@ abstract class ApiInterceptor {
 class LoggingInterceptor implements ApiInterceptor {
   @override
   void onRequest(http.BaseRequest request) {
-    // ignore: avoid_print
-    print('API Request: ${request.method} ${request.url}');
+    if (kDebugMode) {
+      final uri = request.url;
+      debugPrint('[API] ${request.method} ${uri.scheme}://${uri.host}${uri.path}');
+    }
   }
 
   @override
   void onResponse(http.Response response) {
-    // ignore: avoid_print
-    print('API Response: ${response.statusCode} ${response.request?.url}');
+    if (kDebugMode) {
+      final uri = response.request?.url;
+      if (uri != null) {
+        debugPrint('[API] ${response.statusCode} ${uri.scheme}://${uri.host}${uri.path}');
+      }
+    }
   }
 
   @override
   void onError(Exception error) {
-    // ignore: avoid_print
-    print('API Error: $error');
+    if (kDebugMode) {
+      debugPrint('[API] Error: ${error.runtimeType}');
+    }
   }
 }
 
@@ -100,14 +107,8 @@ class ApiProvider {
   final List<ApiInterceptor> _interceptors;
   final RetryPolicy _retryPolicy;
   Future<String?> Function()? _tokenProvider;
-  /// Callback appelé sur 401 pour tenter un refresh de token.
-  /// Doit retourner le nouveau token (ou null si échec → déconnexion).
   final Future<String?> Function()? _tokenRefresher;
-  /// Callback appelé quand le refresh échoue : laisser le shell logger
-  /// l'utilisateur out + router vers landing.
   final void Function()? _onAuthFailed;
-  /// Lock pour éviter plusieurs refresh concurrents (toutes les requêtes
-  /// 401 simultanées attendent le même refresh).
   Future<String?>? _ongoingRefresh;
   String? _lastWorkingBaseUrl;
 
