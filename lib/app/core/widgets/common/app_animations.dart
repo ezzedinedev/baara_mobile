@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-/// Apparition au montage : fade + slide vers le haut + leger scale depuis 0.96.
-/// Idéal pour heros / cards principales pour donner un effet "premium".
+
 class RevealOnMount extends StatefulWidget {
   const RevealOnMount({
     super.key,
     required this.child,
     this.delay = Duration.zero,
-    this.duration = const Duration(milliseconds: 520),
+    this.duration = const Duration(milliseconds: 260),
     this.offsetY = 24,
   });
 
@@ -52,6 +51,12 @@ class _RevealOnMountState extends State<RevealOnMount>
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.maybeOf(context);
+    final reduceMotion =
+        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+
+    if (reduceMotion) return widget.child;
+
     return AnimatedBuilder(
       animation: _curve,
       builder: (context, child) {
@@ -61,7 +66,7 @@ class _RevealOnMountState extends State<RevealOnMount>
           child: Transform.translate(
             offset: Offset(0, widget.offsetY * (1 - t)),
             child: Transform.scale(
-              scale: 0.96 + 0.04 * t,
+              scale: 0.97 + 0.03 * t,
               child: child,
             ),
           ),
@@ -72,8 +77,7 @@ class _RevealOnMountState extends State<RevealOnMount>
   }
 }
 
-/// Pastille avec halo pulsé concentrique. Pour signaler "online", "unread",
-/// ou tout indicateur d'activité. La halo respire 0 → max → 0 en boucle.
+
 class PulsingDot extends StatefulWidget {
   const PulsingDot({
     super.key,
@@ -154,8 +158,6 @@ class _PulsingDotState extends State<PulsingDot>
   }
 }
 
-/// Effet Ken Burns sur une image : un slow zoom + leger panning qui boucle
-/// en ping-pong. Donne du mouvement aux covers statiques.
 class KenBurnsImage extends StatefulWidget {
   const KenBurnsImage({
     super.key,
@@ -215,8 +217,7 @@ class _KenBurnsImageState extends State<KenBurnsImage>
   }
 }
 
-/// Une fleche/widget qui se decale en horizontal (0 → 4px → 0) en continu
-/// pour signaler "ca avance dans cette direction". Parfait pour CTA arrow.
+
 class NudgeArrow extends StatefulWidget {
   const NudgeArrow({
     super.key,
@@ -262,8 +263,7 @@ class _NudgeArrowState extends State<NudgeArrow>
   }
 }
 
-/// Compteur entier qui s'anime de la valeur precedente vers la nouvelle.
-/// Utilise pour stats / badges qui changent.
+
 class AnimatedCount extends StatelessWidget {
   const AnimatedCount({
     super.key,

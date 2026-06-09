@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-
 import '../../theme/app_colors.dart';
 
-/// Primitive de skeleton : rectangle shimmer qui respecte la charte.
-/// Tous les skeletons de l'app composent cette brique.
+
+
 class SkeletonBox extends StatelessWidget {
   const SkeletonBox({
     super.key,

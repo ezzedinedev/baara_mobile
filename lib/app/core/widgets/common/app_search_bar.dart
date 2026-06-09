@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:iconly/iconly.dart';
-
 import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
-/// Barre de recherche moderne destinee a etre superposee juste sous un
-/// [WavyContentHeader] (via Stack ou Transform.translate).
-/// Glassmorphism leger : surface card + ombre douce + icone primary.
+
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
     super.key,
@@ -29,27 +27,20 @@ class AppSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+          color: AppColors.outlineVariant.withValues(alpha: 0.55),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             IconlyLight.search,
-            color: AppColors.primary,
-            size: 22,
+            color: AppColors.bodyColor,
+            size: 20,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -58,9 +49,7 @@ class AppSearchBar extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               textInputAction: TextInputAction.search,
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.titleColor,
-              ),
+              style: AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: AppTextStyles.bodyMd.copyWith(
@@ -85,17 +74,12 @@ class AppSearchBar extends StatelessWidget {
                   onChanged?.call('');
                   onClear?.call();
                 },
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLow,
-                    shape: BoxShape.circle,
-                  ),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
                   child: Icon(
                     Icons.close_rounded,
-                    size: 16,
+                    size: 18,
                     color: AppColors.bodyColor,
                   ),
                 ),

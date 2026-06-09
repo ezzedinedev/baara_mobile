@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
@@ -15,20 +15,27 @@ abstract class ApiInterceptor {
 class LoggingInterceptor implements ApiInterceptor {
   @override
   void onRequest(http.BaseRequest request) {
-    // ignore: avoid_print
-    print('API Request: ${request.method} ${request.url}');
+    if (kDebugMode) {
+      final uri = request.url;
+      debugPrint('[API] ${request.method} ${uri.scheme}://${uri.host}${uri.path}');
+    }
   }
 
   @override
   void onResponse(http.Response response) {
-    // ignore: avoid_print
-    print('API Response: ${response.statusCode} ${response.request?.url}');
+    if (kDebugMode) {
+      final uri = response.request?.url;
+      if (uri != null) {
+        debugPrint('[API] ${response.statusCode} ${uri.scheme}://${uri.host}${uri.path}');
+      }
+    }
   }
 
   @override
   void onError(Exception error) {
-    // ignore: avoid_print
-    print('API Error: $error');
+    if (kDebugMode) {
+      debugPrint('[API] Error: ${error.runtimeType}');
+    }
   }
 }
 
@@ -100,14 +107,8 @@ class ApiProvider {
   final List<ApiInterceptor> _interceptors;
   final RetryPolicy _retryPolicy;
   Future<String?> Function()? _tokenProvider;
-  /// Callback appelé sur 401 pour tenter un refresh de token.
-  /// Doit retourner le nouveau token (ou null si échec → déconnexion).
   final Future<String?> Function()? _tokenRefresher;
-  /// Callback appelé quand le refresh échoue : laisser le shell logger
-  /// l'utilisateur out + router vers landing.
   final void Function()? _onAuthFailed;
-  /// Lock pour éviter plusieurs refresh concurrents (toutes les requêtes
-  /// 401 simultanées attendent le même refresh).
   Future<String?>? _ongoingRefresh;
   String? _lastWorkingBaseUrl;
 
@@ -176,6 +177,56 @@ class ApiProvider {
     );
   }
 
+  /// GET authentifié renvoyant le corps binaire brut (ex: PDF généré serveur).
+  /// Bascule sur les base-URL candidates en cas d'erreur réseau ; une réponse
+  /// HTTP non-2xx est renvoyée telle quelle via [ApiException].
+  Future<Uint8List> getBytes(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
+    final candidateBaseUrls = _orderedBaseUrls();
+    Exception? lastError;
+
+    for (final baseUrl in candidateBaseUrls) {
+      try {
+        final uri = _buildUri(baseUrl, endpoint);
+        final request = http.Request('GET', uri);
+        final authedHeaders =
+            await _withAuth(headers ?? const {'Accept': 'application/pdf'});
+        request.headers.addAll(authedHeaders);
+
+        _notifyRequest(request);
+        final streamed = await _client
+            .send(request)
+            .timeout(ApiConstants.connectTimeout);
+        final response = await http.Response.fromStream(streamed)
+            .timeout(ApiConstants.receiveTimeout);
+        _notifyResponse(response);
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          _lastWorkingBaseUrl = baseUrl;
+          return response.bodyBytes;
+        }
+        throw ApiException(
+          message: 'Téléchargement impossible (HTTP ${response.statusCode}).',
+          statusCode: response.statusCode,
+          endpoint: endpoint,
+        );
+      } on ApiException {
+        rethrow;
+      } on Exception catch (e) {
+        lastError = e;
+        _notifyError(e);
+      }
+    }
+
+    throw ApiException(
+      message: 'Téléchargement impossible.',
+      endpoint: endpoint,
+      previous: lastError,
+    );
+  }
+
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> payload, {
@@ -211,6 +262,41 @@ class ApiProvider {
       endpoint: endpoint,
       headers: headers ?? const {'Accept': 'application/json'},
     );
+  }
+
+  Future<Map<String, dynamic>> multipartPost(
+    String endpoint, {
+    required Map<String, String> fields,
+    required List<http.MultipartFile> files,
+    Map<String, String>? headers,
+  }) async {
+    final candidateBaseUrls = _orderedBaseUrls();
+    Exception? lastError;
+
+    for (final baseUrl in candidateBaseUrls) {
+      try {
+        final uri = _buildUri(baseUrl, endpoint);
+        final request = http.MultipartRequest('POST', uri);
+        final mergedHeaders = await _withAuth({
+          'Accept': 'application/json',
+          ...?headers,
+        });
+        request.headers.addAll(mergedHeaders);
+        request.fields.addAll(fields);
+        request.files.addAll(files);
+
+        _notifyRequest(request);
+        final streamedResponse = await request.send().timeout(ApiConstants.connectTimeout);
+        final response = await http.Response.fromStream(streamedResponse).timeout(ApiConstants.receiveTimeout);
+        _notifyResponse(response);
+        
+        _lastWorkingBaseUrl = baseUrl;
+        return _parseResponse(response);
+      } catch (e) {
+        lastError = e as Exception;
+      }
+    }
+    throw ApiException(message: 'Multipart upload failed', endpoint: endpoint, previous: lastError);
   }
 
   Future<Map<String, dynamic>> sendMultipart(

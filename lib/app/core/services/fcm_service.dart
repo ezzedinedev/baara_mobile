@@ -6,7 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_routes.dart';
-import '../../modules/home/controllers/home_controller.dart';
+import '../../features/home/presentation/controllers/home_controller.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
@@ -113,7 +113,7 @@ class FcmService extends GetxService {
       requestSoundPermission: false,
     );
     await _localNotif.initialize(
-      const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: (response) {
         // Tap sur le banner local en foreground → on parse le payload
         // qu'on a injecte (memes clefs que les data Firebase pour rester
@@ -162,23 +162,25 @@ class FcmService extends GetxService {
   }
 
   Future<void> _pushTokenToBackend(String token) async {
+    final auth = await _tokenStore.readTokenOrNull();
+    if (auth == null || auth.isEmpty) {
+      // Normal au boot avant login — sync via activateAfterLogin().
+      return;
+    }
     try {
-      final auth = await _tokenStore.readToken();
       await _apiProvider.putJson(
         ApiConstants.notificationsFcmToken,
         {
+          // Backend (NotificationApiController@updateFcmToken) ne valide que
+          // `fcm_token` ; ne pas envoyer de champ superflu.
           'fcm_token': token,
-          'platform': defaultTargetPlatform == TargetPlatform.iOS
-              ? 'ios'
-              : 'android',
         },
         headers: ApiConstants.authHeaders(auth),
       );
     } catch (e) {
-      // Echec silencieux : si on est offline ou non-authentifie, on
-      // re-tentera au prochain refresh / login. Pas de notification au
-      // user pour cette plomberie.
-      if (kDebugMode) debugPrint('[FCM] push token to backend failed: $e');
+      if (kDebugMode) {
+        debugPrint('[FCM] push token to backend failed: $e');
+      }
     }
   }
 
@@ -186,11 +188,6 @@ class FcmService extends GetxService {
     final data = message.data;
     final shortType = _shortenType(data['notifiable_type']?.toString());
     final targetId = data['notifiable_id']?.toString();
-
-    // Real-time chat sans WebSocket : si le push concerne une
-    // conversation, on declenche immediatement les refresh in-app
-    // (inbox + thread) pour mettre a jour la liste, le badge non-lus
-    // et le thread actif. Donne un feel WhatsApp avec FCM only.
     var suppressBanner = false;
     if (shortType == 'conversation' &&
         targetId != null &&
@@ -199,9 +196,6 @@ class FcmService extends GetxService {
       final home = Get.find<HomeController>();
       // Inbox : reload pour MAJ unreadCounters + lastMessage des cards.
       home.loadConversations();
-      // Thread actif : si l'utilisateur est DANS la conversation
-      // concernee, on recharge ses messages et on supprime le banner
-      // (pas la peine de le notifier — il voit deja l'ecran).
       if (home.activeConversationId.value == targetId) {
         home.loadConversationThread(targetId);
         suppressBanner = true;
@@ -213,10 +207,10 @@ class FcmService extends GetxService {
     if (notif == null) return;
     final payload = _serializePayload(data);
     _localNotif.show(
-      message.hashCode,
-      notif.title,
-      notif.body,
-      const NotificationDetails(
+      id: message.hashCode,
+      title: notif.title,
+      body: notif.body,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannelId,
           _androidChannelName,
@@ -229,10 +223,6 @@ class FcmService extends GetxService {
       payload: payload,
     );
   }
-
-  /// Reduit "App\\Models\\Conversation" → "conversation". Duplique de
-  /// `_shortenTargetType` cote messaging_methods (volontairement, pour
-  /// que FcmService reste autonome de la logique HomeController).
   String? _shortenType(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     final tail = raw.split('\\').last.toLowerCase();
@@ -242,20 +232,12 @@ class FcmService extends GetxService {
   void _handleNotificationTap(RemoteMessage message) {
     _routeFromPayload(message.data);
   }
-
-  /// Routage commun : memes regles que `_navigateToTarget` cote
-  /// notifications_screen — duplique ici parce que ce code peut s'executer
-  /// avant que l'ecran des notifs n'ait ete monte. Garde la logique
-  /// minimale : on ouvre la route, l'ecran cible recharge ce qu'il faut.
   void _routeFromPayload(Map<String, dynamic> data) {
     final id = data['notifiable_id']?.toString();
     if (id == null || id.isEmpty) return;
     final shortType = _shortenType(data['notifiable_type']?.toString());
     switch (shortType) {
       case 'conversation':
-        // Pas d'overlay messaging direct ici : on bascule sur l'app et
-        // le HomeController prendra l'id depuis un canal de comm dedie.
-        // Pour l'instant on ouvre juste la liste messagerie.
         Get.toNamed(AppRoutes.home);
         break;
       case 'application':

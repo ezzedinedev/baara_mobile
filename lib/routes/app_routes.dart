@@ -14,7 +14,8 @@ abstract class AppRoutes {
   static const home = '/accueil';
   static const profile = '/profile';
   static const profileEdit = '/profile/edit';
-  static const profilePreferences = '/profile/preferences';
+  static const profileParcours = '/profile/parcours';
+  static const profileDocuments = '/profile/documents';
   static const profileCv = '/profile/cv';
   static const profileCvBuilder = '/profile/cv-builder';
   static const profileCvAssistant = '/profile/cv-builder/assistant';
@@ -28,9 +29,18 @@ abstract class AppRoutes {
   static const myApplications = '/offres/mes-candidatures';
   static const trainings = '/formations';
   static const trainingDetail = '/formations/:id';
+  static const trainingPlayer = '/formations/:id/parcours';
   static const messages = '/messages';
   static const conversation = '/messages/:id';
+  static const community = '/communaute';
+  static const communityProfile = '/communaute/membre/:id';
+  static const communitySearch = '/communaute/recherche';
+  static const communityConnections = '/communaute/connexions';
   static const notifications = '/notifications';
   static const settings = '/settings';
+  // IA
+  static const iaScoreProfil = '/ia/score-profil';
+  static const iaChatbot = '/ia/chatbot';
+  static const iaAuditCv = '/ia/audit-cv';
   static const error404 = '/404';
 }

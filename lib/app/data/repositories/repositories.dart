@@ -70,6 +70,13 @@ class AuthRepository {
   Future<Map<String, dynamic>> logout() {
     return _apiProvider.postJson(ApiConstants.logout, {});
   }
+
+  /// Revoke tous les tokens Sanctum de l'utilisateur (toutes sessions /
+  /// tous devices). A appeler depuis l'ecran "Securite" pour permettre
+  /// a un user qui pense son compte compromis de tout fermer d'un coup.
+  Future<Map<String, dynamic>> logoutAll() {
+    return _apiProvider.postJson(ApiConstants.logoutAll, {});
+  }
 }
 
 class OfferRepository {

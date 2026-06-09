@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import 'skeleton_box.dart';
 
-/// Skeleton générique pour loading plein écran (profil, CV, preview, builder).
-/// Évite le `CircularProgressIndicator` central qui fait daté.
-///
+
+
+
 /// Affiche : un hero card (primary gradient box) + [rowCount] cards avec
 /// titre + 2 lignes de texte. Respecte le dark mode via AppColors.
 class PageSkeleton extends StatelessWidget {

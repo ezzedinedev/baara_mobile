@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell($path = 'e:\\\\laragon\\\\www\\\\appli_pour_lemploie\\\\lib\\\\app\\\\modules\\\\home\\\\home_screen.dart'; $lines = Get-Content $path -Encoding utf8; $before = $lines[0..1930]; $after = $lines[2331..\\($lines.Length-1\\)]; $new = $before + $after; Set-Content -Path $path -Value $new -Encoding utf8; Write-Output \"Removed lines 1932-2331. New total: $\\($new.Length\\) lines \\(was $\\($lines.Length\\)\\).\")"
+      "PowerShell($path = 'e:\\\\laragon\\\\www\\\\appli_pour_lemploie\\\\lib\\\\app\\\\modules\\\\home\\\\home_screen.dart'; $lines = Get-Content $path -Encoding utf8; $before = $lines[0..1930]; $after = $lines[2331..\\($lines.Length-1\\)]; $new = $before + $after; Set-Content -Path $path -Value $new -Encoding utf8; Write-Output \"Removed lines 1932-2331. New total: $\\($new.Length\\) lines \\(was $\\($lines.Length\\)\\).\")",
+      "Bash(flutter analyze *)"
     ]
   }
 }

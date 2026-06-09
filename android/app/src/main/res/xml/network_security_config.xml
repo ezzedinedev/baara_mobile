@@ -19,6 +19,5 @@
         <!-- Emulateur Android pointant vers le PC host -->
         <domain includeSubdomains="false">10.0.2.2</domain>
         <!-- IP LAN du dev (Wi-Fi PC actuel). Ajouter d'autres si besoin. -->
-        <domain includeSubdomains="false">192.168.11.112</domain>
     </domain-config>
 </network-security-config>

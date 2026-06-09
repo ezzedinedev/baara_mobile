@@ -1,26 +1,9 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
 
-/// Pill compact icone + texte, declinable en plusieurs styles selon le
-/// contexte (sur fond clair, sur fond gradient hero, mode "dark").
-///
-/// Cas d'usage typiques :
-///   - Tag categorie sur card offer/training
-///   - Status badge ("Disponible", "En ligne")
-///   - Pill informatif sur hero gradient (style `glass` translucide)
-///
-/// Variantes [GlassChipStyle] :
-///   - `surface` (defaut) : fond `surfaceLow`, contenu `bodyColor` ou couleur
-///     personnalisee. A poser sur un fond clair.
-///   - `glass`             : fond `onPrimary.withAlpha(0.18)`. A poser sur un
-///     gradient hero / image scrim.
-///   - `solid`             : fond plein `color`, contenu `onPrimary`. Pour
-///     emphase forte ("DEFAUT", "Recommande").
-///   - `tonal`             : fond `color.withAlpha(0.12)`, contenu `color`.
-///     Pour categorie thematique (Iconly + label categorie).
+
 class GlassChip extends StatelessWidget {
   const GlassChip({
     super.key,

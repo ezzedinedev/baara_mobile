@@ -1,0 +1,441 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
+
+import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
+import 'package:opportune_bf/app/core/utils/haptics.dart';
+import 'package:opportune_bf/app/core/widgets/widgets.dart';
+
+import '../controllers/parcours_editor_controller.dart';
+
+/// Éditeur direct du parcours : ajoute/retire expériences et formations sans
+/// passer par le flux "Créer mon CV". Persiste via le CV-builder.
+class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
+  const ParcoursEditorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+              child: Row(
+                children: [
+                  AppBackButton(onTap: () => Get.back<void>()),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Mon parcours',
+                            style: AppTextStyles.titleLg
+                                .copyWith(fontWeight: FontWeight.w800)),
+                        Text('Vos expériences et formations',
+                            style: AppTextStyles.bodySm
+                                .copyWith(color: AppColors.hintColor)),
+                      ],
+                    ),
+                  ),
+                  Obx(() => controller.isSaving.value
+                      ? const Padding(
+                          padding: EdgeInsets.only(right: 6),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.primary),
+                          ),
+                        )
+                      : const SizedBox.shrink()),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: const [
+                    SkeletonBox(height: 90, radius: 16),
+                    SizedBox(height: 12),
+                    SkeletonBox(height: 90, radius: 16),
+                  ],
+                );
+              }
+              if (controller.errorMessage.value != null &&
+                  controller.experiences.isEmpty &&
+                  controller.educations.isEmpty) {
+                return ErrorStateView(
+                  message: controller.errorMessage.value!,
+                  onRetry: controller.load,
+                );
+              }
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                children: [
+                  _SectionTitle(
+                    icon: IconlyBold.work,
+                    color: AppColors.categoryPurple,
+                    title: 'Expériences',
+                  ),
+                  const SizedBox(height: 10),
+                  ...List.generate(controller.experiences.length, (i) {
+                    final e = controller.experiences[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _EntryCard(
+                        title: _str(e, ['title', 'job_title'], 'Expérience'),
+                        subtitle: _str(e, ['company', 'company_name'], ''),
+                        period: _period(e),
+                        onDelete: () => controller.removeExperience(i),
+                      ),
+                    );
+                  }),
+                  _AddButton(
+                    label: 'Ajouter une expérience',
+                    onTap: () => _showExperienceForm(context),
+                  ),
+                  const SizedBox(height: 26),
+                  _SectionTitle(
+                    icon: IconlyBold.bookmark,
+                    color: AppColors.categoryBlue,
+                    title: 'Formations',
+                  ),
+                  const SizedBox(height: 10),
+                  ...List.generate(controller.educations.length, (i) {
+                    final e = controller.educations[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _EntryCard(
+                        title: _str(e, ['degree', 'diploma'], 'Formation'),
+                        subtitle: _str(
+                            e, ['institution', 'school', 'university'], ''),
+                        period: _period(e),
+                        onDelete: () => controller.removeEducation(i),
+                      ),
+                    );
+                  }),
+                  _AddButton(
+                    label: 'Ajouter une formation',
+                    onTap: () => _showEducationForm(context),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _str(Map<String, dynamic> m, List<String> keys, String fb) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+
+  static String _period(Map<String, dynamic> m) {
+    final start = _str(m, ['start_date', 'start'], '');
+    final end = _str(m, ['end_date', 'end'], '');
+    if (start.isEmpty && end.isEmpty) return '';
+    return '$start${start.isNotEmpty && end.isNotEmpty ? ' – ' : ''}$end';
+  }
+
+  Future<void> _showExperienceForm(BuildContext context) async {
+    final data = await _entryForm(
+      context,
+      title: 'Nouvelle expérience',
+      fields: const [
+        _FieldSpec('title', 'Poste', IconlyLight.work, required: true),
+        _FieldSpec('company', 'Entreprise', IconlyLight.work, required: true),
+        _FieldSpec('location', 'Ville', IconlyLight.location),
+        _FieldSpec('start_date', 'Début (ex : 2020)', IconlyLight.calendar),
+        _FieldSpec('end_date', 'Fin (ex : 2023 / Présent)', IconlyLight.calendar),
+        _FieldSpec('description', 'Missions', IconlyLight.document,
+            multiline: true),
+      ],
+    );
+    if (data != null) {
+      final ok = await controller.addExperience(data);
+      if (ok) AppToast.success('Expérience ajoutée');
+    }
+  }
+
+  Future<void> _showEducationForm(BuildContext context) async {
+    final data = await _entryForm(
+      context,
+      title: 'Nouvelle formation',
+      fields: const [
+        _FieldSpec('degree', 'Diplôme', IconlyLight.star, required: true),
+        _FieldSpec('institution', 'École / Université', IconlyLight.work,
+            required: true),
+        _FieldSpec('location', 'Ville', IconlyLight.location),
+        _FieldSpec('start_date', 'Début (ex : 2018)', IconlyLight.calendar),
+        _FieldSpec('end_date', 'Fin (ex : 2021)', IconlyLight.calendar),
+        _FieldSpec('field_of_study', 'Domaine', IconlyLight.document),
+      ],
+    );
+    if (data != null) {
+      final ok = await controller.addEducation(data);
+      if (ok) AppToast.success('Formation ajoutée');
+    }
+  }
+
+  Future<Map<String, dynamic>?> _entryForm(
+    BuildContext context, {
+    required String title,
+    required List<_FieldSpec> fields,
+  }) {
+    return showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _EntryFormSheet(title: title, fields: fields),
+    );
+  }
+}
+
+class _FieldSpec {
+  const _FieldSpec(this.key, this.label, this.icon,
+      {this.required = false, this.multiline = false});
+  final String key;
+  final String label;
+  final IconData icon;
+  final bool required;
+  final bool multiline;
+}
+
+class _EntryFormSheet extends StatefulWidget {
+  const _EntryFormSheet({required this.title, required this.fields});
+  final String title;
+  final List<_FieldSpec> fields;
+
+  @override
+  State<_EntryFormSheet> createState() => _EntryFormSheetState();
+}
+
+class _EntryFormSheetState extends State<_EntryFormSheet> {
+  late final Map<String, TextEditingController> _ctrls = {
+    for (final f in widget.fields) f.key: TextEditingController(),
+  };
+  String? _error;
+
+  @override
+  void dispose() {
+    for (final c in _ctrls.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _submit() {
+    for (final f in widget.fields) {
+      if (f.required && _ctrls[f.key]!.text.trim().isEmpty) {
+        setState(() => _error = '« ${f.label} » est requis.');
+        return;
+      }
+    }
+    final data = <String, dynamic>{
+      for (final f in widget.fields)
+        if (_ctrls[f.key]!.text.trim().isNotEmpty)
+          f.key: _ctrls[f.key]!.text.trim(),
+    };
+    AppHaptics.tap();
+    Navigator.of(context).pop(data);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(widget.title,
+                  style: AppTextStyles.titleLg
+                      .copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 16),
+              for (final f in widget.fields) ...[
+                AuthTextField(
+                  label: f.label,
+                  controller: _ctrls[f.key]!,
+                  icon: f.icon,
+                  keyboardType:
+                      f.multiline ? TextInputType.multiline : TextInputType.text,
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (_error != null) ...[
+                Text(_error!,
+                    style: AppTextStyles.bodySm
+                        .copyWith(color: AppColors.error)),
+                const SizedBox(height: 12),
+              ],
+              GradientButton(
+                label: 'ENREGISTRER',
+                textColor: AppColors.onPrimary,
+                height: 52,
+                borderRadius: 14,
+                onPressed: _submit,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(
+      {required this.icon, required this.color, required this.title});
+  final IconData icon;
+  final Color color;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Text(title,
+            style: AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
+}
+
+class _EntryCard extends StatelessWidget {
+  const _EntryCard({
+    required this.title,
+    required this.subtitle,
+    required this.period,
+    required this.onDelete,
+  });
+  final String title;
+  final String subtitle;
+  final String period;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w800)),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.bodyColor)),
+                ],
+                if (period.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(period,
+                      style: AppTextStyles.labelSm
+                          .copyWith(color: AppColors.hintColor)),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(IconlyLight.delete, color: AppColors.error),
+            onPressed: () {
+              AppHaptics.tap();
+              onDelete();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddButton extends StatelessWidget {
+  const _AddButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          AppHaptics.tap();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: AppTextStyles.titleMd.copyWith(
+                      color: AppColors.primary, fontWeight: FontWeight.w800)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

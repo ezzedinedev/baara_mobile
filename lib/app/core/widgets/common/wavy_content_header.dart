@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import 'wavy_decorations.dart';
 
-/// Header en vague pour les pages de contenu (offres, formations, messages,
-/// notifications, profil...). Reprend la charte des écrans d'authentification :
-/// gradient primaire, texture topographique, vague en bas.
-///
-/// Contrairement à [WavyAuthHeader] (titre centré, contenu d'auth), celui-ci
-/// est aligné à gauche, expose un titre + sous-titre, et accepte une liste
-/// d'actions à droite (icônes type cloche, filtre...).
+
 class WavyContentHeader extends StatelessWidget {
   const WavyContentHeader({
     super.key,
@@ -35,8 +28,11 @@ class WavyContentHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
 
+    // La barre de statut s'AJOUTE à la hauteur de contenu (au lieu de la
+    // rogner) : la zone visible reste constante quel que soit l'appareil, donc
+    // plus d'overflow sur les téléphones à encoche (barre de statut haute).
     return SizedBox(
-      height: height,
+      height: height + topPadding,
       width: double.infinity,
       child: ClipPath(
         clipper: const WaveClipper(),
@@ -71,7 +67,7 @@ class WavyContentHeader extends StatelessWidget {
                       color: AppColors.onPrimary,
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+                      letterSpacing: 0,
                     ),
                   ),
                   const SizedBox(height: 4),

@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
-/// En-tete de section : titre fort a gauche, action optionnelle (texte +
-/// chevron) a droite. Sert a separer les sections d'une page (ex:
-/// "Swipe des offres" / "Liste", "Mes candidatures" / "Tout voir").
-///
-/// Si [actionLabel] est fourni avec [onAction], une zone tappable
-/// "label →" s'affiche a droite. Sinon, le titre prend toute la largeur.
+
+
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -31,9 +26,9 @@ class SectionHeader extends StatelessWidget {
           child: Text(
             title,
             style: AppTextStyles.titleLg.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 17,
-              letterSpacing: -0.2,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              letterSpacing: -0.3,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -60,8 +55,8 @@ class SectionHeader extends StatelessWidget {
                       actionLabel!,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                     const SizedBox(width: 2),

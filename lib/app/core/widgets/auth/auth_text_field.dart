@@ -1,18 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
-
+import "package:flutter/material.dart";
+import 'package:iconly/iconly.dart' show IconlyLight;
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-/// Champ de texte auth : label au-dessus, icône à gauche, underline discret,
-/// suffix (pour œil masqué/visible par ex.). Style différent du `InputField`
-/// existant qui a un fond rempli — celui-ci est plus épuré, comme les mockups
-/// Welcome / Sign up.
-///
-/// **Toggle eye automatique** : si `obscureText: true` est passe et que
-/// `suffix` n'est pas fourni, le widget rend automatiquement un bouton
-/// œil ouvert/ferme qui bascule la visibilite du mot de passe. Cela
-/// evite que chaque ecran qui a un champ password recode le toggle.
+
 class AuthTextField extends StatefulWidget {
   const AuthTextField({
     super.key,
@@ -85,36 +76,39 @@ class _AuthTextFieldState extends State<AuthTextField> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextFormField(
           controller: widget.controller,
           keyboardType: widget.keyboardType,
           obscureText: _obscured,
           validator: widget.validator,
           onChanged: widget.onChanged,
-          style: AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor),
+          style: AppTextStyles.bodyLg.copyWith(
+            color: AppColors.titleColor,
+            fontWeight: FontWeight.w600,
+          ),
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle: AppTextStyles.bodyMd.copyWith(
               color: AppColors.hintColor,
             ),
-            prefixIcon:
-                Icon(widget.icon, color: AppColors.hintColor, size: 20),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 36,
-              minHeight: 36,
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 14, right: 10),
+              child: Icon(widget.icon, color: AppColors.primary, size: 20),
             ),
+            prefixIconConstraints:
+                const BoxConstraints(minWidth: 46, minHeight: 46),
             suffixIcon: effectiveSuffix,
-            filled: false,
-            // Le `hintColor` est dark-aware : gris-clair en mode clair,
-            // gris-visible en mode sombre — underline toujours lisible.
-            border: _underline(AppColors.hintColor.withValues(alpha: 0.4)),
+            filled: true,
+            fillColor: AppColors.surfaceCard,
+            border: _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
             enabledBorder:
-                _underline(AppColors.hintColor.withValues(alpha: 0.4)),
-            focusedBorder: _underline(AppColors.primary, width: 1.8),
-            errorBorder: _underline(AppColors.error),
-            focusedErrorBorder: _underline(AppColors.error, width: 1.8),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
+            focusedBorder: _outline(AppColors.primary, width: 1.5),
+            errorBorder: _outline(AppColors.error),
+            focusedErrorBorder: _outline(AppColors.error, width: 1.5),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             helperText: widget.helper,
             helperStyle: AppTextStyles.bodySm.copyWith(
               color: AppColors.hintColor,
@@ -130,6 +124,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
     );
   }
 
-  UnderlineInputBorder _underline(Color color, {double width = 1}) =>
-      UnderlineInputBorder(borderSide: BorderSide(color: color, width: width));
+  OutlineInputBorder _outline(Color color, {double width = 1}) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: color, width: width),
+      );
 }

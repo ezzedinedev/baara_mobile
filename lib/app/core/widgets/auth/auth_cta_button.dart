@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
+import '../common/press_scale.dart';
 
-/// CTA principale des écrans auth : pill arrondi plein, couleur primaire.
-/// Support loading state via spinner inline.
+/// Bouton de connexion, inscription, etc.
 class AuthCtaButton extends StatelessWidget {
   const AuthCtaButton({
     super.key,
@@ -30,22 +30,33 @@ class AuthCtaButton extends StatelessWidget {
     final fg = foregroundColor ?? AppColors.onPrimary;
     final disabled = onPressed == null || isLoading;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: Material(
-        color: disabled ? bg.withValues(alpha: 0.6) : bg,
-        borderRadius: BorderRadius.circular(999),
-        elevation: disabled ? 0 : 2,
-        shadowColor: bg.withValues(alpha: 0.4),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: disabled
-              ? null
-              : () {
-                  AppHaptics.success();
-                  onPressed!();
-                },
+    return PressScale(
+      enabled: !disabled,
+      haptic: false,
+      onTap: disabled
+          ? null
+          : () {
+              AppHaptics.success();
+              onPressed!();
+            },
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: disabled ? null : AppColors.landingCtaGradient,
+            color: disabled ? bg.withValues(alpha: 0.55) : null,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: disabled
+                ? null
+                : [
+                    BoxShadow(
+                      color: bg.withValues(alpha: 0.22),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+          ),
           child: Center(
             child: isLoading
                 ? SizedBox(
@@ -59,12 +70,16 @@ class AuthCtaButton extends StatelessWidget {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        label,
-                        style: AppTextStyles.buttonLg.copyWith(
-                          color: fg,
-                          letterSpacing: 0.3,
-                          fontSize: 15,
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: AppTextStyles.buttonLg.copyWith(
+                            color: fg,
+                            letterSpacing: 0,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (trailing != null) ...[
