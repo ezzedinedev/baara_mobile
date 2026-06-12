@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:opportune_bf/routes/app_routes.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 
@@ -62,6 +63,49 @@ class NotificationsController extends GetxController {
     } catch (_) {
       notifications[index] = previous;
       unreadCount.value++;
+    }
+  }
+
+  /// Tap sur une notification : marque lue puis deep-link selon
+  /// `target.target_type`. Reste sans effet si la cible est absente/inconnue.
+  ///
+  /// Mapping :
+  /// - `conversation` → fil de discussion (`AppRoutes.conversation`).
+  /// - `profile`      → profil communauté (`AppRoutes.communityProfile`).
+  /// - `connection`   → écran connexions (`AppRoutes.communityConnections`).
+  /// - `post` / `mention_*` / `story` → fil communauté (best effort, faute
+  ///   d'écran de détail de post / d'entrée directe story).
+  /// - autre/null     → aucune navigation.
+  Future<void> openNotification(AppNotification notification) async {
+    await markAsRead(notification.id);
+
+    final target = notification.target;
+    if (target == null || !target.hasDestination) return;
+    final id = target.targetId;
+
+    switch (target.targetType) {
+      case 'conversation':
+        if (id != null && id.isNotEmpty) {
+          Get.toNamed(AppRoutes.conversation.replaceFirst(':id', id));
+        }
+        break;
+      case 'profile':
+        if (id != null && id.isNotEmpty) {
+          Get.toNamed(AppRoutes.communityProfile.replaceFirst(':id', id));
+        }
+        break;
+      case 'connection':
+        Get.toNamed(AppRoutes.communityConnections);
+        break;
+      case 'post':
+      case 'story':
+        // Pas d'écran de détail de post ni d'entrée directe « story » par id :
+        // on retombe sur le fil communauté (meilleur effort).
+        Get.toNamed(AppRoutes.community);
+        break;
+      default:
+        // application / training / inconnu : pas de deep-link dédié ici.
+        break;
     }
   }
 

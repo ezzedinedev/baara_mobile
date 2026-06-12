@@ -4,6 +4,9 @@ import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -31,24 +34,25 @@ class CvPreviewScreen extends GetView<CvPreviewController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return const Center(
+                return Center(
                   child: CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
                   ),
                 );
               }
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
               return Column(
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   const _TemplateSelector(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   Expanded(child: _PdfArea()),
                 ],
               );
@@ -67,7 +71,7 @@ class _TemplateSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<CvPreviewController>();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       child: Obx(() {
         final selected = controller.selectedTemplate.value;
         return Row(
@@ -79,7 +83,8 @@ class _TemplateSelector extends StatelessWidget {
                   selected: CvPreviewController.templates[i].id == selected,
                   onTap: () {
                     AppHaptics.tap();
-                    controller.changeTemplate(CvPreviewController.templates[i].id);
+                    controller
+                        .changeTemplate(CvPreviewController.templates[i].id);
                   },
                 ),
               ),
@@ -104,13 +109,15 @@ class _TemplateChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return PressScale(
       onTap: onTap,
+      curve: AppMotion.spring,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppMotion.short,
+        curve: AppMotion.emphasizedDecelerate,
         padding: const EdgeInsets.symmetric(vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? AppColors.surfaceSelected : AppColors.surfaceLow,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppShapes.squircleRadius(AppRadius.sm),
           border: Border.all(
             color: selected ? AppColors.primaryLight : AppColors.surfaceLow,
             width: 1.4,
@@ -119,7 +126,7 @@ class _TemplateChip extends StatelessWidget {
         child: Text(
           label,
           style: AppTextStyles.labelMd.copyWith(
-            color: selected ? AppColors.primary : AppColors.bodyColor,
+            color: selected ? AppColors.primaryAccent : AppColors.bodyColor,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
           ),
         ),
@@ -143,12 +150,12 @@ class _PdfArea extends StatelessWidget {
         allowPrinting: true,
         allowSharing: true,
         pdfFileName: 'CV-OpporTune.pdf',
-        loadingWidget: const Center(
+        loadingWidget: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
           ),
         ),
-        previewPageMargin: const EdgeInsets.all(16),
+        previewPageMargin: const EdgeInsets.all(AppSpacing.lg),
         scrollViewDecoration: BoxDecoration(color: AppColors.surfaceLow),
       ),
     );

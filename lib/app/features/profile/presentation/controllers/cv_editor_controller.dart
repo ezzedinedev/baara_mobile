@@ -148,22 +148,28 @@ class CvEditorController extends GetxController {
 
   List<String> _strList(dynamic v) {
     if (v is List) {
-      return v.map((e) => e.toString().trim()).where((s) => s.isNotEmpty).toList();
+      return v
+          .map((e) => e.toString().trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
     return [];
   }
 
   List<Map<String, String>> _langList(dynamic v) {
     if (v is! List) return [];
-    return v.map<Map<String, String>>((e) {
-      if (e is Map) {
-        return {
-          'name': (e['name'] ?? e['language'] ?? '').toString(),
-          'level': (e['level'] ?? '').toString(),
-        };
-      }
-      return {'name': e.toString(), 'level': ''};
-    }).where((m) => (m['name'] ?? '').isNotEmpty).toList();
+    return v
+        .map<Map<String, String>>((e) {
+          if (e is Map) {
+            return {
+              'name': (e['name'] ?? e['language'] ?? '').toString(),
+              'level': (e['level'] ?? '').toString(),
+            };
+          }
+          return {'name': e.toString(), 'level': ''};
+        })
+        .where((m) => (m['name'] ?? '').isNotEmpty)
+        .toList();
   }
 
   int _len(dynamic v) => v is List ? v.length : 0;

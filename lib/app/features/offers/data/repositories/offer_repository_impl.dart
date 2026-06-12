@@ -1,5 +1,6 @@
 import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/core/constants/api_constants.dart';
+import '../../domain/entities/apply_result.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
 import '../../domain/repositories/i_offer_repository.dart';
@@ -91,8 +92,8 @@ class OfferRepositoryImpl implements IOfferRepository {
   @override
   Future<List<MatchedOffer>> getMatchedOffers({int limit = 20}) async {
     try {
-      final response =
-          await _apiProvider.getJson('${ApiConstants.aiMatchFeed}?limit=$limit');
+      final response = await _apiProvider
+          .getJson('${ApiConstants.aiMatchFeed}?limit=$limit');
       if (response['success'] != true) return [];
       final data = response['data'] as Map<String, dynamic>? ?? const {};
       final offers = data['offers'] as List? ?? const [];
@@ -113,7 +114,8 @@ class OfferRepositoryImpl implements IOfferRepository {
           .where((m) => m.id.isNotEmpty)
           .toList();
     } catch (_) {
-      return [];
+      // On laisse remonter pour que le controller distingue échec vs vide.
+      rethrow;
     }
   }
 
@@ -143,7 +145,8 @@ class OfferRepositoryImpl implements IOfferRepository {
   }
 
   @override
-  Future<ApplicationModel> applyToOffer(String offerId, {Map<String, dynamic>? screeningAnswers}) async {
+  Future<ApplyResult> applyToOffer(String offerId,
+      {Map<String, dynamic>? screeningAnswers}) async {
     final response = await _apiProvider.postJson(
       ApiConstants.applications,
       {
@@ -152,19 +155,27 @@ class OfferRepositoryImpl implements IOfferRepository {
       },
     );
     if (response['success'] == true && response['data'] != null) {
-      return ApplicationModel.fromJson(response['data']);
+      final app =
+          ApplicationModel.fromJson(response['data'] as Map<String, dynamic>);
+      final match = response['match'] as Map<String, dynamic>?;
+      final isMatch =
+          match?['is_match'] == true || response['is_match'] == true;
+      final score = (match?['score'] as num?)?.toInt() ?? 0;
+      return ApplyResult(application: app, isMatch: isMatch, score: score);
     }
     throw Exception(response['message'] ?? 'Failed to apply');
   }
 
   @override
-  Future<List<ApplicationModel>> getMyApplications({int page = 1, int perPage = 20}) async {
+  Future<List<ApplicationModel>> getMyApplications(
+      {int page = 1, int perPage = 20}) async {
     final response = await _apiProvider.getJson(
       '${ApiConstants.applications}?page=$page&per_page=$perPage',
     );
     if (response['success'] == true) {
       return _extractList(response['data'])
-          .map((json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
           .toList();
     }
     return [];

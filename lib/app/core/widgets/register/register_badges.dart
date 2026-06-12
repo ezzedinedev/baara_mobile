@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
@@ -7,22 +8,22 @@ class RegisterBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: _RegisterMiniBadge(
-                icon: Icons.shield_outlined,
-                iconColor: AppColors.success,
+                icon: IconlyLight.shield_done,
+                iconColor: AppColors.successAccent,
                 title: '100% Securise',
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _RegisterMiniBadge(
-                icon: Icons.trending_up_rounded,
-                iconColor: AppColors.primary,
+                icon: IconlyLight.chart,
+                iconColor: AppColors.primaryAccent,
                 title: '0% Commission',
               ),
             ),
@@ -34,14 +35,14 @@ class RegisterBadges extends StatelessWidget {
             Expanded(
               child: _RegisterMiniBadge(
                 icon: Icons.school_outlined,
-                iconColor: AppColors.warning,
+                iconColor: AppColors.warningAccent,
                 title: 'Formation incluse',
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _RegisterMiniBadge(
-                icon: Icons.verified_user_outlined,
+                icon: IconlyLight.shield_done,
                 iconColor: AppColors.primaryMedium,
                 title: 'Recruteurs verifies',
               ),

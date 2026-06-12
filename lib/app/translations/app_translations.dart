@@ -37,6 +37,8 @@ const Map<String, String> _fr = {
   'nav.home': 'Accueil',
   'nav.messages': 'Messages',
   'nav.offers': 'Offres',
+  'nav.opportunities': 'Opportunités',
+  'nav.network': 'Communauté',
   'nav.trainings': 'Formations',
   'nav.profile': 'Profil',
 
@@ -147,8 +149,7 @@ const Map<String, String> _fr = {
   'messages.unread_plural': '@count non lus',
   'messages.up_to_date': 'Tout est à jour',
   'messages.empty': 'Aucune conversation',
-  'messages.empty_sub':
-      'Vos échanges avec les recruteurs apparaîtront ici.',
+  'messages.empty_sub': 'Vos échanges avec les recruteurs apparaîtront ici.',
   'messages.compose_hint': 'Écrire un message...',
   'messages.online': 'En ligne',
   'messages.offline': 'Hors ligne',
@@ -202,8 +203,7 @@ const Map<String, String> _fr = {
 
   // ── Profile ───────────────────────────────────────────────
   'profile.title': 'Profil',
-  'profile.subtitle':
-      'Mettez en valeur votre parcours et votre savoir-faire.',
+  'profile.subtitle': 'Mettez en valeur votre parcours et votre savoir-faire.',
   'profile.my_applications': 'Mes candidatures',
   'profile.my_cv': 'Mon CV',
   'profile.my_portfolio': 'Mon portfolio',
@@ -234,8 +234,7 @@ const Map<String, String> _fr = {
   'error.unauthorized':
       'Votre session a expiré. Connectez-vous pour continuer.',
   'error.forbidden': 'Vous n\'avez pas les droits pour cette action.',
-  'error.server':
-      'Une erreur serveur est survenue. Notre équipe est prévenue.',
+  'error.server': 'Une erreur serveur est survenue. Notre équipe est prévenue.',
   'error.generic': 'Une erreur est survenue. Réessayez.',
 };
 
@@ -244,6 +243,8 @@ const Map<String, String> _en = {
   'nav.home': 'Home',
   'nav.messages': 'Messages',
   'nav.offers': 'Jobs',
+  'nav.opportunities': 'Opportunities',
+  'nav.network': 'Community',
   'nav.trainings': 'Courses',
   'nav.profile': 'Profile',
 
@@ -302,8 +303,7 @@ const Map<String, String> _en = {
   'applications.title': 'My applications',
   'applications.subtitle': 'Track the status of every application you sent.',
   'applications.empty_all': 'No applications yet',
-  'applications.empty_all_sub':
-      'Apply to your first jobs to see them here.',
+  'applications.empty_all_sub': 'Apply to your first jobs to see them here.',
   'applications.empty_filtered': 'No applications in this status',
   'applications.empty_filtered_sub':
       'Change or clear the filter to see more applications.',
@@ -319,19 +319,16 @@ const Map<String, String> _en = {
   'applications.tab.applied': 'Applied',
   'applications.tab.saved': 'Saved',
   'applications.saved.empty': 'No saved offers yet',
-  'applications.saved.empty_sub':
-      'Tap the heart on an offer to find it here.',
+  'applications.saved.empty_sub': 'Tap the heart on an offer to find it here.',
   'applications.saved.remove': 'Remove from favorites',
   'applications.saved.removed_toast': 'Removed from favorites',
 
   // ── Trainings ─────────────────────────────────────────────
   'trainings.title': 'Courses',
-  'trainings.subtitle':
-      'Boost your skills with our curated learning paths.',
+  'trainings.subtitle': 'Boost your skills with our curated learning paths.',
   'trainings.search_hint': 'Search a course, provider...',
   'trainings.empty_title': 'No courses available',
-  'trainings.empty_subtitle':
-      'New courses will be published soon.',
+  'trainings.empty_subtitle': 'New courses will be published soon.',
   'trainings.enroll': 'Enroll',
   'trainings.continue': 'Start now',
   'trainings.review': 'Review course',
@@ -354,8 +351,7 @@ const Map<String, String> _en = {
   'messages.unread_plural': '@count unread',
   'messages.up_to_date': "You're all caught up",
   'messages.empty': 'No conversations',
-  'messages.empty_sub':
-      'Your chats with recruiters will appear here.',
+  'messages.empty_sub': 'Your chats with recruiters will appear here.',
   'messages.compose_hint': 'Write a message...',
   'messages.online': 'Online',
   'messages.offline': 'Offline',
@@ -399,18 +395,15 @@ const Map<String, String> _en = {
   'notifs.category.training': 'Course',
   'notifs.category.portfolio': 'Portfolio',
   'notifs.seed.welcome.title': 'Candidate profile',
-  'notifs.seed.welcome.body':
-      'Complete your CV and portfolio to stand out.',
+  'notifs.seed.welcome.body': 'Complete your CV and portfolio to stand out.',
   'notifs.seed.messages.title': 'Recruiter messages',
   'notifs.seed.messages.body': 'You have conversations to check.',
   'notifs.seed.portfolio.title': 'Portfolio',
-  'notifs.seed.portfolio.body':
-      'Companies can browse your public projects.',
+  'notifs.seed.portfolio.body': 'Companies can browse your public projects.',
 
   // ── Profile ───────────────────────────────────────────────
   'profile.title': 'Profile',
-  'profile.subtitle':
-      'Showcase your background and your skills.',
+  'profile.subtitle': 'Showcase your background and your skills.',
   'profile.my_applications': 'My applications',
   'profile.my_cv': 'My CV',
   'profile.my_portfolio': 'My portfolio',
@@ -438,10 +431,8 @@ const Map<String, String> _en = {
   // ── Errors / generic ──────────────────────────────────────
   'error.network':
       'Cannot reach the service. Check your connection and try again.',
-  'error.unauthorized':
-      'Your session expired. Sign in again to continue.',
+  'error.unauthorized': 'Your session expired. Sign in again to continue.',
   'error.forbidden': "You don't have permission for this action.",
-  'error.server':
-      'A server error occurred. Our team has been notified.',
+  'error.server': 'A server error occurred. Our team has been notified.',
   'error.generic': 'Something went wrong. Try again.',
 };

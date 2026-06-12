@@ -80,7 +80,8 @@ class TrainingModel extends Training {
     if (provider == null) return 'Organisme de formation';
     if (provider is Map) {
       return provider['company_name'] ??
-          '${provider['first_name'] ?? ''} ${provider['last_name'] ?? ''}'.trim() ??
+          '${provider['first_name'] ?? ''} ${provider['last_name'] ?? ''}'
+              .trim() ??
           provider['email'] ??
           'Organisme de formation';
     }
@@ -90,20 +91,28 @@ class TrainingModel extends Training {
   static String _formatTrainingFormat(dynamic value) {
     final v = value?.toString().toLowerCase() ?? '';
     switch (v) {
-      case 'online': return 'En ligne';
-      case 'onsite': return 'Presentiel';
-      case 'hybrid': return 'Hybride';
-      default: return 'Format non precise';
+      case 'online':
+        return 'En ligne';
+      case 'onsite':
+        return 'Presentiel';
+      case 'hybrid':
+        return 'Hybride';
+      default:
+        return 'Format non precise';
     }
   }
 
   static String _formatTrainingLevel(dynamic value) {
     final v = value?.toString().toLowerCase() ?? '';
     switch (v) {
-      case 'beginner': return 'Debutant';
-      case 'intermediate': return 'Intermediaire';
-      case 'advanced': return 'Avance';
-      default: return 'Tous niveaux';
+      case 'beginner':
+        return 'Debutant';
+      case 'intermediate':
+        return 'Intermediaire';
+      case 'advanced':
+        return 'Avance';
+      default:
+        return 'Tous niveaux';
     }
   }
 

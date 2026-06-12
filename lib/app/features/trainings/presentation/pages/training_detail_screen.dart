@@ -5,6 +5,8 @@ import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -44,6 +46,7 @@ class TrainingDetailScreen extends GetView<TrainingDetailController> {
                     message: (error == null || error.isEmpty)
                         ? 'Formation introuvable.'
                         : error,
+                    illustration: const ErrorIllustration(),
                     onRetry: controller.load,
                   ),
                 ),
@@ -76,6 +79,13 @@ class _TrainingDetailContent extends StatefulWidget {
 
 class _TrainingDetailContentState extends State<_TrainingDetailContent> {
   _DetailTab _tab = _DetailTab.content;
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +94,7 @@ class _TrainingDetailContentState extends State<_TrainingDetailContent> {
       bottom: false,
       child: AnimationLimiter(
         child: ListView(
+          controller: _scrollCtrl,
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 120),
           children: AnimationConfiguration.toStaggeredList(
@@ -95,20 +106,23 @@ class _TrainingDetailContentState extends State<_TrainingDetailContent> {
             children: [
               _DetailTopBar(title: training.format),
               const SizedBox(height: 12),
-              _CourseHeroBanner(training: training),
+              // Hero banner avec parallax au défilement (translation + zoom doux).
+              ParallaxHeader(
+                controller: _scrollCtrl,
+                parallaxFactor: 0.55,
+                fade: false,
+                child: _CourseHeroBanner(training: training),
+              ),
               const SizedBox(height: 18),
               Text(
                 training.title,
-                style: AppTextStyles.headlineLg.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
+                style: AppTextStyles.displayHero.copyWith(fontSize: 26),
               ),
               const SizedBox(height: 6),
               Text(
                 'Créé par ${training.providerName.isEmpty ? "—" : training.providerName}',
-                style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
               ),
               const SizedBox(height: 4),
               Text(
@@ -133,7 +147,8 @@ class _TrainingDetailContentState extends State<_TrainingDetailContent> {
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
                 child: _tab == _DetailTab.content
-                    ? _ContentTab(key: const ValueKey('content'), training: training)
+                    ? _ContentTab(
+                        key: const ValueKey('content'), training: training)
                     : _DescriptionTab(
                         key: const ValueKey('description'), training: training),
               ),
@@ -191,12 +206,17 @@ class _CourseHeroBanner extends StatelessWidget {
             ],
             stops: [0.0, 0.55, 1.0],
           ),
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: AppShapes.squircleRadius(AppRadius.xl),
           boxShadow: [
             BoxShadow(
               color: AppColors.primaryDark.withValues(alpha: 0.32),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: AppColors.primaryDark.withValues(alpha: 0.12),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -255,77 +275,77 @@ class _CourseHeroBanner extends StatelessWidget {
                 ),
               ),
             ),
+            // Bouton play central : pastille squircle en verre, press spring.
             Center(
               child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                width: 76,
+                height: 76,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
                   color: AppColors.onPrimary.withValues(alpha: 0.20),
-                  border: Border.all(
-                    color: AppColors.onPrimary.withValues(alpha: 0.36),
+                  shape: AppShapes.squircle(
+                    AppRadius.lg,
+                    side: AppColors.onPrimary.withValues(alpha: 0.36),
                     width: 1.4,
                   ),
                 ),
                 child: const Icon(
-                  Icons.play_arrow_rounded,
+                  IconlyLight.play,
                   color: AppColors.onPrimary,
-                  size: 38,
+                  size: 40,
                 ),
               ),
             ),
+            // Bandeau d'infos en verre liquide (chrome hero 2026).
             Positioned(
-              top: 16,
-              left: 16,
-              right: 90,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    training.title.trim().isEmpty
-                        ? 'FORMATION'
-                        : training.title.trim().toUpperCase(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.titleLg.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
-                      height: 1.15,
-                      fontSize: 16,
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: GlassSurface(
+                borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                blurSigma: 14,
+                tintAlpha: 0.18,
+                color: AppColors.onDark,
+                borderColor: AppColors.onPrimary.withValues(alpha: 0.22),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      training.title.trim().isEmpty
+                          ? 'FORMATION'
+                          : training.title.trim().toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleLg.copyWith(
+                        color: AppColors.onPrimary,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                        height: 1.15,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Programme professionnel',
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.onPrimary.withValues(alpha: 0.85),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Row(
+                      children: [
+                        _HeroFormatPill(
+                          icon: Icons.signal_wifi_off_rounded,
+                          label: 'OFFLINE',
+                        ),
+                        SizedBox(width: 8),
+                        _HeroFormatPill(
+                          icon: Icons.devices_other_rounded,
+                          label: 'HYBRIDE',
+                        ),
+                        SizedBox(width: 8),
+                        _HeroFormatPill(
+                          icon: Icons.public_rounded,
+                          label: 'ONLINE',
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Positioned(
-              left: 16,
-              bottom: 16,
-              right: 16,
-              child: Row(
-                children: [
-                  _HeroFormatPill(
-                    icon: Icons.signal_wifi_off_rounded,
-                    label: 'OFFLINE',
-                  ),
-                  SizedBox(width: 8),
-                  _HeroFormatPill(
-                    icon: Icons.devices_other_rounded,
-                    label: 'HYBRIDE',
-                  ),
-                  SizedBox(width: 8),
-                  _HeroFormatPill(
-                    icon: Icons.public_rounded,
-                    label: 'ONLINE',
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -411,13 +431,14 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = AppShapes.squircleRadius(AppRadius.sm);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: radius,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: AppMotion.short,
           height: 48,
           decoration: BoxDecoration(
             gradient: selected
@@ -431,7 +452,7 @@ class _TabButton extends StatelessWidget {
                   )
                 : null,
             color: selected ? null : AppColors.surfaceLow,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: radius,
             boxShadow: selected
                 ? [
                     BoxShadow(
@@ -470,7 +491,7 @@ class _ContentTab extends StatelessWidget {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: EmptyState(
-          icon: Icons.video_library_outlined,
+          illustration: EmptyTrainingsIllustration(),
           title: 'Aucune leçon disponible',
           subtitle:
               'Cette formation ne contient pas encore de modules. Revenez plus tard.',
@@ -545,13 +566,12 @@ class _ProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.18),
         ),
-        boxShadow: AppColors.lightShadow,
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,7 +588,7 @@ class _ProgressCard extends StatelessWidget {
               Text(
                 '$percent%',
                 style: AppTextStyles.titleMd.copyWith(
-                  color: AppColors.primary,
+                  color: AppColors.primaryAccent,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -582,7 +602,7 @@ class _ProgressCard extends StatelessWidget {
               minHeight: 8,
               backgroundColor: AppColors.surfaceHigh,
               valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
             ),
           ),
           const SizedBox(height: 8),
@@ -611,39 +631,45 @@ class _LessonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = AppColors.primary;
     final subtitle =
         lesson.duration > 0 ? '${lesson.duration} min' : lesson.typeLabel;
-    return Material(
-      color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+    // Couleur d'état claire : terminé (succès), verrouillé (atténué), à faire.
+    final stateColor = lesson.isCompleted
+        ? AppColors.successAccent
+        : isLocked
+            ? AppColors.hintColor
+            : AppColors.primaryAccent;
+    return PressScale(
+      curve: AppMotion.spring,
+      onTap: onTap,
+      child: Material(
+        type: MaterialType.transparency,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.18),
+          decoration: ShapeDecoration(
+            color: AppColors.surfaceCard,
+            shape: AppShapes.cardBordered(
+              AppColors.outlineVariant.withValues(alpha: 0.18),
             ),
+            shadows: AppColors.lightShadow,
           ),
           child: Row(
             children: [
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: 0.12),
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  color: stateColor.withValues(alpha: 0.12),
+                  shape: AppShapes.squircle(AppRadius.sm),
                 ),
                 child: Icon(
                   lesson.isCompleted
-                      ? Icons.check_rounded
+                      ? IconlyLight.tick_square
                       : isLocked
-                          ? Icons.lock_outline_rounded
-                          : Icons.play_arrow_rounded,
-                  color: accent,
+                          ? IconlyLight.lock
+                          : IconlyLight.play,
+                  color: stateColor,
                   size: 22,
                 ),
               ),
@@ -679,7 +705,7 @@ class _LessonRow extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.successSoft,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: AppShapes.pill,
                   ),
                   child: Text(
                     'Terminé',
@@ -689,7 +715,12 @@ class _LessonRow extends StatelessWidget {
                       fontSize: 10,
                     ),
                   ),
-                ),
+                )
+              else if (isLocked)
+                Icon(IconlyLight.lock, size: 16, color: AppColors.hintColor)
+              else
+                Icon(IconlyLight.arrow_right_2,
+                    size: 20, color: AppColors.hintColor),
             ],
           ),
         ),
@@ -712,7 +743,7 @@ class _DescriptionTab extends StatelessWidget {
         const SizedBox(height: 16),
         _DetailSection(
           title: 'Description',
-          icon: Icons.notes_rounded,
+          icon: IconlyLight.paper,
           color: AppColors.categoryBlue,
           child: Text(
             training.description.isEmpty
@@ -729,7 +760,7 @@ class _DescriptionTab extends StatelessWidget {
         const SizedBox(height: 14),
         _BulletSection(
           title: 'Objectifs',
-          icon: Icons.flag_outlined,
+          icon: IconlyLight.danger,
           color: AppColors.successDark,
           items: training.objectives.isEmpty
               ? const ['Objectifs non précisés.']
@@ -774,7 +805,7 @@ class _StatusChipsRow extends StatelessWidget {
           _StatusChip(
             text: training.status,
             background: AppColors.successSoft,
-            textColor: AppColors.primary,
+            textColor: AppColors.primaryAccent,
           ),
         if (training.level.isNotEmpty)
           _StatusChip(
@@ -786,7 +817,7 @@ class _StatusChipsRow extends StatelessWidget {
           _StatusChip(
             text: training.format,
             background: AppColors.warningSoft,
-            textColor: AppColors.warning,
+            textColor: AppColors.warningAccent,
           ),
       ],
     );
@@ -853,7 +884,7 @@ class _MetaGrid extends StatelessWidget {
       ),
       _MetaEntry(
         icon: IconlyLight.time_square,
-        color: AppColors.warning,
+        color: AppColors.warningAccent,
         title: 'Limite',
         value: training.deadlineLabel,
       ),
@@ -889,7 +920,7 @@ class _MetaGrid extends StatelessWidget {
       ),
       _MetaEntry(
         icon: IconlyBold.star,
-        color: AppColors.warning,
+        color: AppColors.warningAccent,
         title: 'Note',
         value: training.rating.toStringAsFixed(1),
       ),
@@ -934,12 +965,12 @@ class _MetaTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.18),
         ),
+        shadows: AppColors.lightShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -947,9 +978,10 @@ class _MetaTile extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
-            decoration: BoxDecoration(
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
               color: entry.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              shape: AppShapes.squircle(AppRadius.xs),
             ),
             child: Icon(entry.icon, color: entry.color, size: 19),
           ),
@@ -1006,12 +1038,12 @@ class _DetailSection extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.18),
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.18),
         ),
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,9 +1052,9 @@ class _DetailSection extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  shape: AppShapes.squircle(AppRadius.xs),
                 ),
                 child: Icon(icon, color: color, size: 18),
               ),
@@ -1111,37 +1143,44 @@ class _EnrollBottomBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
-        child: Obx(() {
-          final isEnrolling = controller.isEnrolling.value;
-          final isEnrolled = controller.isEnrolled;
-          final hasModules = training.modules.isNotEmpty;
-          final completedAll =
-              hasModules && training.modules.every((m) => m.isCompleted);
-          final isPaid = training.price != null && training.price! > 0;
+        // CTA posée sur un panneau de verre liquide (chrome sticky 2026).
+        child: GlassSurface(
+          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+          blurSigma: 18,
+          boxShadow: AppColors.ambientShadow,
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Obx(() {
+            final isEnrolling = controller.isEnrolling.value;
+            final isEnrolled = controller.isEnrolled;
+            final hasModules = training.modules.isNotEmpty;
+            final completedAll =
+                hasModules && training.modules.every((m) => m.isCompleted);
+            final isPaid = training.price != null && training.price! > 0;
 
-          final label = isEnrolled
-              ? (!hasModules
-                  ? 'AUCUNE LEÇON DISPONIBLE'
-                  : completedAll
-                      ? 'REVOIR LA FORMATION'
-                      : 'COMMENCER MAINTENANT')
-              : (isPaid
-                  ? "S'INSCRIRE • ${training.priceLabel}"
-                  : 'SUIVRE LA FORMATION');
+            final label = isEnrolled
+                ? (!hasModules
+                    ? 'AUCUNE LEÇON DISPONIBLE'
+                    : completedAll
+                        ? 'REVOIR LA FORMATION'
+                        : 'COMMENCER MAINTENANT')
+                : (isPaid
+                    ? "S'INSCRIRE • ${training.priceLabel}"
+                    : 'SUIVRE LA FORMATION');
 
-          final disabled = isEnrolling || (isEnrolled && !hasModules);
+            final disabled = isEnrolling || (isEnrolled && !hasModules);
 
-          return GradientButton(
-            label: label,
-            isLoading: isEnrolling,
-            textColor: AppColors.onPrimary,
-            height: 52,
-            borderRadius: 14,
-            onPressed: disabled
-                ? null
-                : () => _onPressed(context, controller, isEnrolled, isPaid),
-          );
-        }),
+            return GradientButton(
+              label: label,
+              isLoading: isEnrolling,
+              textColor: AppColors.onPrimary,
+              height: 52,
+              borderRadius: 14,
+              onPressed: disabled
+                  ? null
+                  : () => _onPressed(context, controller, isEnrolled, isPaid),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -1195,7 +1234,7 @@ class _MinimalBackBar extends StatelessWidget {
               AppHaptics.tap();
               Navigator.of(context).maybePop();
             },
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(IconlyLight.arrow_left_2),
             color: AppColors.titleColor,
           ),
         ],

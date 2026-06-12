@@ -32,11 +32,9 @@ class TrainingPlayerController extends GetxController {
 
   int get totalCount => modules.length;
 
-  double get progress =>
-      totalCount == 0 ? 0 : completedCount / totalCount;
+  double get progress => totalCount == 0 ? 0 : completedCount / totalCount;
 
-  bool isCompleted(TrainingModule module) =>
-      completedIds.contains(module.id);
+  bool isCompleted(TrainingModule module) => completedIds.contains(module.id);
 
   @override
   void onInit() {

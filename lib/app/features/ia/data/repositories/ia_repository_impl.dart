@@ -11,7 +11,8 @@ class IaRepositoryImpl implements IIaRepository {
       : _apiProvider = apiProvider;
 
   @override
-  Future<Map<String, dynamic>> sendChatMessage({required String message, String? sessionId}) async {
+  Future<Map<String, dynamic>> sendChatMessage(
+      {required String message, String? sessionId}) async {
     final response = await _apiProvider.postJson(
       ApiConstants.aiChatSend,
       {
@@ -31,7 +32,8 @@ class IaRepositoryImpl implements IIaRepository {
 
   @override
   Future<List<ChatMessage>> getChatMessages(String sessionId) async {
-    final response = await _apiProvider.getJson(ApiConstants.aiChatSession(sessionId));
+    final response =
+        await _apiProvider.getJson(ApiConstants.aiChatSession(sessionId));
     final data = _unwrap(response);
     final messages = (data['messages'] as List?) ?? [];
     return messages
@@ -42,13 +44,15 @@ class IaRepositoryImpl implements IIaRepository {
 
   @override
   Future<Map<String, dynamic>> getProfileScore() async {
-    final response = await _apiProvider.postJson(ApiConstants.aiProfileScore, const {});
+    final response =
+        await _apiProvider.postJson(ApiConstants.aiProfileScore, const {});
     return _unwrap(response);
   }
 
   @override
   Future<Map<String, dynamic>> auditCv() async {
-    final response = await _apiProvider.postJson(ApiConstants.aiCvAudit, const {});
+    final response =
+        await _apiProvider.postJson(ApiConstants.aiCvAudit, const {});
     return _unwrap(response);
   }
 
@@ -74,6 +78,7 @@ class IaRepositoryImpl implements IIaRepository {
     if (data is Map<String, dynamic>) {
       return data;
     }
-    throw Exception(response['message']?.toString() ?? 'Réponse API IA invalide.');
+    throw Exception(
+        response['message']?.toString() ?? 'Réponse API IA invalide.');
   }
 }

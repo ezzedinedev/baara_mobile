@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -35,6 +38,7 @@ class CvAuditScreen extends GetView<CvAuditController> {
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
@@ -46,34 +50,60 @@ class CvAuditScreen extends GetView<CvAuditController> {
                 );
               }
               final sections = audit.sections.entries.toList();
-              return RefreshIndicator(
-                color: AppColors.primary,
+              return AppRefreshIndicator(
+                color: AppColors.primaryAccent,
                 onRefresh: controller.load,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.xxl,
+                    AppSpacing.xl,
+                    40,
+                  ),
                   children: [
-                    _QualityCard(
-                      quality: audit.overallQuality,
-                      atsFriendly: audit.atsFriendly,
-                    ),
-                    const SizedBox(height: 24),
-                    if (audit.keywordsMissing.isNotEmpty) ...[
-                      const SectionHeader(title: 'Mots-clés manquants'),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: audit.keywordsMissing
-                            .map((k) => _KeywordChip(label: k))
-                            .toList(),
+                    RevealOnMount(
+                      duration: AppMotion.long,
+                      child: _QualityCard(
+                        quality: audit.overallQuality,
+                        atsFriendly: audit.atsFriendly,
                       ),
-                      const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    if (audit.keywordsMissing.isNotEmpty) ...[
+                      RevealOnMount(
+                        delay: AppMotion.stagger,
+                        duration: AppMotion.medium,
+                        child:
+                            const SectionHeader(title: 'Mots-clés manquants'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      RevealOnMount(
+                        delay: AppMotion.stagger * 2,
+                        duration: AppMotion.medium,
+                        child: Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: audit.keywordsMissing
+                              .map((k) => _KeywordChip(label: k))
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
                     ],
                     if (sections.isNotEmpty) ...[
-                      const SectionHeader(title: 'Revue par section'),
-                      const SizedBox(height: 12),
-                      ...sections.map(
-                        (e) => _SectionCard(sectionKey: e.key, value: e.value),
+                      RevealOnMount(
+                        delay: AppMotion.stagger,
+                        duration: AppMotion.medium,
+                        child: const SectionHeader(title: 'Revue par section'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ...sections.indexed.map(
+                        (e) => RevealOnMount(
+                          delay: AppMotion.stagger * (e.$1 + 2),
+                          duration: AppMotion.medium,
+                          child: _SectionCard(
+                              sectionKey: e.$2.key, value: e.$2.value),
+                        ),
                       ),
                     ],
                   ],
@@ -94,9 +124,9 @@ String _prettify(String key) {
 }
 
 Color _qualityColor(int v) {
-  if (v >= 75) return AppColors.success;
-  if (v >= 45) return AppColors.warning;
-  return AppColors.error;
+  if (v >= 75) return AppColors.successAccent;
+  if (v >= 45) return AppColors.warningAccent;
+  return AppColors.errorAccent;
 }
 
 class _QualityCard extends StatelessWidget {
@@ -108,51 +138,35 @@ class _QualityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _qualityColor(quality);
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: AppColors.lightShadow,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        shadows: [
+          ...AppColors.lightShadow,
+          ...AppColors.ambientShadow,
+        ],
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 88,
-            height: 88,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: quality / 100),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, v, _) => SizedBox(
-                    width: 88,
-                    height: 88,
-                    child: CircularProgressIndicator(
-                      value: v,
-                      strokeWidth: 8,
-                      backgroundColor: AppColors.surfaceHigh,
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-                ),
-                Text('$quality',
-                    style: AppTextStyles.headlineMd
-                        .copyWith(fontWeight: FontWeight.w900, color: color)),
-              ],
-            ),
+          ScoreRing(
+            value: quality,
+            color: color,
+            size: 88,
+            strokeWidth: 8,
+            valueFontSize: 26,
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Qualité globale',
-                    style: AppTextStyles.titleMd
-                        .copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
+                Text(
+                  'Qualité globale',
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 _AtsBadge(atsFriendly: atsFriendly),
               ],
             ),
@@ -169,21 +183,23 @@ class _AtsBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = atsFriendly ? AppColors.success : AppColors.warning;
+    final color =
+        atsFriendly ? AppColors.successAccent : AppColors.warningAccent;
     final bg = atsFriendly ? AppColors.successSoft : AppColors.warningSoft;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 7,
+      ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: AppShapes.pill,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            atsFriendly
-                ? Icons.check_circle_rounded
-                : Icons.warning_amber_rounded,
+            atsFriendly ? IconlyBold.tick_square : Icons.warning_amber_rounded,
             size: 16,
             color: color,
           ),
@@ -210,15 +226,20 @@ class _KeywordChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColors.warningSoft,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMd
-            .copyWith(color: AppColors.warning, fontWeight: FontWeight.w700),
+        style: AppTextStyles.labelMd.copyWith(
+          color: AppColors.warningAccent,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -249,12 +270,15 @@ class _SectionCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.lightShadow,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        shadows: [
+          ...AppColors.lightShadow,
+          ...AppColors.ambientShadow,
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,24 +286,31 @@ class _SectionCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(_prettify(sectionKey),
-                    style: AppTextStyles.titleMd
-                        .copyWith(fontWeight: FontWeight.w800)),
+                child: Text(
+                  _prettify(sectionKey),
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontWeight: FontWeight.w800),
+                ),
               ),
               if (score != null)
-                Text('$score%',
-                    style: AppTextStyles.labelMd.copyWith(
-                        color: _qualityColor(score),
-                        fontWeight: FontWeight.w800)),
+                Text(
+                  '$score%',
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: _qualityColor(score),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
             ],
           ),
           if (feedback.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(feedback,
-                style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.bodyColor, height: 1.4)),
+            Text(
+              feedback,
+              style: AppTextStyles.bodySm
+                  .copyWith(color: AppColors.bodyColor, height: 1.4),
+            ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Obx(() {
             final busy = controller.rewritingSection.value == sectionKey;
             return PressScale(
@@ -293,37 +324,46 @@ class _SectionCard extends StatelessWidget {
                       if (result != null && result.isNotEmpty) {
                         _showRewriteSheet(context, sectionKey, result);
                       } else if (result == null) {
-                        AppToast.error('Réécriture indisponible pour le moment.');
+                        AppToast.error(
+                            'Réécriture indisponible pour le moment.');
                       }
                     },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSelected,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppShapes.squircleRadius(AppRadius.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (busy)
-                      const SizedBox(
+                      SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primaryAccent),
                         ),
                       )
                     else
-                      const Icon(IconlyLight.edit,
-                          size: 16, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Text(busy ? 'Réécriture…' : 'Réécrire avec l\'IA',
-                        style: AppTextStyles.labelMd.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700)),
+                      Icon(
+                        IconlyLight.edit,
+                        size: 16,
+                        color: AppColors.primaryAccent,
+                      ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      busy ? 'Réécriture…' : 'Réécrire avec l\'IA',
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.primaryAccent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -339,8 +379,10 @@ class _SectionCard extends StatelessWidget {
       context: context,
       backgroundColor: AppColors.surfaceCard,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheetTop),
+        ),
       ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
@@ -348,7 +390,12 @@ class _SectionCard extends StatelessWidget {
         maxChildSize: 0.9,
         expand: false,
         builder: (ctx, scrollCtrl) => Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.md,
+            AppSpacing.xl,
+            28,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -358,43 +405,51 @@ class _SectionCard extends StatelessWidget {
                   height: 4,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceHighest,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: AppShapes.pill,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text('Proposition IA — ${_prettify(section)}',
-                  style: AppTextStyles.titleLg
-                      .copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Proposition IA — ${_prettify(section)}',
+                style:
+                    AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollCtrl,
-                  child: Text(text,
-                      style: AppTextStyles.bodyMd
-                          .copyWith(color: AppColors.titleColor, height: 1.5)),
+                  child: Text(
+                    text,
+                    style: AppTextStyles.bodyMd
+                        .copyWith(color: AppColors.titleColor, height: 1.5),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: AppShapes.pill,
                     ),
                   ),
                   onPressed: () {
                     AppHaptics.tap();
                     Navigator.of(ctx).pop();
                   },
-                  child: Text('Fermer',
-                      style: AppTextStyles.titleMd.copyWith(
-                          color: AppColors.onPrimary,
-                          fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Fermer',
+                    style: AppTextStyles.titleMd.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -411,17 +466,30 @@ class _AuditSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xxl,
+        AppSpacing.xl,
+        40,
+      ),
       physics: const NeverScrollableScrollPhysics(),
       children: [
-        const SkeletonBox(width: double.infinity, height: 128, radius: 22),
-        const SizedBox(height: 24),
+        SkeletonBox(
+          width: double.infinity,
+          height: 128,
+          radius: AppRadius.xl * 1.7,
+        ),
+        const SizedBox(height: AppSpacing.xxl),
         const SkeletonBox(width: 180, height: 20, radius: 8),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         for (var i = 0; i < 3; i++)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: SkeletonBox(width: double.infinity, height: 110, radius: 18),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: SkeletonBox(
+              width: double.infinity,
+              height: 110,
+              radius: AppRadius.xl * 1.7,
+            ),
           ),
       ],
     );

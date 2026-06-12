@@ -10,7 +10,8 @@ class DashboardRepositoryImpl implements IDashboardRepository {
 
   @override
   Future<Map<String, dynamic>> getCandidateDashboard() async {
-    final response = await _apiProvider.getJson(ApiConstants.candidateDashboard);
+    final response =
+        await _apiProvider.getJson(ApiConstants.candidateDashboard);
     return response['data'] ?? {};
   }
 

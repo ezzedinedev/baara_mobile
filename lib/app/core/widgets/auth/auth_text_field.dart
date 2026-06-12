@@ -1,8 +1,10 @@
 import "package:flutter/material.dart";
 import 'package:iconly/iconly.dart' show IconlyLight;
 import '../../theme/app_colors.dart';
+import '../../theme/app_dimens.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/app_shapes.dart';
 import '../../theme/app_text_styles.dart';
-
 
 class AuthTextField extends StatefulWidget {
   const AuthTextField({
@@ -36,11 +38,27 @@ class AuthTextField extends StatefulWidget {
 
 class _AuthTextFieldState extends State<AuthTextField> {
   late bool _obscured;
+  final FocusNode _focusNode = FocusNode();
+  bool _focused = false;
 
   @override
   void initState() {
     super.initState();
     _obscured = widget.obscureText;
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus != _focused) {
+      setState(() => _focused = _focusNode.hasFocus);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
   }
 
   void _toggleObscure() {
@@ -77,46 +95,75 @@ class _AuthTextFieldState extends State<AuthTextField> {
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: widget.controller,
-          keyboardType: widget.keyboardType,
-          obscureText: _obscured,
-          validator: widget.validator,
-          onChanged: widget.onChanged,
-          style: AppTextStyles.bodyLg.copyWith(
-            color: AppColors.titleColor,
-            fontWeight: FontWeight.w600,
+        AnimatedContainer(
+          duration: AppMotion.medium,
+          curve: AppMotion.emphasizedDecelerate,
+          decoration: BoxDecoration(
+            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            boxShadow: _focused
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryAccent.withValues(alpha: 0.18),
+                      blurRadius: 22,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : const [],
           ),
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            hintStyle: AppTextStyles.bodyMd.copyWith(
-              color: AppColors.hintColor,
+          child: TextFormField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            keyboardType: widget.keyboardType,
+            obscureText: _obscured,
+            validator: widget.validator,
+            onChanged: widget.onChanged,
+            style: AppTextStyles.bodyLg.copyWith(
+              color: AppColors.titleColor,
+              fontWeight: FontWeight.w600,
             ),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 14, right: 10),
-              child: Icon(widget.icon, color: AppColors.primary, size: 20),
-            ),
-            prefixIconConstraints:
-                const BoxConstraints(minWidth: 46, minHeight: 46),
-            suffixIcon: effectiveSuffix,
-            filled: true,
-            fillColor: AppColors.surfaceCard,
-            border: _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
-            enabledBorder:
-                _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
-            focusedBorder: _outline(AppColors.primary, width: 1.5),
-            errorBorder: _outline(AppColors.error),
-            focusedErrorBorder: _outline(AppColors.error, width: 1.5),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            helperText: widget.helper,
-            helperStyle: AppTextStyles.bodySm.copyWith(
-              color: AppColors.hintColor,
-              fontSize: 11,
-            ),
-            errorStyle: AppTextStyles.bodySm.copyWith(
-              color: AppColors.error,
-              fontSize: 11,
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              hintStyle: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.hintColor,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: 14, right: 10),
+                child: AnimatedScale(
+                  duration: AppMotion.short,
+                  curve: AppMotion.spring,
+                  scale: _focused ? 1.12 : 1.0,
+                  child: Icon(
+                    widget.icon,
+                    color: _focused
+                        ? AppColors.primaryAccent
+                        : AppColors.primaryAccent.withValues(alpha: 0.85),
+                    size: 20,
+                  ),
+                ),
+              ),
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 46, minHeight: 46),
+              suffixIcon: effectiveSuffix,
+              filled: true,
+              fillColor: _focused ? AppColors.inputFill : AppColors.surfaceCard,
+              border:
+                  _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
+              enabledBorder:
+                  _outline(AppColors.outlineVariant.withValues(alpha: 0.55)),
+              focusedBorder: _outline(AppColors.primaryAccent, width: 1.5),
+              errorBorder: _outline(AppColors.errorAccent),
+              focusedErrorBorder: _outline(AppColors.errorAccent, width: 1.5),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              helperText: widget.helper,
+              helperStyle: AppTextStyles.bodySm.copyWith(
+                color: AppColors.hintColor,
+                fontSize: 11,
+              ),
+              errorStyle: AppTextStyles.bodySm.copyWith(
+                color: AppColors.errorAccent,
+                fontSize: 11,
+              ),
             ),
           ),
         ),
@@ -126,7 +173,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
 
   OutlineInputBorder _outline(Color color, {double width = 1}) =>
       OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppShapes.squircleRadius(AppRadius.lg),
         borderSide: BorderSide(color: color, width: width),
       );
 }

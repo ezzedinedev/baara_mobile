@@ -25,11 +25,26 @@ class ProfileModel extends Profile {
     super.githubUrl,
     super.portfolioUrl,
     super.desiredRole,
+    super.notificationsEnabled,
+    super.notificationChannels,
+    super.teamActivity,
+    super.themePref,
+    super.languagePref,
+    super.profileVisibility,
   });
 
+  /// Clés des canaux de notification renvoyées par le backend.
+  static const _channelKeys = <String>[
+    'offer_updates',
+    'application_updates',
+    'match_alerts',
+    'message_alerts',
+    'training_updates',
+  ];
+
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
-    final user = json['user'] is Map<String, dynamic> 
-        ? json['user'] as Map<String, dynamic> 
+    final user = json['user'] is Map<String, dynamic>
+        ? json['user'] as Map<String, dynamic>
         : json;
     final profile = json['profile'] is Map<String, dynamic>
         ? json['profile'] as Map<String, dynamic>
@@ -37,6 +52,16 @@ class ProfileModel extends Profile {
     final cv = json['cv'] is Map<String, dynamic>
         ? json['cv'] as Map<String, dynamic>
         : <String, dynamic>{};
+
+    final prefs = user['preferences'] is Map<String, dynamic>
+        ? user['preferences'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final notif = prefs['notifications'] is Map<String, dynamic>
+        ? prefs['notifications'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final apparence = prefs['apparence'] is Map<String, dynamic>
+        ? prefs['apparence'] as Map<String, dynamic>
+        : const <String, dynamic>{};
 
     return ProfileModel(
       id: user['id']?.toString() ?? '',
@@ -47,14 +72,17 @@ class ProfileModel extends Profile {
       country: user['country'] ?? user['region'] ?? '',
       city: user['city'] ?? '',
       userType: user['user_type'] ?? 'candidate',
-      avatarUrl: user['avatar_url'] ?? user['avatar'] ?? user['profile_picture'],
+      avatarUrl:
+          user['avatar_url'] ?? user['avatar'] ?? user['profile_picture'],
       headline: profile['headline'] ?? cv['desired_role'] ?? user['headline'],
       bio: profile['summary'] ?? cv['bio'] ?? user['bio'],
       skills: _parseList(profile['skills'] ?? cv['hard_skills']),
       experiences: _parseExperiences(cv['experiences'] ?? user['experiences']),
-      educations: _parseEducations(cv['educations'] ?? user['educations'] ?? user['education']),
+      educations: _parseEducations(
+          cv['educations'] ?? user['educations'] ?? user['education']),
       languages: _parseLanguages(cv['languages'] ?? profile['languages']),
-      isProfileComplete: user['is_profile_complete'] ?? user['is_complete'] ?? false,
+      isProfileComplete:
+          user['is_profile_complete'] ?? user['is_complete'] ?? false,
       dateOfBirth: cv['date_of_birth'] != null
           ? DateTime.tryParse(cv['date_of_birth'].toString())
           : null,
@@ -64,7 +92,33 @@ class ProfileModel extends Profile {
       githubUrl: cv['github_url'],
       portfolioUrl: cv['portfolio_url'],
       desiredRole: cv['desired_role'],
+      notificationsEnabled: _parseBool(notif['enabled'], fallback: true),
+      notificationChannels: {
+        for (final k in _channelKeys) k: _parseBool(notif[k], fallback: true),
+      },
+      teamActivity: _parseBool(notif['team_activity'], fallback: false),
+      themePref: (apparence['theme'] ?? 'light').toString(),
+      languagePref: (apparence['language'] ?? 'fr').toString(),
+      profileVisibility: _parseVisibility(
+        json['profile_visibility'] ??
+            user['profile_visibility'] ??
+            prefs['profile_visibility'],
+      ),
     );
+  }
+
+  /// Normalise la visibilité du profil ('public' | 'connections'),
+  /// défaut 'public' si valeur absente/inconnue.
+  static String _parseVisibility(dynamic value) {
+    final v = value?.toString().trim().toLowerCase();
+    return v == 'connections' ? 'connections' : 'public';
+  }
+
+  static bool _parseBool(dynamic value, {required bool fallback}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) return value == 'true' || value == '1';
+    return fallback;
   }
 
   static List<String> _parseList(dynamic value) {
@@ -76,19 +130,25 @@ class ProfileModel extends Profile {
 
   static List<ExperienceModel> _parseExperiences(dynamic value) {
     if (value == null) return [];
-    if (value is List) return value.map((e) => ExperienceModel.fromJson(e)).toList();
+    if (value is List) {
+      return value.map((e) => ExperienceModel.fromJson(e)).toList();
+    }
     return [];
   }
 
   static List<EducationModel> _parseEducations(dynamic value) {
     if (value == null) return [];
-    if (value is List) return value.map((e) => EducationModel.fromJson(e)).toList();
+    if (value is List) {
+      return value.map((e) => EducationModel.fromJson(e)).toList();
+    }
     return [];
   }
 
   static List<LanguageModel> _parseLanguages(dynamic value) {
     if (value == null) return [];
-    if (value is List) return value.map((e) => LanguageModel.fromJson(e)).toList();
+    if (value is List) {
+      return value.map((e) => LanguageModel.fromJson(e)).toList();
+    }
     return [];
   }
 }
@@ -140,7 +200,8 @@ class EducationModel extends Education {
     return EducationModel(
       id: json['id']?.toString() ?? '',
       degree: json['degree'] ?? json['diploma'] ?? '',
-      institution: json['institution'] ?? json['school'] ?? json['university'] ?? '',
+      institution:
+          json['institution'] ?? json['school'] ?? json['university'] ?? '',
       location: json['location'] ?? '',
       startDate: _parseDate(json['start_date']),
       endDate: json['end_date'] != null ? _parseDate(json['end_date']) : null,

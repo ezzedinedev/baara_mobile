@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -30,7 +33,8 @@ class CvAssistantChatScreen extends GetView<CvAssistantController> {
               final hasOnlyWelcome = controller.messages.length <= 1;
               return ListView.builder(
                 controller: controller.scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: 24),
                 itemCount: controller.messages.length +
                     (controller.isSending.value ? 1 : 0) +
                     (hasOnlyWelcome ? 1 : 0),
@@ -65,7 +69,7 @@ class CvAssistantChatScreen extends GetView<CvAssistantController> {
 class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(gradient: AppColors.headerBrandGradient),
       child: SafeArea(
         bottom: false,
@@ -74,17 +78,18 @@ class _Header extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                icon: const Icon(IconlyLight.arrow_left_2,
                     color: AppColors.onPrimary),
                 onPressed: () {
                   AppHaptics.tap();
                   Get.back();
                 },
               ),
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundColor: Color(0x33FFFFFF),
-                child: Icon(IconlyBold.document, color: AppColors.onPrimary),
+                backgroundColor: AppColors.onPrimary.withValues(alpha: 0.2),
+                child:
+                    const Icon(IconlyBold.document, color: AppColors.onPrimary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -100,8 +105,9 @@ class _Header extends StatelessWidget {
                     ),
                     Text(
                       'Rédige et améliore votre CV',
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: Colors.white70, fontSize: 11),
+                      style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.onPrimary.withValues(alpha: 0.7),
+                          fontSize: 11),
                     ),
                   ],
                 ),
@@ -123,22 +129,26 @@ class _StarterPrompts extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 40, top: 4),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
         children: CvAssistantController.starterPrompts.map((p) {
           return PressScale(
             onTap: () => onTap(p),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            curve: AppMotion.spring,
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 color: AppColors.surfaceSelected,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppShapes.squircleRadius(AppRadius.md),
                 border: Border.all(color: AppColors.primaryLight),
               ),
-              child: Text(
-                p,
-                style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Text(
+                  p,
+                  style: AppTextStyles.labelMd
+                      .copyWith(color: AppColors.primaryAccent),
+                ),
               ),
             ),
           );
@@ -163,7 +173,7 @@ class _ChatBubble extends StatelessWidget {
         : (isUser ? AppColors.onPrimary : AppColors.titleColor);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment:
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -180,7 +190,7 @@ class _ChatBubble extends StatelessWidget {
                   child: Icon(IconlyBold.document,
                       size: 16, color: AppColors.onPrimary),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
               ],
               Flexible(
                 child: Container(
@@ -188,6 +198,8 @@ class _ChatBubble extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: bubbleColor,
+                    // Rayons asymétriques de bulle de chat : cas légitime,
+                    // forme spécifique au contexte conversationnel.
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
@@ -210,12 +222,14 @@ class _ChatBubble extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isUser) const SizedBox(width: 8),
+              if (isUser) const SizedBox(width: AppSpacing.sm),
             ],
           ),
           Padding(
             padding: EdgeInsets.only(
-                top: 4, left: isUser ? 0 : 40, right: isUser ? 8 : 0),
+                top: AppSpacing.xs,
+                left: isUser ? 0 : 40,
+                right: isUser ? AppSpacing.sm : 0),
             child: Text(
               '${message.at.hour}:${message.at.minute.toString().padLeft(2, '0')}',
               style: AppTextStyles.bodySm
@@ -244,63 +258,69 @@ class _InputBar extends StatelessWidget {
       inputCtrl.clear();
     }
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    // La barre d'input est de la « chrome » (fixe en bas de l'écran).
+    // Le Scaffold racine fournit l'ancêtre Material requis par le TextField.
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         boxShadow: AppColors.lightShadow,
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceLow,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: TextField(
-                  controller: inputCtrl,
-                  style: AppTextStyles.bodyMd,
-                  maxLines: 4,
-                  minLines: 1,
-                  textInputAction: TextInputAction.send,
-                  decoration: InputDecoration(
-                    hintText: 'Décrivez votre parcours...',
-                    hintStyle: AppTextStyles.bodyMd
-                        .copyWith(color: AppColors.hintColor),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                  ),
-                  onSubmitted: (_) => submit(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Obx(
-              () => PressScale(
-                onTap: controller.isSending.value ? null : submit,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 24),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              Expanded(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: controller.isSending.value
-                        ? AppColors.surfaceLow
-                        : AppColors.primary,
-                    shape: BoxShape.circle,
+                    color: AppColors.surfaceLow,
+                    borderRadius: AppShapes.squircleRadius(AppRadius.xl),
                   ),
-                  child: Icon(
-                    IconlyBold.send,
-                    color: controller.isSending.value
-                        ? AppColors.hintColor
-                        : AppColors.onPrimary,
-                    size: 20,
+                  child: TextField(
+                    controller: inputCtrl,
+                    style: AppTextStyles.bodyMd,
+                    maxLines: 4,
+                    minLines: 1,
+                    textInputAction: TextInputAction.send,
+                    decoration: InputDecoration(
+                      hintText: 'Décrivez votre parcours...',
+                      hintStyle: AppTextStyles.bodyMd
+                          .copyWith(color: AppColors.hintColor),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                    ),
+                    onSubmitted: (_) => submit(),
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Obx(
+                () => PressScale(
+                  onTap: controller.isSending.value ? null : submit,
+                  curve: AppMotion.spring,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: controller.isSending.value
+                          ? AppColors.surfaceLow
+                          : AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      IconlyBold.send,
+                      color: controller.isSending.value
+                          ? AppColors.hintColor
+                          : AppColors.onPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -331,34 +351,36 @@ class _TypingIndicatorState extends State<_TypingIndicator>
     return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 16, left: 40),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.only(bottom: AppSpacing.lg, left: 40),
+        child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.surfaceLow,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(3, (index) {
-              return FadeTransition(
-                opacity: _controller.drive(
-                  Tween<double>(begin: 0.3, end: 1.0).chain(
-                    CurveTween(
-                      curve: Interval(index * 0.2, 0.6 + index * 0.2,
-                          curve: Curves.easeInOut),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (index) {
+                return FadeTransition(
+                  opacity: _controller.drive(
+                    Tween<double>(begin: 0.3, end: 1.0).chain(
+                      CurveTween(
+                        curve: Interval(index * 0.2, 0.6 + index * 0.2,
+                            curve: Curves.easeInOut),
+                      ),
                     ),
                   ),
-                ),
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: const BoxDecoration(
-                      color: AppColors.secondary, shape: BoxShape.circle),
-                ),
-              );
-            }),
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: const BoxDecoration(
+                        color: AppColors.secondary, shape: BoxShape.circle),
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ),

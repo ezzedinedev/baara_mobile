@@ -1,4 +1,3 @@
-
 String relativeTimeFr(DateTime? dateTime) {
   if (dateTime == null) return '';
   final diff = DateTime.now().difference(dateTime);

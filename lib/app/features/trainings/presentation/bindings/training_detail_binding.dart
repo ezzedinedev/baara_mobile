@@ -11,6 +11,7 @@ class TrainingDetailBinding extends Bindings {
     Get.lazyPut<ITrainingRepository>(
       () => TrainingRepositoryImpl(apiProvider: Get.find<ApiProvider>()),
     );
-    Get.lazyPut(() => TrainingDetailController(Get.find<ITrainingRepository>()));
+    Get.lazyPut(
+        () => TrainingDetailController(Get.find<ITrainingRepository>()));
   }
 }

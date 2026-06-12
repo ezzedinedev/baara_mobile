@@ -60,7 +60,9 @@ class _OpportunitesScreenState extends State<OpportunitesScreen> {
           // Bascule Liste / Découverte (swipe) — visible uniquement sur Offres.
           if (_segment == 0)
             AppIconButton(
-              icon: _offersSwipe ? Icons.view_agenda_rounded : Icons.swipe_rounded,
+              icon: _offersSwipe
+                  ? Icons.view_agenda_rounded
+                  : Icons.swipe_rounded,
               tooltip: _offersSwipe ? 'Vue liste' : 'Mode découverte (swipe)',
               onTap: () {
                 AppHaptics.tap();
@@ -169,7 +171,7 @@ class SegmentedControl extends StatelessWidget {
                                 icons![i],
                                 size: 16,
                                 color: active
-                                    ? AppColors.primary
+                                    ? AppColors.primaryAccent
                                     : AppColors.hintColor,
                               ),
                               const SizedBox(width: 6),

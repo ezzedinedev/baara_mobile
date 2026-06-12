@@ -7,6 +7,10 @@ class Conversation {
   final bool isOnline;
   final String? avatar;
 
+  /// Dernière activité connue de l'interlocuteur (depuis `direct_user`).
+  /// Utilisé pour « Vu il y a … » quand `isOnline` est faux.
+  final DateTime? lastSeenAt;
+
   const Conversation({
     required this.id,
     required this.title,
@@ -15,5 +19,6 @@ class Conversation {
     required this.unreadCount,
     required this.isOnline,
     this.avatar,
+    this.lastSeenAt,
   });
 }

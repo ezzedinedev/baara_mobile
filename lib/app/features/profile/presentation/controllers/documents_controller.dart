@@ -91,7 +91,8 @@ class DocumentsController extends GetxController {
     try {
       await _repository.delete(doc.id);
     } catch (e) {
-      documents.insert(index > documents.length ? documents.length : index, doc);
+      documents.insert(
+          index > documents.length ? documents.length : index, doc);
       AppToast.error('Suppression échouée', userFacingError(e));
     } finally {
       deletingId.value = null;

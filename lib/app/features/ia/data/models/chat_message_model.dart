@@ -11,9 +11,11 @@ class ChatMessageModel extends ChatMessage {
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
     final atRaw = json['at']?.toString();
-    final at = atRaw != null ? DateTime.tryParse(atRaw) ?? DateTime.now() : DateTime.now();
+    final at = atRaw != null
+        ? DateTime.tryParse(atRaw) ?? DateTime.now()
+        : DateTime.now();
     final ctaRaw = (json['cta_actions'] as List?) ?? [];
-    
+
     return ChatMessageModel(
       role: json['role']?.toString() ?? 'assistant',
       content: json['content']?.toString() ?? '',

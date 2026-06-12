@@ -10,7 +10,8 @@ class RegisterProfileController extends GetxController {
 
   void onContinue() {
     if (selectedProfile.value.isNotEmpty) {
-      Get.toNamed(AppRoutes.register, arguments: {'registration_profile': selectedProfile.value});
+      Get.toNamed(AppRoutes.register,
+          arguments: {'registration_profile': selectedProfile.value});
     }
   }
 }

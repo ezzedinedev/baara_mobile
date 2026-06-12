@@ -7,7 +7,8 @@ import '../controllers/register_controller.dart';
 class RegisterBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<IAuthRepository>(() => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<IAuthRepository>(
+        () => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => RegisterController(Get.find<IAuthRepository>()));
   }
 }

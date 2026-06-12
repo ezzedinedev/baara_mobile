@@ -3,7 +3,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import 'wavy_decorations.dart';
 
-
 class WavyContentHeader extends StatelessWidget {
   const WavyContentHeader({
     super.key,

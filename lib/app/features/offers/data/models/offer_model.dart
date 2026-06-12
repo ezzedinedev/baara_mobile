@@ -37,16 +37,21 @@ class OfferModel extends Offer {
       id: json['id']?.toString() ?? '',
       title: json['title'] ?? 'Sans titre',
       company: json['company_name'] ?? employer?['company_name'] ?? 'Anonyme',
-      companyLogo: json['company_logo'] ?? employer?['logo'] ?? employer?['logo_url'],
+      companyLogo:
+          json['company_logo'] ?? employer?['logo'] ?? employer?['logo_url'],
       location: _formatLocation(json),
       salary: _formatSalary(json),
       contractType: json['contract_type'] ?? '',
       requiredSkills: _parseSkills(json['required_skills']),
       minYearsExperience: _parseExperience(json['experience_level']),
       description: json['description'] ?? '',
-      sector: json['sector'] is Map ? (json['sector']['name'] ?? '') : (json['sector']?.toString() ?? ''),
+      sector: json['sector'] is Map
+          ? (json['sector']['name'] ?? '')
+          : (json['sector']?.toString() ?? ''),
       isRemote: json['is_remote'] == true || json['is_remote'] == 1,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
       experienceLabel: _formatExperienceLabel(json),
       deadlineLabel: _formatDeadline(json['deadline']),
       isBoosted: json['is_boosted'] == true || json['is_boosted'] == 1,
@@ -55,7 +60,8 @@ class OfferModel extends Offer {
     );
   }
 
-  static int _parseBoostTier(Map<String, dynamic> json, Map<String, dynamic>? badge) {
+  static int _parseBoostTier(
+      Map<String, dynamic> json, Map<String, dynamic>? badge) {
     final fromBadge = badge?['tier'];
     if (fromBadge is int) return fromBadge;
     if (fromBadge != null) return int.tryParse(fromBadge.toString()) ?? 0;
@@ -68,7 +74,9 @@ class OfferModel extends Offer {
     final parts = <String>[];
     if (json['city'] != null) parts.add(json['city'].toString());
     if (json['region'] != null) parts.add(json['region'].toString());
-    if (json['is_remote'] == true || json['is_remote'] == 1) parts.add('Remote');
+    if (json['is_remote'] == true || json['is_remote'] == 1) {
+      parts.add('Remote');
+    }
     return parts.isEmpty ? 'Non précisé' : parts.join(' • ');
   }
 
@@ -86,7 +94,9 @@ class OfferModel extends Offer {
   static List<String> _parseSkills(dynamic skills) {
     if (skills == null) return [];
     if (skills is List) return skills.map((s) => s.toString()).toList();
-    if (skills is String) return skills.split(',').map((s) => s.trim()).toList();
+    if (skills is String) {
+      return skills.split(',').map((s) => s.trim()).toList();
+    }
     return [];
   }
 

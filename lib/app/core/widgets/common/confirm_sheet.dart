@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-
 Future<bool?> showConfirmSheet({
   required BuildContext context,
   required IconData icon,
@@ -80,8 +79,7 @@ Future<bool?> showConfirmSheet({
                     onPressed: () => Navigator.of(sheetCtx).pop(false),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color:
-                            AppColors.outlineVariant.withValues(alpha: 0.4),
+                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
@@ -102,9 +100,8 @@ Future<bool?> showConfirmSheet({
                   child: FilledButton(
                     onPressed: () => Navigator.of(sheetCtx).pop(true),
                     style: FilledButton.styleFrom(
-                      backgroundColor: isDestructive
-                          ? AppColors.error
-                          : AppColors.primary,
+                      backgroundColor:
+                          isDestructive ? AppColors.error : AppColors.primary,
                       foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
-
-
-
 
 class SettingsUpdatedDialog extends StatefulWidget {
   const SettingsUpdatedDialog({super.key});
@@ -56,7 +54,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1C2E), // Fond encore plus profond
+        color: AppColors.surfaceImmersive, // Fond encore plus profond
         borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
         boxShadow: [
           BoxShadow(
@@ -87,7 +85,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                 alignment: Alignment.center,
                 children: [
                   Icon(
-                    Icons.settings_outlined,
+                    IconlyLight.setting,
                     size: 64,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
@@ -101,7 +99,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.check,
+                        IconlyLight.tick_square,
                         size: 20,
                         color: Colors.white,
                       ),
@@ -152,7 +150,8 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                 padding: const EdgeInsets.symmetric(vertical: 22),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                  side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.1), width: 1),
                 ),
               ),
               onPressed: () {

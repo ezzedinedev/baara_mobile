@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -29,7 +32,8 @@ class OfferListScreen extends GetView<OfferController> {
           if (controller.isLoading.value && controller.offers.isEmpty) {
             return _buildSkeletons(isTablet);
           }
-          if (controller.filteredOffers.isEmpty && !controller.isLoading.value) {
+          if (controller.filteredOffers.isEmpty &&
+              !controller.isLoading.value) {
             return _buildEmptyState();
           }
           return _buildList(isTablet);
@@ -41,7 +45,7 @@ class OfferListScreen extends GetView<OfferController> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: AppSearchBar(
-                  controller: TextEditingController(),
+                  controller: controller.searchCtrl,
                   hint: 'Métier, entreprise, ville...',
                   onChanged: (v) => controller.searchQuery.value = v,
                 ),
@@ -66,7 +70,7 @@ class OfferListScreen extends GetView<OfferController> {
               ),
             ],
             headerChild: AppSearchBar(
-              controller: TextEditingController(),
+              controller: controller.searchCtrl,
               hint: 'Métier, entreprise, ville...',
               onChanged: (v) => controller.searchQuery.value = v,
             ),
@@ -84,7 +88,7 @@ class OfferListScreen extends GetView<OfferController> {
         crossAxisCount: isTablet ? 2 : 1,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: isTablet ? 1.4 : 2.5,
+        childAspectRatio: isTablet ? 1.25 : 2.05,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => const OfferCardSkeleton(),
@@ -94,15 +98,17 @@ class OfferListScreen extends GetView<OfferController> {
   Widget _buildEmptyState() {
     final filtered = controller.hasActiveFilter ||
         controller.searchQuery.value.trim().isNotEmpty;
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => controller.loadOffers(refresh: true),
-      color: AppColors.primary,
+      color: AppColors.primaryAccent,
       child: ListView(
         children: [
           SizedBox(
             height: 400,
             child: EmptyState(
-              icon: IconlyLight.work,
+              illustration: filtered
+                  ? const NoResultsIllustration()
+                  : const EmptyOffersIllustration(),
               title: filtered ? 'Aucun résultat' : 'Aucune offre',
               subtitle: filtered
                   ? 'Aucune offre ne correspond à ta recherche.'
@@ -124,9 +130,9 @@ class OfferListScreen extends GetView<OfferController> {
 
   Widget _buildList(bool isTablet) {
     final items = controller.filteredOffers;
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () => controller.loadOffers(refresh: true),
-      color: AppColors.primary,
+      color: AppColors.primaryAccent,
       child: AnimationLimiter(
         child: GridView.builder(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -134,31 +140,38 @@ class OfferListScreen extends GetView<OfferController> {
             crossAxisCount: isTablet ? 2 : 1,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: isTablet ? 1.3 : 2.3,
+            childAspectRatio: isTablet ? 1.2 : 2.05,
           ),
           itemCount: items.length + (controller.hasNextPage.value ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == items.length) {
               controller.loadOffers();
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: const AppLoader(),
+              );
             }
 
             final offer = items[index];
             return AnimationConfiguration.staggeredGrid(
               position: index,
-              duration: const Duration(milliseconds: 260),
+              duration: AppMotion.medium,
               columnCount: isTablet ? 2 : 1,
-              child: ScaleAnimation(
-                scale: 0.96,
-                child: FadeInAnimation(
-                  child: _OfferCard(
-                    offer: offer,
-                    onTap: () {
-                      AppHaptics.tap();
-                      Get.toNamed(
-                        AppRoutes.offerDetail.replaceFirst(':id', offer.id),
-                      );
-                    },
+              child: SlideAnimation(
+                verticalOffset: AppMotion.listSlideOffset,
+                curve: AppMotion.emphasizedDecelerate,
+                child: ScaleAnimation(
+                  scale: 0.96,
+                  curve: AppMotion.emphasizedDecelerate,
+                  child: FadeInAnimation(
+                    child: _OfferCard(
+                      offer: offer,
+                      onTap: () {
+                        AppHaptics.tap();
+                        Get.toNamed(
+                          AppRoutes.offerDetail.replaceFirst(':id', offer.id),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -183,7 +196,8 @@ Future<void> openOffersFilter(
     ..sort();
   final groups = <FilterGroup>[
     if (contracts.isNotEmpty)
-      FilterGroup(key: 'contract', label: 'Type de contrat', options: contracts),
+      FilterGroup(
+          key: 'contract', label: 'Type de contrat', options: contracts),
     const FilterGroup(key: 'remote', label: 'Lieu', options: ['Télétravail']),
   ];
   final result = await showFilterSheet(
@@ -209,10 +223,18 @@ class _OfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<OfferController>();
-    
-    return AppCard(
+
+    return PressScale(
       onTap: onTap,
-      child: Column(
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          // Ombres en couches : portée courte + ambiante large (profondeur 2026).
+          shadows: [...AppColors.lightShadow, ...AppColors.ambientShadow],
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (offer.isBoosted && offer.boostTier > 0) ...[
@@ -220,81 +242,144 @@ class _OfferCard extends StatelessWidget {
                 tier: offer.boostTier,
                 label: offer.boostLabel ?? 'À la une',
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
             ],
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Hero(
                   tag: 'offer-logo-${offer.id}',
-                  child: BrandAvatar(
-                    seed: offer.company,
-                    label: offer.company,
-                    imageUrl: offer.companyLogo,
-                    size: 48,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+                      boxShadow: AppColors.lightShadow,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+                      child: BrandAvatar(
+                        seed: offer.company,
+                        label: offer.company,
+                        imageUrl: offer.companyLogo,
+                        size: 52,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        offer.company,
-                        style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
                         offer.title,
                         style: AppTextStyles.headlineMd.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
+                          height: 1.25,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Icon(IconlyLight.work,
+                              size: 13, color: AppColors.primaryAccent),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              offer.company,
+                              style: AppTextStyles.labelMd.copyWith(
+                                color: AppColors.primaryAccent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Obx(() => Semantics(
-                  label: controller.isOfferSaved(offer.id) ? 'Retirer des favoris' : 'Ajouter aux favoris',
-                  child: IconButton(
-                    icon: Icon(
-                      controller.isOfferSaved(offer.id) 
-                          ? IconlyBold.bookmark 
-                          : IconlyLight.bookmark,
-                      color: controller.isOfferSaved(offer.id) 
-                          ? AppColors.warning 
-                          : AppColors.hintColor,
+                const SizedBox(width: AppSpacing.xs),
+                Obx(() {
+                  final saved = controller.isOfferSaved(offer.id);
+                  return Semantics(
+                    label:
+                        saved ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                    button: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        AppHaptics.tap();
+                        controller.toggleSaveOffer(offer);
+                      },
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: saved
+                              ? AppColors.warningAccent.withValues(alpha: 0.12)
+                              : AppColors.surfaceLow,
+                          shape: BoxShape.circle,
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: AppMotion.fast,
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                          child: Icon(
+                            saved ? IconlyBold.bookmark : IconlyLight.bookmark,
+                            key: ValueKey(saved),
+                            size: 19,
+                            color: saved
+                                ? AppColors.warningAccent
+                                : AppColors.hintColor,
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: () {
-                      AppHaptics.tap();
-                      controller.toggleSaveOffer(offer);
-                    },
-                  ),
-                )),
+                  );
+                }),
               ],
             ),
             const Spacer(),
+            Divider(
+              height: AppSpacing.lg,
+              thickness: 1,
+              color: AppColors.outlineVariant.withValues(alpha: 0.5),
+            ),
             Row(
               children: [
+                if (offer.contractType.isNotEmpty) ...[
+                  _OfferBadge(
+                    icon: IconlyLight.work,
+                    label: offer.contractType,
+                    accent: true,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
                 Flexible(
                   child: _OfferBadge(
                     icon: IconlyLight.location,
-                    label: offer.location,
+                    label: offer.isRemote ? 'Télétravail' : offer.location,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: _OfferBadge(
-                    icon: IconlyLight.wallet,
-                    label: offer.salary,
+                if (offer.salary.isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: _OfferBadge(
+                      icon: IconlyLight.wallet,
+                      label: offer.salary,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ],
         ),
+      ),
     );
   }
 }
@@ -302,25 +387,41 @@ class _OfferCard extends StatelessWidget {
 class _OfferBadge extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _OfferBadge({required this.icon, required this.label});
+  final bool accent;
+  const _OfferBadge({
+    required this.icon,
+    required this.label,
+    this.accent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final fg = accent ? AppColors.primaryAccent : AppColors.bodyColor;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xs + 1),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(8),
+        color: accent
+            ? AppColors.primaryAccent.withValues(alpha: 0.10)
+            : AppColors.surfaceLow,
+        borderRadius: AppShapes.squircleRadius(AppRadius.xs),
+        border: accent
+            ? Border.all(color: AppColors.primaryAccent.withValues(alpha: 0.18))
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.bodyColor),
-          const SizedBox(width: 4),
+          Icon(icon, size: 13, color: fg),
+          const SizedBox(width: 5),
           Flexible(
             child: Text(
               label,
-              style: AppTextStyles.bodySm.copyWith(fontSize: 10, fontWeight: FontWeight.w600),
+              style: AppTextStyles.labelSm.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

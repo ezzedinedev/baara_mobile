@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -24,7 +24,7 @@ class MessagesScreen extends GetView<MessagesController> {
         title: 'Messages',
         subtitle: 'Vos discussions avec les recruteurs.',
         headerChild: AppSearchBar(
-          controller: TextEditingController(),
+          controller: controller.searchCtrl,
           hint: 'Rechercher une discussion...',
           onChanged: (v) => controller.searchQuery.value = v,
         ),
@@ -56,7 +56,7 @@ class MessagesScreen extends GetView<MessagesController> {
 
   Widget _buildEmptyState() {
     return EmptyState(
-      icon: IconlyLight.chat,
+      illustration: const EmptyInboxIllustration(),
       title: 'Aucun message',
       subtitle: 'Commencez à discuter avec des recruteurs.',
       onAction: () => controller.loadConversations(),
@@ -68,7 +68,7 @@ class MessagesScreen extends GetView<MessagesController> {
     if (items.isEmpty) {
       return const Center(
         child: EmptyState(
-          icon: IconlyLight.search,
+          illustration: NoResultsIllustration(),
           title: 'Aucun résultat',
           subtitle: 'Aucune discussion ne correspond à ta recherche.',
         ),
@@ -76,8 +76,8 @@ class MessagesScreen extends GetView<MessagesController> {
     }
     final showLoadMore = controller.searchQuery.value.trim().isEmpty &&
         controller.hasMoreConversations.value;
-    return RefreshIndicator(
-      color: AppColors.primary,
+    return AppRefreshIndicator(
+      color: AppColors.primaryAccent,
       onRefresh: () => controller.loadConversations(),
       child: AnimationLimiter(
         child: ListView.separated(
@@ -88,16 +88,13 @@ class MessagesScreen extends GetView<MessagesController> {
           itemBuilder: (context, index) {
             if (index >= items.length) {
               controller.loadMoreConversations();
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
                   child: SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      color: AppColors.primary,
-                    ),
+                    child: const AppLoader(),
                   ),
                 ),
               );
@@ -105,10 +102,12 @@ class MessagesScreen extends GetView<MessagesController> {
             final conv = items[index];
             return AnimationConfiguration.staggeredList(
               position: index,
-              duration: AppMotion.base,
+              duration: AppMotion.medium,
               child: SlideAnimation(
                 verticalOffset: AppMotion.listSlideOffset,
+                curve: AppMotion.emphasizedDecelerate,
                 child: FadeInAnimation(
+                  curve: AppMotion.emphasizedDecelerate,
                   child: _ConversationTile(conversation: conv),
                 ),
               ),
@@ -129,18 +128,16 @@ class _ConversationTile extends StatelessWidget {
     return AppCard(
       onTap: () {
         AppHaptics.tap();
-        Get.toNamed(AppRoutes.conversation.replaceFirst(':id', conversation.id));
+        Get.toNamed(
+            AppRoutes.conversation.replaceFirst(':id', conversation.id));
       },
       padding: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: AppShapes.squircleRadius(AppRadius.md)),
         onTap: null,
-        leading: BrandAvatar(
-          seed: conversation.id,
-          label: conversation.title,
-          size: 52,
-        ),
+        leading: _AvatarWithPresence(conversation: conversation),
         title: Row(
           children: [
             Expanded(
@@ -156,7 +153,15 @@ class _ConversationTile extends StatelessWidget {
             ),
             Text(
               _formatDate(conversation.lastMessageTime),
-              style: AppTextStyles.bodySm.copyWith(fontSize: 11),
+              style: AppTextStyles.bodySm.copyWith(
+                fontSize: 11,
+                color: conversation.unreadCount > 0
+                    ? AppColors.primaryAccent
+                    : AppColors.hintColor,
+                fontWeight: conversation.unreadCount > 0
+                    ? FontWeight.w700
+                    : FontWeight.w400,
+              ),
             ),
           ],
         ),
@@ -168,11 +173,11 @@ class _ConversationTile extends StatelessWidget {
                 child: Text(
                   conversation.lastMessage,
                   style: AppTextStyles.bodyMd.copyWith(
-                    color: conversation.unreadCount > 0 
-                        ? AppColors.titleColor 
+                    color: conversation.unreadCount > 0
+                        ? AppColors.titleColor
                         : AppColors.bodyColor,
-                    fontWeight: conversation.unreadCount > 0 
-                        ? FontWeight.w700 
+                    fontWeight: conversation.unreadCount > 0
+                        ? FontWeight.w700
                         : FontWeight.w400,
                   ),
                   maxLines: 1,
@@ -182,26 +187,33 @@ class _ConversationTile extends StatelessWidget {
               if (conversation.unreadCount > 0)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
+                  constraints: const BoxConstraints(minWidth: 20),
+                  height: 20,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
                     color: AppColors.primary,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
-                    conversation.unreadCount.toString(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                    color: AppColors.onPrimary,
-                      fontWeight: FontWeight.bold,
+                    conversation.unreadCount > 99
+                        ? '99+'
+                        : conversation.unreadCount.toString(),
+                    style: AppTextStyles.labelSm.copyWith(
+                      fontSize: 11,
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
             ],
           ),
         ),
-        ),
+      ),
     );
   }
+
+  // (helper de date conservé ci-dessous)
 
   /// Aujourd'hui -> "HH:mm" ; sinon -> "JJ/MM".
   String _formatDate(DateTime date) {
@@ -218,5 +230,46 @@ class _ConversationTile extends StatelessWidget {
     final dd = local.day.toString().padLeft(2, '0');
     final mo = local.month.toString().padLeft(2, '0');
     return '$dd/$mo';
+  }
+}
+
+/// Avatar de l'interlocuteur avec pastille de présence en ligne (en bas-droite).
+class _AvatarWithPresence extends StatelessWidget {
+  final Conversation conversation;
+  const _AvatarWithPresence({required this.conversation});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 52,
+      height: 52,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          BrandAvatar(
+            seed: conversation.id,
+            label: conversation.title,
+            size: 52,
+          ),
+          if (conversation.isOnline)
+            Positioned(
+              right: -1,
+              bottom: -1,
+              child: Container(
+                padding: const EdgeInsets.all(2.5),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceCard,
+                  shape: BoxShape.circle,
+                ),
+                child: PulsingDot(
+                  color: AppColors.successAccent,
+                  size: 10,
+                  haloSize: 14,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

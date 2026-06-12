@@ -2,9 +2,6 @@ import '../../core/constants/api_constants.dart';
 import '../../core/network/api_provider.dart';
 import '../models/ai_models.dart';
 
-
-
-
 class AiRepository {
   const AiRepository({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
@@ -12,7 +9,8 @@ class AiRepository {
   final ApiProvider _apiProvider;
 
   /// Feed "Pour vous" — top N offres pertinentes.
-  Future<AiMatchFeedResponse> matchFeed({int limit = 20, bool rerank = true}) async {
+  Future<AiMatchFeedResponse> matchFeed(
+      {int limit = 20, bool rerank = true}) async {
     final response = await _apiProvider.getJson(
       '${ApiConstants.aiMatchFeed}?limit=$limit&rerank=$rerank',
     );
@@ -73,7 +71,6 @@ class AiRepository {
     return _unwrapMap(response);
   }
 
-
   /// Audit qualité du CV courant.
   Future<AiCvAudit> cvAudit() async {
     final response = await _apiProvider.postJson(
@@ -83,7 +80,6 @@ class AiRepository {
     return AiCvAudit.fromJson(_unwrapMap(response));
   }
 
-
   /// Score décomposé du profil candidat.
   Future<AiProfileScore> profileScore() async {
     final response = await _apiProvider.postJson(
@@ -92,8 +88,6 @@ class AiRepository {
     );
     return AiProfileScore.fromJson(_unwrapMap(response));
   }
-
-
 
   /// Envoie un message au chatbot.
   Future<AiChatResponse> chatSend({
@@ -133,7 +127,8 @@ class AiRepository {
   /// Gère les échecs via [ApiException] pour une remontée d'erreur propre.
   dynamic _unwrap(Map<String, dynamic> response) {
     final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ?? (statusCode != null && statusCode < 400);
+    final success = response['success'] as bool? ??
+        (statusCode != null && statusCode < 400);
 
     if (!success) {
       throw ApiException(

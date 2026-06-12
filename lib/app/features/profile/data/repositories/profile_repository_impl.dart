@@ -56,6 +56,18 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
+  Future<Profile> setProfileVisibility(String visibility) async {
+    final response = await _apiProvider.putJson(
+      ApiConstants.profile,
+      {'profile_visibility': visibility},
+    );
+    if (response['success'] == true && response['data'] != null) {
+      return ProfileModel.fromJson(response['data'] as Map<String, dynamic>);
+    }
+    throw Exception('Failed to update profile visibility');
+  }
+
+  @override
   Future<void> logout() async {
     await _apiProvider.postJson(ApiConstants.logout, {});
   }

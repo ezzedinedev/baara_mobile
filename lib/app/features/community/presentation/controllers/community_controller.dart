@@ -1,8 +1,13 @@
 import 'package:get/get.dart';
+import 'package:opportune_bf/app/core/network/api_provider.dart';
+import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
+import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/community_comment.dart';
 import '../../domain/entities/connection_request.dart';
+import '../../domain/entities/skill.dart';
+import '../../domain/entities/profile_viewer.dart';
 import '../../domain/repositories/i_community_repository.dart';
 
 class CommunityController extends GetxController {
@@ -17,6 +22,8 @@ class CommunityController extends GetxController {
   final hasMore = false.obs;
   final errorMessage = RxnString();
   final activeType = RxnString(); // null = Tout
+  // Onglet du feed intelligent : foryou | recent | connections.
+  final feedTab = 'foryou'.obs;
 
   int _page = 1;
 
@@ -25,6 +32,9 @@ class CommunityController extends GetxController {
     super.onInit();
     loadFeed();
     loadSuggestions();
+    // Charge les demandes de connexion en attente dès le départ pour que le
+    // badge de l'onglet Réseau soit exact sans avoir à ouvrir l'écran dédié.
+    loadPendingConnections();
   }
 
   Future<void> loadFeed({String? type}) async {
@@ -33,7 +43,11 @@ class CommunityController extends GetxController {
       errorMessage.value = null;
       activeType.value = type;
       _page = 1;
-      final result = await _repository.getFeed(type: type, page: 1);
+      final result = await _repository.getFeed(
+        tab: feedTab.value,
+        type: type,
+        page: 1,
+      );
       posts.assignAll(result.items);
       hasMore.value = result.hasMore;
     } catch (e) {
@@ -43,13 +57,24 @@ class CommunityController extends GetxController {
     }
   }
 
+  /// Change d'onglet (Pour vous / Récent / Connexions) et recharge le fil.
+  Future<void> changeTab(String tab) async {
+    if (feedTab.value == tab) return;
+    feedTab.value = tab;
+    await loadFeed(type: activeType.value);
+  }
+
   Future<void> refreshFeed() => loadFeed(type: activeType.value);
 
   Future<void> loadMore() async {
     if (isLoadingMore.value || isLoading.value || !hasMore.value) return;
     try {
       isLoadingMore.value = true;
-      final result = await _repository.getFeed(type: activeType.value, page: _page + 1);
+      final result = await _repository.getFeed(
+        tab: feedTab.value,
+        type: activeType.value,
+        page: _page + 1,
+      );
       _page += 1;
       posts.addAll(result.items);
       hasMore.value = result.hasMore;
@@ -65,14 +90,55 @@ class CommunityController extends GetxController {
     } catch (_) {}
   }
 
+  // ── Explore (posts publics tendance) ──────────────────────────────────────
+  final explorePosts = <Post>[].obs;
+  final exploreLoading = false.obs;
+  final exploreLoadingMore = false.obs;
+  final exploreHasMore = false.obs;
+  int _explorePage = 1;
+
+  Future<void> loadExplore() async {
+    try {
+      exploreLoading.value = true;
+      _explorePage = 1;
+      final result = await _repository.getExplore(page: 1);
+      explorePosts.assignAll(result.items);
+      exploreHasMore.value = result.hasMore;
+    } catch (e) {
+      errorMessage.value = _friendlyError(e);
+    } finally {
+      exploreLoading.value = false;
+    }
+  }
+
+  Future<void> loadMoreExplore() async {
+    if (exploreLoadingMore.value ||
+        exploreLoading.value ||
+        !exploreHasMore.value) {
+      return;
+    }
+    try {
+      exploreLoadingMore.value = true;
+      final result = await _repository.getExplore(page: _explorePage + 1);
+      _explorePage += 1;
+      explorePosts.addAll(result.items);
+      exploreHasMore.value = result.hasMore;
+    } catch (_) {
+    } finally {
+      exploreLoadingMore.value = false;
+    }
+  }
+
   /// Publie une nouvelle publication et l'ajoute en tête du fil.
   Future<bool> publish({
     required String body,
     String category = 'general',
     String visibility = 'public',
     List<String> mediaPaths = const [],
+    PollDraft? poll,
   }) async {
-    if (body.trim().isEmpty) return false;
+    // Un sondage seul (sans texte) est une publication valable.
+    if (body.trim().isEmpty && mediaPaths.isEmpty && poll == null) return false;
     try {
       isPublishing.value = true;
       final post = await _repository.createPost(
@@ -80,6 +146,7 @@ class CommunityController extends GetxController {
         category: category,
         visibility: visibility,
         mediaPaths: mediaPaths,
+        poll: poll,
       );
       posts.insert(0, post);
       return true;
@@ -91,23 +158,387 @@ class CommunityController extends GetxController {
     }
   }
 
-  /// Réaction optimiste (mise à jour locale immédiate, rollback si échec).
-  Future<void> toggleReaction(String postId, String type) async {
-    final index = posts.indexWhere((p) => p.id == postId);
+  // ── Wave 2 — Sondages ─────────────────────────────────────────────────────
+  /// Vote (toggle) à un sondage. Optimiste sur les listes [posts] ET
+  /// [explorePosts] ET [savedPosts], puis réalignement sur la réponse serveur,
+  /// rollback intégral en cas d'échec.
+  Future<void> votePoll(String postId, String optionId) async {
+    final lists = [posts, explorePosts, savedPosts];
+    // Sauvegarde pour rollback (le post peut être présent dans plusieurs listes).
+    final backups = <RxList<Post>, Post>{};
+    PostPoll? optimistic;
+    bool hadPoll = false;
+
+    for (final list in lists) {
+      final idx = list.indexWhere((p) => p.id == postId);
+      if (idx < 0) continue;
+      final post = list[idx];
+      final poll = post.poll;
+      if (poll == null || poll.isClosed) continue;
+      hadPoll = true;
+      backups[list] = post;
+      optimistic ??= _applyVoteLocally(poll, optionId);
+      list[idx] = post.copyWith(poll: optimistic);
+    }
+    if (!hadPoll) return;
+
+    try {
+      final updated = await _repository.votePoll(
+        // L'API attend l'id du sondage, pas du post.
+        backups.values.first.poll!.id,
+        _resolveVoteSelection(backups.values.first.poll!, optionId),
+      );
+      for (final list in lists) {
+        final idx = list.indexWhere((p) => p.id == postId);
+        if (idx >= 0) list[idx] = list[idx].copyWith(poll: updated);
+      }
+    } catch (e) {
+      backups.forEach((list, original) {
+        final idx = list.indexWhere((p) => p.id == postId);
+        if (idx >= 0) list[idx] = original; // rollback
+      });
+      errorMessage.value = _friendlyError(e);
+    }
+  }
+
+  /// Calcule l'état optimiste d'un sondage après tap sur [optionId].
+  PostPoll _applyVoteLocally(PostPoll poll, String optionId) {
+    final tapped = poll.options.firstWhere(
+      (o) => o.id == optionId,
+      orElse: () => poll.options.first,
+    );
+    final willSelect = !tapped.votedByMe;
+    var total = poll.totalVotes;
+    final myVotes = List<String>.from(poll.myVotes);
+
+    final options = poll.options.map((o) {
+      if (!poll.multiple) {
+        // Choix unique : une seule option cochée à la fois.
+        if (o.id == optionId) {
+          return o.copyWith(
+            votedByMe: willSelect,
+            votesCount: willSelect ? o.votesCount + 1 : o.votesCount - 1,
+          );
+        }
+        // Si on sélectionne une nouvelle option, l'ancienne se décoche.
+        if (willSelect && o.votedByMe) {
+          return o.copyWith(votedByMe: false, votesCount: o.votesCount - 1);
+        }
+        return o;
+      }
+      // Choix multiples : toggle l'option tapée uniquement.
+      if (o.id == optionId) {
+        return o.copyWith(
+          votedByMe: willSelect,
+          votesCount: willSelect ? o.votesCount + 1 : o.votesCount - 1,
+        );
+      }
+      return o;
+    }).toList();
+
+    if (!poll.multiple) {
+      total = willSelect && myVotes.isEmpty ? total + 1 : total;
+      if (!willSelect) total -= 1;
+      myVotes
+        ..clear()
+        ..addAll(willSelect ? [optionId] : const []);
+    } else {
+      total += willSelect ? 1 : -1;
+      if (willSelect) {
+        myVotes.add(optionId);
+      } else {
+        myVotes.remove(optionId);
+      }
+    }
+
+    return poll.copyWith(
+      options: options,
+      totalVotes: total < 0 ? 0 : total,
+      myVotes: myVotes,
+    );
+  }
+
+  /// Détermine le payload `option_ids` envoyé au serveur (toggle / exclusif).
+  List<String> _resolveVoteSelection(PostPoll poll, String optionId) {
+    final tapped = poll.options.firstWhere(
+      (o) => o.id == optionId,
+      orElse: () => poll.options.first,
+    );
+    final willSelect = !tapped.votedByMe;
+    if (!poll.multiple) {
+      return willSelect ? [optionId] : const [];
+    }
+    final selected =
+        poll.options.where((o) => o.votedByMe).map((o) => o.id).toSet();
+    if (willSelect) {
+      selected.add(optionId);
+    } else {
+      selected.remove(optionId);
+    }
+    return selected.toList();
+  }
+
+  // ── Wave 2 — Enregistrer (signet) ─────────────────────────────────────────
+  /// Enregistre/retire une publication. Optimiste sur toutes les listes ; retire
+  /// le post de [savedPosts] s'il est désenregistré. Rollback sur échec.
+  Future<void> toggleSave(String postId) async {
+    final lists = [posts, explorePosts, savedPosts];
+    bool? willSave;
+    final backups = <RxList<Post>, Post>{};
+    Post? removedFromSaved;
+    int removedIndex = -1;
+
+    for (final list in lists) {
+      final idx = list.indexWhere((p) => p.id == postId);
+      if (idx < 0) continue;
+      final post = list[idx];
+      willSave ??= !post.isSaved;
+      backups[list] = post;
+      list[idx] = post.copyWith(isSaved: willSave);
+    }
+    if (willSave == null) return;
+
+    // Si on retire, le post quitte la liste « Enregistrés ».
+    if (!willSave) {
+      removedIndex = savedPosts.indexWhere((p) => p.id == postId);
+      if (removedIndex >= 0) {
+        removedFromSaved = savedPosts[removedIndex];
+        savedPosts.removeAt(removedIndex);
+      }
+    }
+
+    try {
+      await _repository.toggleSave(postId, save: willSave);
+    } catch (e) {
+      backups.forEach((list, original) {
+        final idx = list.indexWhere((p) => p.id == postId);
+        if (idx >= 0) list[idx] = original; // rollback in-place
+      });
+      if (removedFromSaved != null) {
+        savedPosts.insert(
+          removedIndex.clamp(0, savedPosts.length),
+          removedFromSaved,
+        );
+      }
+      errorMessage.value = _friendlyError(e);
+    }
+  }
+
+  // ── Wave 2 — Publications enregistrées ────────────────────────────────────
+  final savedPosts = <Post>[].obs;
+  final savedLoading = false.obs;
+  final savedLoadingMore = false.obs;
+  final savedHasMore = false.obs;
+  final savedError = RxnString();
+  int _savedPage = 1;
+
+  Future<void> loadSaved() async {
+    try {
+      savedLoading.value = true;
+      savedError.value = null;
+      _savedPage = 1;
+      final result = await _repository.getSaved(page: 1);
+      savedPosts.assignAll(result.items);
+      savedHasMore.value = result.hasMore;
+    } catch (e) {
+      savedError.value = _friendlyError(e);
+    } finally {
+      savedLoading.value = false;
+    }
+  }
+
+  Future<void> loadMoreSaved() async {
+    if (savedLoadingMore.value || savedLoading.value || !savedHasMore.value) {
+      return;
+    }
+    try {
+      savedLoadingMore.value = true;
+      final result = await _repository.getSaved(page: _savedPage + 1);
+      _savedPage += 1;
+      savedPosts.addAll(result.items);
+      savedHasMore.value = result.hasMore;
+    } catch (_) {
+    } finally {
+      savedLoadingMore.value = false;
+    }
+  }
+
+  // ── Wave 2 — Aperçu de lien (composer) ────────────────────────────────────
+  Future<PostLinkPreview?> fetchLinkPreview(String url) async {
+    try {
+      return await _repository.fetchLinkPreview(url);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Réaction optimiste avec gestion fine de [Post.myReaction] et
+  /// [Post.reactionsBreakdown]. Règles :
+  /// - même type que la réaction courante → on la retire (toggle off) ;
+  /// - aucun type courant → on ajoute ;
+  /// - type différent → on échange (l'ancien -1, le nouveau +1, total stable).
+  /// Rollback intégral sur échec réseau.
+  Future<void> toggleReaction(String postId, String type) =>
+      _toggleReactionIn(posts, postId, type);
+
+  /// Même réaction optimiste, appliquée à la liste Explore.
+  Future<void> toggleExploreReaction(String postId, String type) =>
+      _toggleReactionIn(explorePosts, postId, type);
+
+  Future<void> _toggleReactionIn(
+      RxList<Post> list, String postId, String type) async {
+    final index = list.indexWhere((p) => p.id == postId);
     if (index < 0) return;
-    final current = posts[index];
-    final optimistic = current.isLiked
-        ? (current.reactionsCount - 1)
-        : (current.reactionsCount + 1);
-    posts[index] = _copyWith(current, isLiked: !current.isLiked, reactionsCount: optimistic < 0 ? 0 : optimistic);
+    final current = list[index];
+    final previous = current.myReaction;
+
+    final breakdown = Map<String, int>.from(current.reactionsBreakdown);
+    int count = current.reactionsCount;
+    String? nextReaction;
+
+    if (previous == type) {
+      // Toggle off.
+      breakdown[type] = ((breakdown[type] ?? 1) - 1).clamp(0, 1 << 30);
+      count = (count - 1).clamp(0, 1 << 30);
+      nextReaction = null;
+    } else if (previous == null) {
+      // Nouvelle réaction.
+      breakdown[type] = (breakdown[type] ?? 0) + 1;
+      count = count + 1;
+      nextReaction = type;
+    } else {
+      // Échange : ancien -1, nouveau +1 (total inchangé).
+      breakdown[previous] = ((breakdown[previous] ?? 1) - 1).clamp(0, 1 << 30);
+      breakdown[type] = (breakdown[type] ?? 0) + 1;
+      nextReaction = type;
+    }
+
+    list[index] = current.copyWith(
+      isLiked: nextReaction != null,
+      reactionsCount: count,
+      reactionsBreakdown: breakdown,
+      myReaction: nextReaction,
+      clearMyReaction: nextReaction == null,
+    );
+
     try {
       final res = await _repository.react(postId, type);
-      final count = (res['reactions_count'] as num?)?.toInt();
-      if (count != null) {
-        posts[index] = _copyWith(posts[index], reactionsCount: count);
+      final serverCount = (res['reactions_count'] as num?)?.toInt();
+      if (serverCount != null) {
+        final idx = list.indexWhere((p) => p.id == postId);
+        if (idx >= 0) {
+          list[idx] = list[idx].copyWith(reactionsCount: serverCount);
+        }
       }
     } catch (_) {
-      posts[index] = current; // rollback
+      final idx = list.indexWhere((p) => p.id == postId);
+      if (idx >= 0) list[idx] = current; // rollback intégral
+    }
+  }
+
+  /// Édition optimiste d'une publication (remplace le post localement, rollback).
+  Future<bool> editPost(String id, String body) async {
+    final trimmed = body.trim();
+    if (trimmed.isEmpty) return false;
+    final index = posts.indexWhere((p) => p.id == id);
+    final backup = index >= 0 ? posts[index] : null;
+    if (index >= 0) {
+      posts[index] = posts[index].copyWith(
+        body: trimmed,
+        isEdited: true,
+        editedAt: DateTime.now(),
+      );
+    }
+    try {
+      final updated = await _repository.updatePost(id, trimmed);
+      final idx = posts.indexWhere((p) => p.id == id);
+      if (idx >= 0) posts[idx] = updated;
+      return true;
+    } catch (e) {
+      if (backup != null && index >= 0) posts[index] = backup; // rollback
+      errorMessage.value = _friendlyError(e);
+      return false;
+    }
+  }
+
+  /// Édite un commentaire (utilisé par la feuille de commentaires).
+  Future<CommunityComment?> editComment(String id, String body) async {
+    final trimmed = body.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      return await _repository.updateComment(id, trimmed);
+    } catch (e) {
+      errorMessage.value = _friendlyError(e);
+      return null;
+    }
+  }
+
+  // ── Hashtags & mentions ───────────────────────────────────────────────────
+  final trendingHashtags = <TrendingHashtag>[].obs;
+
+  /// Charge (et met en cache) les hashtags tendance.
+  Future<List<TrendingHashtag>> loadTrendingHashtags() async {
+    try {
+      final list = await _repository.getTrendingHashtags();
+      trendingHashtags.assignAll(list);
+      return list;
+    } catch (_) {
+      return trendingHashtags;
+    }
+  }
+
+  /// Autocomplétion @mentions (sans état persistant : appel direct).
+  Future<List<Mentionable>> fetchMentionables(String q) async {
+    final query = q.trim();
+    if (query.isEmpty) return const [];
+    try {
+      return await _repository.getMentionables(query);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  // ── Wave 2 — Assistant IA (composer + résumé + traduction) ───────────────
+  /// Message doux pour une indisponibilité de l'assistant IA (502). Pour les
+  /// autres erreurs, on retombe sur [userFacingError] (jamais de détail brut).
+  String aiError(Object e) {
+    final code = e is ApiException ? e.statusCode : null;
+    if (code == 502 || code == 503 || code == 504) {
+      return 'Assistant indisponible pour le moment. Réessayez dans un instant.';
+    }
+    return userFacingError(e);
+  }
+
+  /// Aide à la rédaction. Retourne le résultat IA ou `null` (le caller affiche
+  /// l'erreur via [aiError]). On ne stocke pas d'état : appel direct.
+  Future<AiComposeResult?> aiCompose(String draft, String action) async {
+    try {
+      return await _repository.aiCompose(draft, action);
+    } catch (e) {
+      AppToast.error('Assistant IA', aiError(e));
+      return null;
+    }
+  }
+
+  /// Résumé IA d'une publication. Retourne le texte ou `null` (toast d'erreur).
+  Future<String?> summarizePost(String postId) async {
+    try {
+      final summary = await _repository.summarizePost(postId);
+      return summary.trim().isEmpty ? null : summary;
+    } catch (e) {
+      AppToast.error('Résumé IA', aiError(e));
+      return null;
+    }
+  }
+
+  /// Traduction IA d'une publication. Retourne le texte ou `null` (toast).
+  Future<String?> translatePost(String postId, String lang) async {
+    try {
+      final translation = await _repository.translatePost(postId, lang);
+      return translation.trim().isEmpty ? null : translation;
+    } catch (e) {
+      AppToast.error('Traduction IA', aiError(e));
+      return null;
     }
   }
 
@@ -155,7 +586,8 @@ class CommunityController extends GetxController {
     for (var i = 0; i < posts.length; i++) {
       final author = posts[i].author;
       if (author != null && author.id == userId) {
-        posts[i] = _copyWith(posts[i], author: author.copyWith(isFollowing: isFollowing));
+        posts[i] = _copyWith(posts[i],
+            author: author.copyWith(isFollowing: isFollowing));
       }
     }
   }
@@ -181,8 +613,8 @@ class CommunityController extends GetxController {
     for (var i = 0; i < posts.length; i++) {
       final author = posts[i].author;
       if (author != null && author.id == userId) {
-        posts[i] =
-            _copyWith(posts[i], author: author.copyWith(connectionStatus: status));
+        posts[i] = _copyWith(posts[i],
+            author: author.copyWith(connectionStatus: status));
       }
     }
     final idx = suggestions.indexWhere((u) => u.id == userId);
@@ -205,6 +637,57 @@ class CommunityController extends GetxController {
   Future<Map<String, dynamic>> fetchUserProfile(String userId) =>
       _repository.getProfile(userId);
 
+  // ── Cluster D — Blocage / vues de profil / compétences ───────────────────
+  /// Bloque/débloque un membre. Retourne l'état `is_blocked` côté serveur
+  /// (le bloquer retire aussi connexion + follow). Propage l'erreur au caller
+  /// pour qu'il puisse rollback son état optimiste.
+  Future<bool> setBlocked(String userId, {required bool blocked}) async {
+    final result = await _repository.setBlocked(userId, blocked: blocked);
+    if (blocked) {
+      // Côté serveur le blocage casse connexion + follow : reflète localement.
+      _applyFollowState(userId, false);
+      _applyConnectionState(userId, 'none');
+      suggestions.removeWhere((u) => u.id == userId);
+      posts.removeWhere((p) => p.author?.id == userId);
+    }
+    return result;
+  }
+
+  Future<ProfileViewsResult> fetchProfileViews() =>
+      _repository.getProfileViews();
+
+  Future<Skill?> addSkill(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      return await _repository.addSkill(trimmed);
+    } catch (e) {
+      errorMessage.value = userFacingError(e);
+      return null;
+    }
+  }
+
+  Future<bool> removeSkill(String skillId) async {
+    try {
+      await _repository.removeSkill(skillId);
+      return true;
+    } catch (e) {
+      errorMessage.value = userFacingError(e);
+      return false;
+    }
+  }
+
+  /// Recommande/retire la recommandation d'une compétence. Retourne le skill
+  /// à jour (compteur + état) ou null en cas d'échec (le caller rollback).
+  Future<Skill?> endorseSkill(String skillId, {required bool endorse}) async {
+    try {
+      return await _repository.endorseSkill(skillId, endorse: endorse);
+    } catch (e) {
+      errorMessage.value = userFacingError(e);
+      return null;
+    }
+  }
+
   Future<List<NetworkUser>> searchPeople(String query) =>
       _repository.searchPeople(query);
 
@@ -222,6 +705,8 @@ class CommunityController extends GetxController {
     try {
       await _repository.respondConnection(connectionId, accept: accept);
       pendingConnections.removeWhere((c) => c.connectionId == connectionId);
+      // Petit burst de célébration uniquement à l'acceptation d'une connexion.
+      if (accept) showCelebration(particles: 16);
       return true;
     } catch (e) {
       errorMessage.value = _friendlyError(e);
@@ -257,6 +742,18 @@ class CommunityController extends GetxController {
     }
   }
 
+  /// Réaction (toggle) sur un commentaire. Renvoie le résultat serveur
+  /// {reactions_count, my_reaction} ou null en cas d'échec (le caller rollback).
+  Future<Map<String, dynamic>?> reactComment(String commentId,
+      {String type = 'like'}) async {
+    try {
+      return await _repository.reactComment(commentId, type: type);
+    } catch (e) {
+      errorMessage.value = _friendlyError(e);
+      return null;
+    }
+  }
+
   void _bumpCommentCount(String postId, int delta) {
     final index = posts.indexWhere((p) => p.id == postId);
     if (index < 0) return;
@@ -264,6 +761,8 @@ class CommunityController extends GetxController {
     posts[index] = _copyWith(posts[index], commentsCount: next < 0 ? 0 : next);
   }
 
+  /// Helper interne : délègue au [Post.copyWith] de l'entité pour préserver
+  /// TOUS les champs (myReaction, reactionsBreakdown, isEdited…).
   Post _copyWith(
     Post p, {
     bool? isLiked,
@@ -271,26 +770,18 @@ class CommunityController extends GetxController {
     int? commentsCount,
     NetworkUser? author,
   }) =>
-      Post(
-        id: p.id,
-        body: p.body,
-        category: p.category,
-        visibility: p.visibility,
-        createdAt: p.createdAt,
-        author: author ?? p.author,
-        reactionsCount: reactionsCount ?? p.reactionsCount,
-        commentsCount: commentsCount ?? p.commentsCount,
-        sharesCount: p.sharesCount,
-        isLiked: isLiked ?? p.isLiked,
-        media: p.media,
-        imageUrl: p.imageUrl,
-        hashtags: p.hashtags,
-        shared: p.shared,
+      p.copyWith(
+        author: author,
+        reactionsCount: reactionsCount,
+        commentsCount: commentsCount,
+        isLiked: isLiked,
       );
 
   String _friendlyError(Object e) {
     final msg = e.toString();
-    if (msg.contains('SocketException') || msg.contains('réseau') || msg.contains('network')) {
+    if (msg.contains('SocketException') ||
+        msg.contains('réseau') ||
+        msg.contains('network')) {
       return 'Connexion impossible. Vérifiez votre réseau.';
     }
     if (msg.contains('vous-même')) {

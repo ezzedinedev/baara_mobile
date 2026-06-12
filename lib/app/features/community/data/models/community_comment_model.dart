@@ -9,6 +9,8 @@ class CommunityCommentModel extends CommunityComment {
     required super.createdAt,
     required super.user,
     super.replies,
+    super.reactionsCount,
+    super.myReaction,
   });
 
   factory CommunityCommentModel.fromJson(Map<String, dynamic> json) {
@@ -24,11 +26,14 @@ class CommunityCommentModel extends CommunityComment {
       id: json['id']?.toString() ?? '',
       body: json['body']?.toString() ?? '',
       parentId: json['parent_id'] as String?,
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
       user: json['user'] is Map<String, dynamic>
           ? NetworkUserModel.fromJson(json['user'] as Map<String, dynamic>)
           : null,
       replies: replies,
+      reactionsCount: (json['reactions_count'] as num?)?.toInt() ?? 0,
+      myReaction: json['my_reaction']?.toString(),
     );
   }
 }

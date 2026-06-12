@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/haptics.dart';
 
@@ -34,8 +35,8 @@ class _ScrollToTopFabState extends State<ScrollToTopFab> {
   }
 
   void _onScroll() {
-    final shouldShow =
-        widget.controller.hasClients && widget.controller.offset > widget.threshold;
+    final shouldShow = widget.controller.hasClients &&
+        widget.controller.offset > widget.threshold;
     if (shouldShow != _visible) {
       setState(() => _visible = shouldShow);
     }
@@ -83,7 +84,7 @@ class _ScrollToTopFabState extends State<ScrollToTopFab> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.arrow_upward_rounded,
+                  IconlyLight.arrow_up_2,
                   color: AppColors.onPrimary,
                   size: 22,
                 ),

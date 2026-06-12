@@ -3,7 +3,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import 'press_scale.dart';
 
-
 /// Si [onTap] est fourni, la carte réagit au tap avec un effet [PressScale].
 class AppCard extends StatelessWidget {
   const AppCard({

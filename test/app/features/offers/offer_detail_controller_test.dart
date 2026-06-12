@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opportune_bf/app/features/offers/data/models/application_model.dart';
 import 'package:opportune_bf/app/features/offers/data/models/upcoming_interview_model.dart';
+import 'package:opportune_bf/app/features/offers/domain/entities/apply_result.dart';
 import 'package:opportune_bf/app/features/offers/domain/entities/offer.dart';
 import 'package:opportune_bf/app/features/offers/domain/entities/matched_offer.dart';
 import 'package:opportune_bf/app/features/offers/domain/repositories/i_offer_repository.dart';
@@ -28,18 +29,22 @@ class _FakeOfferRepository implements IOfferRepository {
   Future<bool> unsaveOffer(String offerId) async => true;
 
   @override
-  Future<ApplicationModel> applyToOffer(
+  Future<ApplyResult> applyToOffer(
     String offerId, {
     Map<String, dynamic>? screeningAnswers,
   }) async {
-    return ApplicationModel(
-      id: 'app-1',
-      offerId: offerId,
-      candidateId: 'cand-1',
-      status: ApplicationStatus.newApp,
-      appliedAt: DateTime.now(),
-      aiMatchScore: 0,
-      screeningScore: 0,
+    return ApplyResult(
+      application: ApplicationModel(
+        id: 'app-1',
+        offerId: offerId,
+        candidateId: 'cand-1',
+        status: ApplicationStatus.newApp,
+        appliedAt: DateTime.now(),
+        aiMatchScore: 0,
+        screeningScore: 0,
+      ),
+      isMatch: false,
+      score: 0,
     );
   }
 

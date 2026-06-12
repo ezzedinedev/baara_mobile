@@ -3,7 +3,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
 
-
 class GlassChip extends StatelessWidget {
   const GlassChip({
     super.key,
@@ -17,12 +16,15 @@ class GlassChip extends StatelessWidget {
 
   final String label;
   final IconData? icon;
+
   /// Override de la couleur de l'icone si differente de la couleur principale.
   final Color? iconColor;
   final GlassChipStyle style;
+
   /// Couleur thematique (utilisee pour `solid` et `tonal`, et pour l'icone
   /// par defaut).
   final Color color;
+
   /// Variante compacte (font + padding plus petits).
   final bool dense;
 
@@ -89,10 +91,13 @@ class GlassChip extends StatelessWidget {
 enum GlassChipStyle {
   /// Sur fond clair de l'app (surfaceCard, background). Bordure discrete.
   surface,
+
   /// Sur fond gradient hero / image. Translucide blanc cassé.
   glass,
+
   /// Couleur pleine pour emphase forte.
   solid,
+
   /// Couleur thematique douce (12% alpha sur fond, color sur texte).
   tonal,
 }

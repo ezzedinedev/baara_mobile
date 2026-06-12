@@ -27,8 +27,14 @@ class SplashController extends GetxController {
 
   Future<void> _startLoading() async {
     const steps = <(int, int)>[
-      (15, 400), (32, 300), (48, 250), (65, 350),
-      (78, 200), (89, 300), (95, 200), (100, 150),
+      (15, 400),
+      (32, 300),
+      (48, 250),
+      (65, 350),
+      (78, 200),
+      (89, 300),
+      (95, 200),
+      (100, 150),
     ];
 
     for (final step in steps) {

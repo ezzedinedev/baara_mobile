@@ -18,7 +18,7 @@ class ProfileSelectionController extends GetxController {
     switch (selected.value!) {
       case ProfileType.jobseeker:
       case ProfileType.student:
-        Get.toNamed(AppRoutes.candidateLogin);
+        Get.toNamed(AppRoutes.register);
       case ProfileType.recruiter:
         Get.toNamed(AppRoutes.recruiterLogin);
     }

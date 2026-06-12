@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -128,78 +132,97 @@ class _TrainingPaymentScreenState extends State<TrainingPaymentScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
-          children: [
-            _SummaryCard(title: t.title, priceLabel: t.priceLabel),
-            const SizedBox(height: 24),
-            Text(
-              'Moyen de paiement',
-              style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            ..._operators.map(
-              (op) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _OperatorTile(
-                  operator: op,
-                  selected: _provider == op.key,
-                  onTap: () {
-                    AppHaptics.tap();
-                    setState(() {
-                      _provider = op.key;
-                      _error = null;
-                    });
-                  },
+        child: AnimationLimiter(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+            children: AnimationConfiguration.toStaggeredList(
+              duration: AppMotion.medium,
+              childAnimationBuilder: (child) => SlideAnimation(
+                curve: AppMotion.emphasizedDecelerate,
+                verticalOffset: AppMotion.listSlideOffset,
+                child: FadeInAnimation(child: child),
+              ),
+              children: [
+                _SummaryCard(title: t.title, priceLabel: t.priceLabel),
+                const SizedBox(height: 24),
+                Text(
+                  'Moyen de paiement',
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontWeight: FontWeight.w800),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            AuthTextField(
-              label: 'Numéro de téléphone',
-              controller: _phoneCtrl,
-              keyboardType: TextInputType.phone,
-              icon: IconlyLight.call,
-              hint: 'Ex : 70 00 00 00',
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: AppTextStyles.bodySm.copyWith(color: AppColors.error),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Icon(IconlyLight.shield_done,
-                      size: 15, color: AppColors.hintColor),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Vous recevrez une demande de confirmation sur votre téléphone.',
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.hintColor, height: 1.35),
+                const SizedBox(height: 12),
+                ..._operators.map(
+                  (op) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _OperatorTile(
+                      operator: op,
+                      selected: _provider == op.key,
+                      onTap: () {
+                        AppHaptics.tap();
+                        setState(() {
+                          _provider = op.key;
+                          _error = null;
+                        });
+                      },
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                AuthTextField(
+                  label: 'Numéro de téléphone',
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  icon: IconlyLight.call,
+                  hint: 'Ex : 70 00 00 00',
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: AppTextStyles.bodySm
+                        .copyWith(color: AppColors.errorAccent),
+                  ),
                 ],
-              ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(IconlyLight.shield_done,
+                          size: 15, color: AppColors.hintColor),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Vous recevrez une demande de confirmation sur votre téléphone.',
+                          style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.hintColor, height: 1.35),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 14),
-          child: GradientButton(
-            label: 'PAYER ${t.priceLabel}',
-            isLoading: _isPaying,
-            textColor: AppColors.onPrimary,
-            height: 52,
-            borderRadius: 14,
-            onPressed: _isPaying ? null : _pay,
+          // CTA posée sur un panneau de verre liquide (chrome sticky 2026).
+          child: GlassSurface(
+            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            blurSigma: 18,
+            boxShadow: AppColors.ambientShadow,
+            padding: const EdgeInsets.all(8),
+            child: GradientButton(
+              label: 'PAYER ${t.priceLabel}',
+              isLoading: _isPaying,
+              textColor: AppColors.onPrimary,
+              height: 52,
+              borderRadius: 14,
+              onPressed: _isPaying ? null : _pay,
+            ),
           ),
         ),
       ),
@@ -216,14 +239,14 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.primary, AppColors.primaryDark],
         ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
+        shape: AppShapes.squircle(AppRadius.lg),
+        shadows: [
           BoxShadow(
             color: AppColors.primaryDark.withValues(alpha: 0.3),
             blurRadius: 18,
@@ -289,20 +312,21 @@ class _OperatorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = AppShapes.squircleRadius(AppRadius.md);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: radius,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: AppMotion.short,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: radius,
             border: Border.all(
               color: selected
-                  ? AppColors.primary
+                  ? AppColors.primaryAccent
                   : AppColors.outlineVariant.withValues(alpha: 0.25),
               width: selected ? 2 : 1,
             ),
@@ -311,7 +335,7 @@ class _OperatorTile extends StatelessWidget {
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: AppShapes.squircleRadius(AppRadius.xs),
                 child: Image.asset(
                   operator.asset,
                   width: 44,
@@ -321,8 +345,8 @@ class _OperatorTile extends StatelessWidget {
                     width: 44,
                     height: 44,
                     color: AppColors.surfaceLow,
-                    child: const Icon(IconlyBold.wallet,
-                        color: AppColors.primary, size: 22),
+                    child: Icon(IconlyBold.wallet,
+                        color: AppColors.primaryAccent, size: 22),
                   ),
                 ),
               ),
@@ -355,13 +379,13 @@ class _RadioDot extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? AppColors.primary : AppColors.outlineVariant,
+          color: selected ? AppColors.primaryAccent : AppColors.outlineVariant,
           width: 2,
         ),
         color: selected ? AppColors.primary : Colors.transparent,
       ),
       child: selected
-          ? const Icon(Icons.check_rounded,
+          ? const Icon(IconlyLight.tick_square,
               size: 14, color: AppColors.onPrimary)
           : null,
     );

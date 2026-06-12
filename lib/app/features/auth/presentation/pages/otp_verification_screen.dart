@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
+import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../controllers/otp_verification_controller.dart';
@@ -13,68 +15,89 @@ class OtpVerificationScreen extends GetView<OtpVerificationController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WavyAuthHeader(
-            height: 180,
-            showLeading: true,
-            onLeadingTap: () => Get.offAllNamed(AppRoutes.candidateLogin),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Vérification OTP', style: AppTextStyles.displayMd),
-                const SizedBox(height: 8),
-                Text(
-                  controller.phone.isNotEmpty
-                      ? 'Saisissez le code à 6 chiffres envoyé au ${controller.phone}.'
-                      : 'Saisissez le code à 6 chiffres reçu par SMS.',
-                  style: AppTextStyles.bodyMd
-                      .copyWith(color: AppColors.hintColor),
-                ),
-                const SizedBox(height: 20),
-                AuthTextField(
-                  label: 'Code reçu',
-                  controller: controller.otpCtrl,
-                  keyboardType: TextInputType.number,
-                  icon: Icons.lock_clock_outlined,
-                ),
-                Obx(() => controller.errorMsg.value.isEmpty
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Text(
-                          controller.errorMsg.value,
-                          style: AppTextStyles.bodySm
-                              .copyWith(color: AppColors.error),
+      body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            WavyAuthHeader(
+              height: 200,
+              showLeading: true,
+              foregroundIcon: IconlyLight.message,
+              title: 'Vérification',
+              onLeadingTap: () => Get.offAllNamed(AppRoutes.candidateLogin),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RevealOnMount(
+                    child: Text(
+                      'Saisissez le code',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.displayHero.copyWith(fontSize: 28),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  RevealOnMount(
+                    delay: const Duration(milliseconds: 60),
+                    child: Text(
+                      controller.phone.isNotEmpty
+                          ? 'Code à 6 chiffres envoyé au ${controller.phone}.'
+                          : 'Code à 6 chiffres reçu par SMS.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.bodyColor,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  RevealOnMount(
+                    delay: const Duration(milliseconds: 120),
+                    child: AuthOtpField(
+                      controller: controller.otpCtrl,
+                      length: 6,
+                      onCompleted: (_) => controller.verifyOtp(),
+                    ),
+                  ),
+                  Obx(() => AuthErrorBanner(
+                        message: controller.errorMsg.value,
+                      )),
+                  const SizedBox(height: 28),
+                  Obx(() => AuthCtaButton(
+                        label: 'Vérifier',
+                        isLoading: controller.isLoading.value,
+                        onPressed: () => controller.verifyOtp(),
+                      )),
+                  const SizedBox(height: 14),
+                  Obx(() => Center(
+                        child: TextButton(
+                          onPressed: controller.isResending.value
+                              ? null
+                              : () {
+                                  AppHaptics.tap();
+                                  controller.resend();
+                                },
+                          child: Text(
+                            controller.isResending.value
+                                ? 'Envoi en cours…'
+                                : 'Renvoyer le code',
+                            style: AppTextStyles.titleMd.copyWith(
+                              color: controller.isResending.value
+                                  ? AppColors.hintColor
+                                  : AppColors.primaryAccent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       )),
-                const SizedBox(height: 24),
-                Obx(() => AuthCtaButton(
-                      label: 'Vérifier',
-                      isLoading: controller.isLoading.value,
-                      onPressed: () => controller.verifyOtp(),
-                    )),
-                const SizedBox(height: 12),
-                Obx(() => TextButton(
-                      onPressed: controller.isResending.value
-                          ? null
-                          : () => controller.resend(),
-                      child: Text(
-                        controller.isResending.value
-                            ? 'Envoi en cours…'
-                            : 'Renvoyer le code',
-                        style: AppTextStyles.bodyMd
-                            .copyWith(color: AppColors.primary),
-                      ),
-                    )),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -5,7 +5,6 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
-
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
     super.key,
@@ -78,7 +77,7 @@ class AppSearchBar extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: Icon(
-                    Icons.close_rounded,
+                    IconlyLight.close_square,
                     size: 18,
                     color: AppColors.bodyColor,
                   ),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 
@@ -33,6 +36,7 @@ class ScoreProfilScreen extends GetView<ScoreProfilController> {
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
@@ -43,25 +47,54 @@ class ScoreProfilScreen extends GetView<ScoreProfilController> {
                   onRetry: controller.load,
                 );
               }
-              return RefreshIndicator(
-                color: AppColors.primary,
+              return AppRefreshIndicator(
+                color: AppColors.primaryAccent,
                 onRefresh: controller.load,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.xxl,
+                    AppSpacing.xl,
+                    40,
+                  ),
                   children: [
-                    _ScoreGauge(value: score.overall),
+                    RevealOnMount(
+                      duration: AppMotion.long,
+                      child: _ScoreGauge(value: score.overall),
+                    ),
                     const SizedBox(height: 28),
                     if (score.breakdown.isNotEmpty) ...[
-                      const SectionHeader(title: 'Détail par axe'),
-                      const SizedBox(height: 12),
-                      ..._breakdownEntries(score.breakdown)
-                          .map((e) => _AxisBar(label: e.key, value: e.value)),
-                      const SizedBox(height: 20),
+                      RevealOnMount(
+                        delay: AppMotion.stagger,
+                        duration: AppMotion.medium,
+                        child: const SectionHeader(title: 'Détail par axe'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ..._breakdownEntries(score.breakdown).indexed.map(
+                            (e) => RevealOnMount(
+                              delay: AppMotion.stagger * (e.$1 + 2),
+                              duration: AppMotion.medium,
+                              child:
+                                  _AxisBar(label: e.$2.key, value: e.$2.value),
+                            ),
+                          ),
+                      const SizedBox(height: AppSpacing.xl),
                     ],
                     if (score.suggestions.isNotEmpty) ...[
-                      const SectionHeader(title: 'Pistes d\'amélioration'),
-                      const SizedBox(height: 12),
-                      ...score.suggestions.map((s) => _SuggestionCard(data: s)),
+                      RevealOnMount(
+                        delay: AppMotion.stagger,
+                        duration: AppMotion.medium,
+                        child: const SectionHeader(
+                            title: 'Pistes d\'amélioration'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ...score.suggestions.indexed.map(
+                        (e) => RevealOnMount(
+                          delay: AppMotion.stagger * (e.$1 + 2),
+                          duration: AppMotion.medium,
+                          child: _SuggestionCard(data: e.$2),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -98,9 +131,9 @@ String prettifyKey(String key) {
 }
 
 Color scoreColor(int value) {
-  if (value >= 75) return AppColors.success;
-  if (value >= 45) return AppColors.warning;
-  return AppColors.error;
+  if (value >= 75) return AppColors.successAccent;
+  if (value >= 45) return AppColors.warningAccent;
+  return AppColors.errorAccent;
 }
 
 class _ScoreGauge extends StatelessWidget {
@@ -109,48 +142,14 @@ class _ScoreGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = scoreColor(value);
     return Center(
-      child: SizedBox(
-        width: 168,
-        height: 168,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 168,
-              height: 168,
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: value / 100),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOutCubic,
-                builder: (context, v, _) => CircularProgressIndicator(
-                  value: v,
-                  strokeWidth: 12,
-                  backgroundColor: AppColors.surfaceHigh,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                  strokeCap: StrokeCap.round,
-                ),
-              ),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$value',
-                  style: AppTextStyles.displayMd.copyWith(
-                    fontSize: 46,
-                    fontWeight: FontWeight.w900,
-                    color: color,
-                  ),
-                ),
-                Text('/ 100',
-                    style: AppTextStyles.bodySm
-                        .copyWith(color: AppColors.hintColor)),
-              ],
-            ),
-          ],
-        ),
+      child: ScoreRing(
+        value: value,
+        color: scoreColor(value),
+        size: 168,
+        strokeWidth: 12,
+        valueFontSize: 46,
+        suffix: '/ 100',
       ),
     );
   }
@@ -172,25 +171,52 @@ class _AxisBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(prettifyKey(label), style: AppTextStyles.labelMd),
-              Text('$value%',
+              AnimatedCount(
+                value: value,
+                builder: (_, v) => Text(
+                  '$v%',
                   style: AppTextStyles.labelMd.copyWith(
-                      color: scoreColor(value), fontWeight: FontWeight.w800)),
+                    color: scoreColor(value),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: value / 100),
-              duration: const Duration(milliseconds: 700),
-              curve: Curves.easeOut,
-              builder: (context, v, _) => LinearProgressIndicator(
-                value: v,
-                minHeight: 8,
-                backgroundColor: AppColors.surfaceHigh,
-                valueColor: AlwaysStoppedAnimation<Color>(scoreColor(value)),
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final color = scoreColor(value);
+              return ClipRRect(
+                borderRadius: AppShapes.pill,
+                child: Container(
+                  height: 8,
+                  width: constraints.maxWidth,
+                  color: AppColors.surfaceHigh,
+                  alignment: Alignment.centerLeft,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: value / 100),
+                    duration: AppMotion.long,
+                    curve: AppMotion.emphasizedDecelerate,
+                    builder: (context, v, _) => Container(
+                      height: 8,
+                      width: constraints.maxWidth * v,
+                      decoration: BoxDecoration(
+                        borderRadius: AppShapes.pill,
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            color.withValues(alpha: 0.55),
+                            color,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -214,45 +240,58 @@ class _SuggestionCard extends StatelessWidget {
             '')
         .toString();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppColors.lightShadow,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
+    return PressScale(
+      onTap: null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: [
+            ...AppColors.lightShadow,
+            ...AppColors.ambientShadow,
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceIconSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.lightbulb_outline_rounded,
+                color: AppColors.primaryAccent,
+                size: 20,
+              ),
             ),
-            child: const Icon(Icons.lightbulb_outline_rounded,
-                color: AppColors.primaryDark, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
                     style: AppTextStyles.titleMd
-                        .copyWith(fontWeight: FontWeight.w800)),
-                if (desc.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(desc,
+                        .copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  if (desc.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      desc,
                       style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.bodyColor, height: 1.4)),
+                          .copyWith(color: AppColors.bodyColor, height: 1.4),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -264,12 +303,16 @@ class _ScoreSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xxl,
+        AppSpacing.xl,
+        40,
+      ),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         const Center(
-          child: SkeletonBox(
-              width: 168, height: 168, shape: BoxShape.circle),
+          child: SkeletonBox(width: 168, height: 168, shape: BoxShape.circle),
         ),
         const SizedBox(height: 28),
         for (var i = 0; i < 4; i++)
@@ -281,7 +324,11 @@ class _ScoreSkeleton extends StatelessWidget {
         for (var i = 0; i < 3; i++)
           const Padding(
             padding: EdgeInsets.only(bottom: 12),
-            child: SkeletonBox(width: double.infinity, height: 76, radius: 18),
+            child: SkeletonBox(
+              width: double.infinity,
+              height: 76,
+              radius: AppRadius.xl * 1.7,
+            ),
           ),
       ],
     );

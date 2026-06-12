@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-
 class RevealOnMount extends StatefulWidget {
   const RevealOnMount({
     super.key,
@@ -76,7 +75,6 @@ class _RevealOnMountState extends State<RevealOnMount>
     );
   }
 }
-
 
 class PulsingDot extends StatefulWidget {
   const PulsingDot({
@@ -217,7 +215,6 @@ class _KenBurnsImageState extends State<KenBurnsImage>
   }
 }
 
-
 class NudgeArrow extends StatefulWidget {
   const NudgeArrow({
     super.key,
@@ -262,7 +259,6 @@ class _NudgeArrowState extends State<NudgeArrow>
     );
   }
 }
-
 
 class AnimatedCount extends StatelessWidget {
   const AnimatedCount({

@@ -10,6 +10,7 @@ class NotificationsBinding extends Bindings {
     Get.lazyPut<INotificationRepository>(
       () => NotificationRepositoryImpl(apiProvider: Get.find<ApiProvider>()),
     );
-    Get.lazyPut(() => NotificationsController(Get.find<INotificationRepository>()));
+    Get.lazyPut(
+        () => NotificationsController(Get.find<INotificationRepository>()));
   }
 }

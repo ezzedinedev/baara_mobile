@@ -60,7 +60,8 @@ class CvPreviewController extends GetxController {
   }
 
   /// Octets PDF du modèle courant (pour l'aperçu / le partage).
-  Future<Uint8List> pdfBytes() => _repository.downloadPdf(selectedTemplate.value);
+  Future<Uint8List> pdfBytes() =>
+      _repository.downloadPdf(selectedTemplate.value);
 
   int _asInt(dynamic v) {
     if (v is num) return v.round();

@@ -6,7 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_routes.dart';
-import '../../features/home/presentation/controllers/home_controller.dart';
+import '../../features/messaging/presentation/controllers/messages_controller.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
@@ -113,7 +113,8 @@ class FcmService extends GetxService {
       requestSoundPermission: false,
     );
     await _localNotif.initialize(
-      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings:
+          const InitializationSettings(android: androidInit, iOS: iosInit),
       onDidReceiveNotificationResponse: (response) {
         // Tap sur le banner local en foreground → on parse le payload
         // qu'on a injecte (memes clefs que les data Firebase pour rester
@@ -192,12 +193,11 @@ class FcmService extends GetxService {
     if (shortType == 'conversation' &&
         targetId != null &&
         targetId.isNotEmpty &&
-        Get.isRegistered<HomeController>()) {
-      final home = Get.find<HomeController>();
-      // Inbox : reload pour MAJ unreadCounters + lastMessage des cards.
-      home.loadConversations();
-      if (home.activeConversationId.value == targetId) {
-        home.loadConversationThread(targetId);
+        Get.isRegistered<MessagesController>()) {
+      final ctrl = Get.find<MessagesController>();
+      ctrl.loadConversations();
+      if (ctrl.activeConversationId.value == targetId) {
+        ctrl.loadMessages(targetId);
         suppressBanner = true;
       }
     }
@@ -223,6 +223,7 @@ class FcmService extends GetxService {
       payload: payload,
     );
   }
+
   String? _shortenType(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     final tail = raw.split('\\').last.toLowerCase();
@@ -232,6 +233,7 @@ class FcmService extends GetxService {
   void _handleNotificationTap(RemoteMessage message) {
     _routeFromPayload(message.data);
   }
+
   void _routeFromPayload(Map<String, dynamic> data) {
     final id = data['notifiable_id']?.toString();
     if (id == null || id.isEmpty) return;

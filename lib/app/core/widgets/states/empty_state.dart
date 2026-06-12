@@ -3,19 +3,26 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
 
-
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
-    required this.icon,
+    this.icon,
+    this.illustration,
     required this.title,
     required this.subtitle,
     this.actionLabel,
     this.onAction,
     this.accent,
-  });
+  }) : assert(
+          icon != null || illustration != null,
+          'Fournir au moins une icon ou une illustration.',
+        );
 
-  final IconData icon;
+  /// Icône fallback (rétro-compat). Ignorée si [illustration] est fournie.
+  final IconData? icon;
+
+  /// Illustration de marque optionnelle (prioritaire sur [icon]).
+  final Widget? illustration;
   final String title;
   final String subtitle;
   final String? actionLabel;
@@ -32,15 +39,18 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceIconSoft,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+            if (illustration != null)
+              illustration!
+            else
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceIconSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Icon(icon, size: 32, color: accent),
               ),
-              child: Icon(icon, size: 32, color: accent),
-            ),
             const SizedBox(height: AppSpacing.xl),
             Text(
               title,

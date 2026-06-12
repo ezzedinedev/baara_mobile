@@ -5,7 +5,15 @@ import '../../../../core/utils/user_facing_error.dart';
 import '../../data/repositories/cv_import_repository.dart';
 
 /// Étapes du flux d'import.
-enum CvImportStep { pick, analyzing, review, improving, improved, applying, done }
+enum CvImportStep {
+  pick,
+  analyzing,
+  review,
+  improving,
+  improved,
+  applying,
+  done
+}
 
 /// Orchestration de l'import de CV : sélection fichier → analyse → revue →
 /// amélioration IA → application au CV. État observable pour [CvImportScreen].
@@ -54,7 +62,8 @@ class CvImportController extends GetxController {
     final picked = result.files.first;
     final bytes = picked.bytes;
     if (bytes == null) {
-      errorMessage.value = 'Fichier illisible. Réessayez avec un autre fichier.';
+      errorMessage.value =
+          'Fichier illisible. Réessayez avec un autre fichier.';
       return;
     }
 
@@ -67,7 +76,8 @@ class CvImportController extends GetxController {
       _analysis = data['analysis'] is Map<String, dynamic>
           ? data['analysis'] as Map<String, dynamic>
           : <String, dynamic>{};
-      cvScore.value = _asInt(_analysis['cv_score'] ?? _analysis['overall_score']);
+      cvScore.value =
+          _asInt(_analysis['cv_score'] ?? _analysis['overall_score']);
       profileScore.value = _asInt(_analysis['profile_score']);
       summary.value = (_analysis['summary'] ?? _analysis['feedback'] ?? '')
           .toString()

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
-
-
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
@@ -54,16 +53,16 @@ class SectionHeader extends StatelessWidget {
                     Text(
                       actionLabel!,
                       style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.primary,
+                        color: AppColors.primaryAccent,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
                     ),
                     const SizedBox(width: 2),
-                    const Icon(
-                      Icons.chevron_right_rounded,
+                    Icon(
+                      IconlyLight.arrow_right_2,
                       size: 18,
-                      color: AppColors.primary,
+                      color: AppColors.primaryAccent,
                     ),
                   ],
                 ),

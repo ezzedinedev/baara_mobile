@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../../domain/entities/network_user.dart';
+import '../../domain/repositories/i_community_repository.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/network_user_tile.dart';
+import 'hashtag_feed_screen.dart';
 
 /// Recherche de membres du réseau (`GET /community/search?type=people`).
 class CommunitySearchScreen extends StatefulWidget {
-  const CommunitySearchScreen({super.key});
+  const CommunitySearchScreen({super.key, this.initialQuery});
+
+  /// Pré-remplit le champ et lance la recherche (ex. depuis un @mention).
+  final String? initialQuery;
 
   @override
   State<CommunitySearchScreen> createState() => _CommunitySearchScreenState();
@@ -24,8 +33,30 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
   final _input = TextEditingController();
 
   final _results = <NetworkUser>[];
+  final _trending = <TrendingHashtag>[];
   bool _loading = false;
   bool _searched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrending();
+    final q = widget.initialQuery?.trim() ?? '';
+    if (q.isNotEmpty) {
+      _input.text = q;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _search(q));
+    }
+  }
+
+  Future<void> _loadTrending() async {
+    final list = await _controller.loadTrendingHashtags();
+    if (!mounted) return;
+    setState(() {
+      _trending
+        ..clear()
+        ..addAll(list);
+    });
+  }
 
   @override
   void dispose() {
@@ -58,8 +89,8 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
   Future<void> _toggleFollow(int index) async {
     AppHaptics.tap();
     final user = _results[index];
-    setState(() => _results[index] =
-        user.copyWith(isFollowing: !user.isFollowing));
+    setState(
+        () => _results[index] = user.copyWith(isFollowing: !user.isFollowing));
     await _controller.toggleFollow(user);
   }
 
@@ -72,19 +103,45 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
             AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
         child: Column(
           children: [
-            TextField(
-              controller: _input,
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              onSubmitted: _search,
-              decoration: InputDecoration(
-                hintText: 'Nom ou prénom d\'un membre…',
-                prefixIcon:
-                    Icon(Icons.search_rounded, color: AppColors.hintColor),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.arrow_forward_rounded,
-                      color: AppColors.primary),
-                  onPressed: () => _search(_input.text),
+            // Champ de recherche squircle
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLow,
+                borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                border: Border.all(color: AppColors.outlineVariant),
+                boxShadow: AppColors.lightShadow,
+              ),
+              child: TextField(
+                controller: _input,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onSubmitted: _search,
+                style: AppTextStyles.bodyMd,
+                decoration: InputDecoration(
+                  hintText: 'Nom ou prénom d\'un membre…',
+                  hintStyle:
+                      AppTextStyles.bodyMd.copyWith(color: AppColors.hintColor),
+                  prefixIcon:
+                      Icon(IconlyLight.search, color: AppColors.hintColor),
+                  suffixIcon: IconButton(
+                    icon: Icon(IconlyLight.arrow_right_2,
+                        color: AppColors.primaryAccent),
+                    onPressed: () => _search(_input.text),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.transparent,
                 ),
               ),
             ),
@@ -98,9 +155,63 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return ListView.separated(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+        itemCount: 7,
+        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+        itemBuilder: (_, __) => const MessageTileSkeleton(),
+      );
     }
     if (!_searched) {
+      return _trendingSection();
+    }
+    if (_results.isEmpty) {
+      return const Center(
+        child: EmptyState(
+          illustration: NoResultsIllustration(),
+          title: 'Aucun membre',
+          subtitle: 'Aucun résultat pour cette recherche.',
+        ),
+      );
+    }
+    return AnimationLimiter(
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+        itemCount: _results.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+        itemBuilder: (_, i) {
+          final user = _results[i];
+          return AnimationConfiguration.staggeredList(
+            position: i,
+            duration: AppMotion.medium,
+            child: SlideAnimation(
+              verticalOffset: AppMotion.listSlideOffset,
+              curve: AppMotion.emphasizedDecelerate,
+              child: FadeInAnimation(
+                curve: AppMotion.emphasizedDecelerate,
+                child: NetworkUserTile(
+                  user: user,
+                  onTap: () => Get.toNamed(
+                    AppRoutes.communityProfile.replaceFirst(':id', user.id),
+                  ),
+                  trailing: user.isSelf
+                      ? null
+                      : FollowPillButton(
+                          following: user.isFollowing,
+                          onTap: () => _toggleFollow(i),
+                        ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Section « Tendances » (champ vide) ────────────────────────────────────
+  Widget _trendingSection() {
+    if (_trending.isEmpty) {
       return Center(
         child: Text(
           'Cherchez des membres par nom.',
@@ -108,34 +219,70 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
         ),
       );
     }
-    if (_results.isEmpty) {
-      return const Center(
-        child: EmptyState(
-          icon: Icons.search_off_rounded,
-          title: 'Aucun membre',
-          subtitle: 'Aucun résultat pour cette recherche.',
-        ),
-      );
-    }
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
-      itemCount: _results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (_, i) {
-        final user = _results[i];
-        return NetworkUserTile(
-          user: user,
-          onTap: () => Get.toNamed(
-            AppRoutes.communityProfile.replaceFirst(':id', user.id),
-          ),
-          trailing: user.isSelf
-              ? null
-              : TextButton(
-                  onPressed: () => _toggleFollow(i),
-                  child: Text(user.isFollowing ? 'Suivi' : 'Suivre'),
-                ),
-        );
+      children: [
+        Row(
+          children: [
+            Icon(IconlyLight.chart, size: 18, color: AppColors.primaryAccent),
+            const SizedBox(width: 8),
+            Text(
+              'Tendances',
+              style: AppTextStyles.titleMd.copyWith(
+                color: AppColors.titleColor,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            for (final t in _trending) _trendingChip(t),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _trendingChip(TrendingHashtag t) {
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        Get.to<void>(() => HashtagFeedScreen(tag: t.tag));
       },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLow,
+          // pill pour les chips tendances — cohérent avec FollowPillButton
+          borderRadius: AppShapes.pill,
+          border: Border.all(color: AppColors.outlineVariant),
+          boxShadow: AppColors.lightShadow,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '#${t.tag}',
+              style: AppTextStyles.labelLg.copyWith(
+                color: AppColors.primaryAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (t.count > 0) ...[
+              const SizedBox(width: 6),
+              Text(
+                '${t.count}',
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

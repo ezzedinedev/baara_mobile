@@ -1,3 +1,4 @@
+import '../entities/apply_result.dart';
 import '../entities/offer.dart';
 import '../entities/matched_offer.dart';
 import '../../data/models/application_model.dart';
@@ -15,8 +16,10 @@ abstract class IOfferRepository {
   Future<bool> unsaveOffer(String offerId);
 
   // Applications
-  Future<ApplicationModel> applyToOffer(String offerId, {Map<String, dynamic>? screeningAnswers});
-  Future<List<ApplicationModel>> getMyApplications({int page = 1, int perPage = 20});
+  Future<ApplyResult> applyToOffer(String offerId,
+      {Map<String, dynamic>? screeningAnswers});
+  Future<List<ApplicationModel>> getMyApplications(
+      {int page = 1, int perPage = 20});
 
   /// Entretiens à venir (géoloc + itinéraire + .ics).
   /// GET /applications/interviews/upcoming.

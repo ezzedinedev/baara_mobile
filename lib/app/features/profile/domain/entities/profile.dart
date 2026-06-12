@@ -83,6 +83,20 @@ class Profile {
   final String? portfolioUrl;
   final String? desiredRole;
 
+  // Préférences utilisateur (renvoyées par GET /profile → user.preferences).
+  // Source de vérité serveur pour l'écran Paramètres.
+  final bool notificationsEnabled;
+
+  /// Canaux de notification, clés backend : `offer_updates`,
+  /// `application_updates`, `match_alerts`, `message_alerts`, `training_updates`.
+  final Map<String, bool> notificationChannels;
+  final bool teamActivity;
+  final String themePref; // 'light' | 'dark'
+  final String languagePref; // 'fr' | 'en'
+
+  /// Visibilité du profil communauté : 'public' | 'connections'.
+  final String profileVisibility;
+
   const Profile({
     required this.id,
     required this.firstName,
@@ -107,7 +121,30 @@ class Profile {
     this.githubUrl,
     this.portfolioUrl,
     this.desiredRole,
+    this.notificationsEnabled = true,
+    this.notificationChannels = const {},
+    this.teamActivity = false,
+    this.themePref = 'light',
+    this.languagePref = 'fr',
+    this.profileVisibility = 'public',
   });
 
   String get fullName => '$firstName $lastName';
+
+  /// Taux de complétion du profil (0–100), calculé sur les champs clés remplis.
+  /// Sert à l'anneau de progression autour de l'avatar.
+  int get completionPercent {
+    final checks = <bool>[
+      (avatarUrl ?? '').trim().isNotEmpty,
+      (headline ?? '').trim().isNotEmpty,
+      city.trim().isNotEmpty,
+      phone.trim().isNotEmpty,
+      (bio ?? '').trim().isNotEmpty,
+      skills.isNotEmpty,
+      experiences.isNotEmpty,
+      educations.isNotEmpty,
+    ];
+    final filled = checks.where((c) => c).length;
+    return ((filled / checks.length) * 100).round().clamp(0, 100);
+  }
 }

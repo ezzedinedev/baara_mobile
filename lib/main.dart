@@ -11,8 +11,9 @@ import 'app/bindings/initial_binding.dart';
 import 'app/core/services/fcm_service.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
+import 'app/core/theme/app_motion.dart';
+import 'app/core/theme/app_transitions.dart';
 import 'app/features/errors/presentation/pages/error_404_screen.dart';
-// import 'app/fonctionnalites/erreurs/vue/error_404_screen.dart';
 import 'app/translations/app_translations.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
@@ -21,7 +22,8 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(_bootstrap, (error, stack) {
     final msg = error.toString().toLowerCase();
     if (msg.contains('auth_token') || msg.contains('bearer')) {
-      debugPrint('[Crash] Error with potential credentials suppressed from Crashlytics');
+      debugPrint(
+          '[Crash] Error with potential credentials suppressed from Crashlytics');
       return;
     }
     if (Firebase.apps.isNotEmpty) {
@@ -89,25 +91,39 @@ class OpportuneBFApp extends StatelessWidget {
     final themeController = Get.find<AppThemeController>();
 
     return Obx(
-      () => GetMaterialApp(
-        title: 'OpporTune BF',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeController.themeMode,
-        initialRoute: AppRoutes.splash,
-        getPages: AppPages.routes,
-        defaultTransition: Transition.rightToLeft,
-        transitionDuration: const Duration(milliseconds: 260),
-        // i18n : FR par defaut, EN disponible via la pref `language` du profil.
-        translations: AppTranslations(),
-        locale: const Locale('fr', 'FR'),
-        fallbackLocale: const Locale('fr', 'FR'),
-        unknownRoute: GetPage(
-          name: AppRoutes.error404,
-          page: () => const Error404Screen(),
-        ),
-      ),
+      () {
+        // Observe explicitement les préférences d'apparence : changer l'accent
+        // ou l'AMOLED ne modifie pas le ThemeMode, mais doit reconstruire l'app
+        // (les ThemeData/AppColors sont des getters relus ici). Lire ces Rx
+        // dans l'Obx suffit à déclencher le rebuild live.
+        themeController.amoled.value;
+        themeController.accentSeed.value;
+        return GetMaterialApp(
+          title: 'OpporTune BF',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeController.themeMode,
+          initialRoute: AppRoutes.splash,
+          getPages: AppPages.routes,
+          // Transition « signature » maison (fade-through + slide/scale
+          // subtils), appliquée par défaut via le `customTransition` global.
+          // Les GetPage qui définissent leur propre `customTransition` (la
+          // plupart, cf. app_pages) ou des transitions spéciales (composer
+          // downToUp, viewers fadeIn…) la conservent.
+          customTransition: AppPageTransition(),
+          defaultTransition: Transition.fadeIn,
+          transitionDuration: AppMotion.medium,
+          // i18n : FR par defaut, EN disponible via la pref `language` du profil.
+          translations: AppTranslations(),
+          locale: const Locale('fr', 'FR'),
+          fallbackLocale: const Locale('fr', 'FR'),
+          unknownRoute: GetPage(
+            name: AppRoutes.error404,
+            page: () => const Error404Screen(),
+          ),
+        );
+      },
     );
   }
 }

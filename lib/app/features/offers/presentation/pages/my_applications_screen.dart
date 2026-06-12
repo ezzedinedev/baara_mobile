@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
@@ -126,7 +130,9 @@ class _ToggleSegment extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        // Bascule de segment en ressort (langage motion 2026).
+        duration: AppMotion.medium,
+        curve: AppMotion.spring,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : Colors.transparent,
@@ -156,12 +162,13 @@ class _ApplicationsListView extends StatelessWidget {
       if (controller.errorMessage.value != null) {
         return ErrorStateView(
           message: controller.errorMessage.value!,
+          illustration: const ErrorIllustration(),
           onRetry: controller.load,
         );
       }
       if (controller.applications.isEmpty) {
         return EmptyState(
-          icon: IconlyLight.paper,
+          illustration: const EmptyApplicationsIllustration(),
           title: 'Aucune candidature',
           subtitle:
               'Vous n\'avez pas encore postulé. Explorez les offres et tentez votre chance !',
@@ -169,17 +176,31 @@ class _ApplicationsListView extends StatelessWidget {
           onAction: () => Get.toNamed(AppRoutes.offers),
         );
       }
-      return RefreshIndicator(
-        color: AppColors.primary,
+      final apps = controller.applications;
+      return AppRefreshIndicator(
+        color: AppColors.primaryAccent,
         onRefresh: controller.load,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-          children: [
-            if (controller.upcomingInterviews.isNotEmpty)
-              _UpcomingInterviewsSection(
-                  items: controller.upcomingInterviews.toList()),
-            ...controller.applications.map((app) => _ApplicationCard(app: app)),
-          ],
+        child: AnimationLimiter(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+            children: [
+              if (controller.upcomingInterviews.isNotEmpty)
+                _UpcomingInterviewsSection(
+                    items: controller.upcomingInterviews.toList()),
+              for (var i = 0; i < apps.length; i++)
+                AnimationConfiguration.staggeredList(
+                  position: i,
+                  duration: AppMotion.medium,
+                  child: SlideAnimation(
+                    verticalOffset: AppMotion.listSlideOffset,
+                    curve: AppMotion.emphasizedDecelerate,
+                    child: FadeInAnimation(
+                      child: _ApplicationCard(app: apps[i]),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       );
     });
@@ -199,8 +220,8 @@ class _UpcomingInterviewsSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.event_available_rounded,
-                size: 18, color: AppColors.warning),
+            Icon(IconlyLight.calendar,
+                size: 18, color: AppColors.warningAccent),
             const SizedBox(width: 8),
             Text('Prochains entretiens',
                 style: AppTextStyles.titleMd
@@ -222,19 +243,18 @@ class _InterviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iv = item.interview;
-    final when = iv?.dateHuman ??
-        (iv?.date != null ? _formatDate(iv!.date!) : null);
-    final canRoute = (iv?.hasCoordinates ?? false) &&
-        iv?.lat != null &&
-        iv?.lng != null;
+    final when =
+        iv?.dateHuman ?? (iv?.date != null ? _formatDate(iv!.date!) : null);
+    final canRoute =
+        (iv?.hasCoordinates ?? false) && iv?.lat != null && iv?.lng != null;
     final canCalendar = (iv?.icsUrl ?? '').isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.warningSoft,
-        borderRadius: BorderRadius.circular(18),
+        shape: AppShapes.squircle(AppRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,20 +267,20 @@ class _InterviewCard extends StatelessWidget {
           if ((item.companyName ?? '').isNotEmpty) ...[
             const SizedBox(height: 2),
             Text(item.companyName!,
-                style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.bodyColor)),
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor)),
           ],
           if (when != null) ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.schedule_rounded,
-                    size: 15, color: AppColors.warning),
+                Icon(IconlyLight.calendar,
+                    size: 15, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(when,
                       style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.warning,
+                          color: AppColors.warningAccent,
                           fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -271,7 +291,7 @@ class _InterviewCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.place_outlined,
+                Icon(IconlyLight.location,
                     size: 15, color: AppColors.hintColor),
                 const SizedBox(width: 6),
                 Expanded(
@@ -293,7 +313,8 @@ class _InterviewCard extends StatelessWidget {
                       label: 'Itinéraire',
                       onTap: () {
                         AppHaptics.tap();
-                        MapNavigationLauncher.openCoordinates(iv!.lat!, iv.lng!);
+                        MapNavigationLauncher.openCoordinates(
+                            iv!.lat!, iv.lng!);
                       },
                     ),
                   ),
@@ -301,7 +322,7 @@ class _InterviewCard extends StatelessWidget {
                 if (canCalendar)
                   Expanded(
                     child: _InterviewAction(
-                      icon: Icons.calendar_month_rounded,
+                      icon: IconlyLight.calendar,
                       label: 'Calendrier',
                       onTap: () {
                         AppHaptics.tap();
@@ -332,21 +353,22 @@ class _InterviewAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(12),
+          shape: AppShapes.squircle(AppRadius.sm),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: AppColors.primary),
+            Icon(icon, size: 16, color: AppColors.primaryAccent),
             const SizedBox(width: 6),
             Text(label,
                 style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    color: AppColors.primaryAccent,
+                    fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -355,26 +377,24 @@ class _InterviewAction extends StatelessWidget {
 }
 
 class _StatusStyle {
-  const _StatusStyle(this.label, this.color, this.bg, this.icon);
+  const _StatusStyle(this.label, this.color, this.icon);
   final String label;
   final Color color;
-  final Color bg;
   final IconData icon;
 }
 
 _StatusStyle _statusStyle(ApplicationStatus status) {
   switch (status) {
     case ApplicationStatus.newApp:
-      return _StatusStyle('Envoyée', AppColors.secondary,
-          AppColors.secondarySoft, Icons.send_rounded);
+      return _StatusStyle('Envoyée', AppColors.primaryAccent, IconlyLight.send);
     case ApplicationStatus.shortlisted:
-      return _StatusStyle('Présélectionné', AppColors.success,
-          AppColors.successSoft, Icons.star_rounded);
+      return _StatusStyle(
+          'Présélectionné', AppColors.successAccent, IconlyBold.star);
     case ApplicationStatus.interview:
-      return _StatusStyle('Entretien', AppColors.warning,
-          AppColors.warningSoft, Icons.event_available_rounded);
+      return _StatusStyle(
+          'Entretien', AppColors.warningAccent, IconlyLight.calendar);
     case ApplicationStatus.rejected:
-      return _StatusStyle('Non retenue', AppColors.error, AppColors.errorSoft,
+      return _StatusStyle('Non retenue', AppColors.errorAccent,
           Icons.do_not_disturb_on_rounded);
   }
 }
@@ -392,124 +412,129 @@ class _ApplicationCard extends StatelessWidget {
     final title = app.offer?.title ?? 'Offre #${app.offerId}';
     final company = app.offer?.company ?? '';
     final location = app.offer?.location ?? '';
-    final matchPct = (app.aiMatchScore <= 1
-            ? app.aiMatchScore * 100
-            : app.aiMatchScore)
-        .round();
+    final matchPct =
+        (app.aiMatchScore <= 1 ? app.aiMatchScore * 100 : app.aiMatchScore)
+            .round();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.lightShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', app.offerId));
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg - 2),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+          // Profondeur en couches (langage 2026) + liseré d'accent par statut.
+          boxShadow: [...AppColors.lightShadow, ...AppColors.ambientShadow],
+          border: Border(
+            left: BorderSide(color: style.color, width: 3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+                  child: BrandAvatar(
+                    seed: company.isEmpty ? title : company,
+                    label: company.isEmpty ? title : company,
+                    imageUrl: app.offer?.companyLogo,
+                    size: 44,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: AppTextStyles.titleMd
+                              .copyWith(fontWeight: FontWeight.w800),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                      if (company.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(company,
+                            style: AppTextStyles.bodySm
+                                .copyWith(color: AppColors.primaryAccent),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                StatusPill(
+                  label: style.label,
+                  color: style.color,
+                  icon: style.icon,
+                  dense: true,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                if (location.isNotEmpty) ...[
+                  Icon(IconlyLight.location,
+                      size: 14, color: AppColors.hintColor),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(location,
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.hintColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                ],
+                Icon(IconlyLight.calendar,
+                    size: 14, color: AppColors.hintColor),
+                const SizedBox(width: 4),
+                Text(_formatDate(app.appliedAt),
+                    style: AppTextStyles.bodySm
+                        .copyWith(color: AppColors.hintColor)),
+                const Spacer(),
+                if (matchPct > 0) MatchScorePill(score: matchPct, dense: true),
+              ],
+            ),
+            if (app.isRejected &&
+                (app.rejectionReason?.isNotEmpty ?? false)) ...[
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: ShapeDecoration(
+                  color: AppColors.errorSoft,
+                  shape: AppShapes.squircle(AppRadius.sm),
+                ),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: AppTextStyles.titleMd
-                            .copyWith(fontWeight: FontWeight.w800),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    if (company.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(company,
-                          style: AppTextStyles.bodySm
-                              .copyWith(color: AppColors.bodyColor)),
-                    ],
+                    Icon(IconlyLight.info_circle,
+                        size: 15, color: AppColors.errorAccent),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(app.rejectionReason!,
+                          style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.errorAccent, height: 1.4)),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              _StatusBadge(style: style),
             ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (location.isNotEmpty) ...[
-                Icon(IconlyLight.location,
-                    size: 14, color: AppColors.hintColor),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(location,
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.hintColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Icon(IconlyLight.calendar,
-                  size: 14, color: AppColors.hintColor),
-              const SizedBox(width: 4),
-              Text(_formatDate(app.appliedAt),
-                  style: AppTextStyles.bodySm
-                      .copyWith(color: AppColors.hintColor)),
-              const Spacer(),
-              if (matchPct > 0)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSelected,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text('$matchPct% match',
-                      style: AppTextStyles.labelSm.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700)),
-                ),
-            ],
-          ),
-          if (app.isRejected &&
-              (app.rejectionReason?.isNotEmpty ?? false)) ...[
-            const SizedBox(height: 10),
-            Text(app.rejectionReason!,
-                style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.error, height: 1.4)),
           ],
-        ],
+        ),
       ),
     );
   }
 }
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.style});
-  final _StatusStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: style.bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(style.icon, size: 14, color: style.color),
-          const SizedBox(width: 5),
-          Text(style.label,
-              style: AppTextStyles.labelSm
-                  .copyWith(color: style.color, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-}
-
 
 class _ApplicationsSkeleton extends StatelessWidget {
   const _ApplicationsSkeleton();

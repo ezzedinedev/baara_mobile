@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app_theme_controller.dart';
 
-
-
 class AppColors {
   AppColors._();
   static const Color primary = Color(0xFF0E8A4D);
@@ -20,20 +18,73 @@ class AppColors {
       Get.isRegistered<AppThemeController>() &&
       Get.find<AppThemeController>().isDarkMode.value;
 
-  static Color get background =>
-      _isDark ? const Color(0xFF0D1214) : const Color(0xFFF7F8FA);
-  static Color get surfaceLow =>
-      _isDark ? const Color(0xFF151B1E) : const Color(0xFFF1F5F4);
-  static Color get inputFill =>
-      _isDark ? const Color(0xFF1B2326) : const Color(0xFFF3F6F6);
-  static Color get surfaceCard =>
-      _isDark ? const Color(0xFF182023) : const Color(0xFFFFFFFF);
-  static Color get surfaceContainer =>
-      _isDark ? const Color(0xFF202A2D) : const Color(0xFFEEF3F2);
-  static Color get surfaceHigh =>
-      _isDark ? const Color(0xFF283436) : const Color(0xFFE5ECEB);
-  static Color get surfaceHighest =>
-      _isDark ? const Color(0xFF334144) : const Color(0xFFD8E2E1);
+  /// Noir intense (AMOLED) : actif uniquement en dark. Lit le controller, false
+  /// si non enregistré (sécurité splash / tests).
+  static bool get _amoled =>
+      _isDark &&
+      Get.isRegistered<AppThemeController>() &&
+      Get.find<AppThemeController>().amoled.value;
+
+  /// Graine d'accent choisie par l'utilisateur (fallback [primary] si le
+  /// controller n'est pas encore monté).
+  static Color get _accentSeed => Get.isRegistered<AppThemeController>()
+      ? Get.find<AppThemeController>().accentSeed.value
+      : primary;
+
+  /// Éclaircit une couleur en espace HSL (clamp 0..1). Sert à relever l'accent
+  /// en dark pour garder lisibilité et vivacité sur surface sombre.
+  static Color _lighten(Color base, double amount) {
+    final hsl = HSLColor.fromColor(base);
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  /// Presets d'accent proposés dans les Paramètres (Apparence). Constantes de
+  /// couleur (tokens) : le vert de marque + 5 dérivés des tokens « category ».
+  /// Pas de roue chromatique libre → on garde la cohérence de la charte.
+  static const List<Color> accentPresets = [
+    primary,
+    categoryBlue,
+    categoryPurple,
+    categoryCyan,
+    categoryOrange,
+    categoryPink,
+  ];
+
+  /// Accent de PREMIER-PLAN (texte/icône/bordure/nav active) dérivé du choix
+  /// utilisateur ([_accentSeed]). En dark on l'éclaircit (~+14 % L) pour rester
+  /// lisible et vivant ; en light c'est la graine telle quelle. À NE PAS
+  /// utiliser comme fond de bouton (garder [primary] pour les fills de marque).
+  static Color get primaryAccent {
+    final base = _accentSeed;
+    return _isDark ? _lighten(base, 0.14) : base;
+  }
+
+  // Rampe dark : base légèrement relevée (moins « trou noir »), pas vers le
+  // haut réguliers (~+6 L*) pour une élévation lisible et calme. En AMOLED,
+  // les fonds basculent vers le vrai noir / quasi-noir (paliers très sombres).
+  static Color get background => _amoled
+      ? const Color(0xFF000000)
+      : (_isDark ? const Color(0xFF0F1518) : const Color(0xFFF7F8FA));
+  static Color get surfaceLow => _amoled
+      ? const Color(0xFF070809)
+      : (_isDark ? const Color(0xFF161E21) : const Color(0xFFF1F5F4));
+  static Color get inputFill => _amoled
+      ? const Color(0xFF0D0F10)
+      : (_isDark ? const Color(0xFF1B2427) : const Color(0xFFF3F6F6));
+  static Color get surfaceCard => _amoled
+      ? const Color(0xFF0D0F10)
+      : (_isDark ? const Color(0xFF1A2326) : const Color(0xFFFFFFFF));
+  static Color get surfaceContainer => _amoled
+      ? const Color(0xFF121517)
+      : (_isDark ? const Color(0xFF222C2F) : const Color(0xFFEEF3F2));
+  static Color get surfaceHigh => _amoled
+      ? const Color(0xFF181B1D)
+      : (_isDark ? const Color(0xFF2A3539) : const Color(0xFFE5ECEB));
+  static Color get surfaceHighest => _amoled
+      ? const Color(0xFF202427)
+      : (_isDark ? const Color(0xFF333F43) : const Color(0xFFD8E2E1));
   static Color get surfaceSelected =>
       _isDark ? const Color(0xFF15322E) : const Color(0xFFE7F4F1);
   static Color get surfaceIconSoft =>
@@ -43,20 +94,34 @@ class AppColors {
   static Color get surfaceSplashBottom =>
       _isDark ? const Color(0xFF0D1517) : const Color(0xFFEAF2F1);
 
+  // Texte dark adouci : on évite le blanc pur (#F5F7F7 éblouit sur fond
+  // sombre). ~90 % de blanc = lisible sans « brûler » les yeux.
   static Color get titleColor =>
-      _isDark ? const Color(0xFFF5F7F7) : const Color(0xFF111827);
+      _isDark ? const Color(0xFFE6EBEA) : const Color(0xFF111827);
   static Color get bodyColor =>
-      _isDark ? const Color(0xFFC8D2D0) : const Color(0xFF4B5563);
+      _isDark ? const Color(0xFFB6C0BE) : const Color(0xFF4B5563);
   static Color get hintColor =>
-      _isDark ? const Color(0xFF91A09D) : const Color(0xFF8A94A6);
+      _isDark ? const Color(0xFF879491) : const Color(0xFF8A94A6);
   static Color get onDark =>
       _isDark ? const Color(0xFF0A0F0B) : const Color(0xFF1B1C1A);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  static const Color outlineVariant = Color(0xFFD7DEE3);
+  // Bordure/diviseur theme-aware : en dark, un gris clair (#D7DEE3) jure ;
+  // on prend une ligne sombre douce, juste au-dessus des surfaces.
+  static Color get outlineVariant => _amoled
+      ? const Color(0xFF1C1F21)
+      : (_isDark ? const Color(0xFF2C3739) : const Color(0xFFD7DEE3));
   static const Color error = Color(0xFFBA1A1A);
   static const Color success = Color(0xFF2F7D5B);
   static const Color warning = Color(0xFFB45309);
+
+  // Variantes PREMIER-PLAN theme-aware (texte/icône/bordure d'état sur surface
+  // sombre). En dark, les états sombres (#BA1A1A, #2F7D5B, #B45309) vibrent /
+  // manquent de lisibilité → on les éclaircit. En light == version pleine.
+  // NE PAS utiliser comme fond plein portant du texte blanc (garder error/…).
+  static Color get errorAccent => _isDark ? const Color(0xFFFF6B6B) : error;
+  static Color get successAccent => _isDark ? const Color(0xFF4ED98A) : success;
+  static Color get warningAccent => _isDark ? const Color(0xFFF2A93C) : warning;
 
   static const Color successStrong = Color(0xFF087443);
   static const Color successSwitch = Color(0xFF0F9D58);
@@ -92,6 +157,23 @@ class AppColors {
       _isDark ? const Color(0xFF102236) : const Color(0xFFE8F1FF);
   static Color get categoryPinkSoft =>
       _isDark ? const Color(0xFF3A1225) : const Color(0xFFFFE7F1);
+
+  // Paliers de boost d'offre (aligne sur le web). Or (Pro) > ambre (Populaire) >
+  // ambre soft (Essentiel). Opaques, fort contraste, lisibles sur degrade.
+  static const Color boostGold = Color(0xFFE89400);
+  static const Color onBoostGold = Color(0xFF2A1500);
+  static const Color boostAmber = Color(0xFFF7B500);
+  static const Color onBoostAmber = Color(0xFF1B1300);
+  static const Color boostSoft = Color(0xFFFFF3D4);
+  static const Color onBoostSoft = Color(0xFF8A5A00);
+
+  // Vert vif de celebration (confetti / match). Plus saturé que [success].
+  static const Color celebrationGreen = Color(0xFF00E676);
+  static const Color celebrationGold = Color(0xFFFFEB3B);
+
+  // Surface sombre profonde pour overlays/dialogs immersifs (independante du
+  // theme : ces surfaces restent sombres en light comme en dark).
+  static const Color surfaceImmersive = Color(0xFF1A1C2E);
 
   static const Color paymentOrangeMoney = Color(0xFFFF7900);
   static const Color paymentWave = Color(0xFF1D9BF0);
@@ -222,20 +304,20 @@ class AppColors {
   static List<BoxShadow> get ambientShadow => [
         BoxShadow(
           color: (_isDark ? Colors.black : primaryDark).withValues(
-            alpha: _isDark ? 0.34 : 0.07,
+            alpha: _isDark ? 0.22 : 0.07,
           ),
-          blurRadius: _isDark ? 22 : 32,
+          blurRadius: _isDark ? 18 : 32,
           spreadRadius: 0,
-          offset: const Offset(0, 8),
+          offset: Offset(0, _isDark ? 6 : 8),
         ),
       ];
 
   static List<BoxShadow> get lightShadow => [
         BoxShadow(
           color: (_isDark ? Colors.black : primaryDark).withValues(
-            alpha: _isDark ? 0.28 : 0.05,
+            alpha: _isDark ? 0.16 : 0.05,
           ),
-          blurRadius: _isDark ? 14 : 16,
+          blurRadius: _isDark ? 12 : 16,
           offset: const Offset(0, 4),
         ),
       ];
@@ -258,6 +340,37 @@ class AppColors {
     final hash = seed.codeUnits.fold<int>(0, (acc, c) => (acc + c) & 0xFFFF);
     return avatarPalette[hash % avatarPalette.length];
   }
+
+  // Mesh « marque » multi-stops doux pour fonds hero (top bar accueil, etc.).
+  // Diagonale vert vibrant → olive profond, très désaturé en dark pour rester
+  // calme. À poser SOUS du contenu (faible alpha conseillé via les helpers).
+  static LinearGradient get meshBrand => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: _isDark
+            ? const [
+                Color(0xFF13322F),
+                Color(0xFF173B33),
+                Color(0xFF0F1518),
+              ]
+            : const [
+                Color(0xFFEAF7EF),
+                Color(0xFFE0F1E8),
+                Color(0xFFF7F8FA),
+              ],
+        stops: const [0.0, 0.5, 1.0],
+      );
+
+  /// Voile mesh radial subtil (halo de marque) pour accentuer un coin de hero.
+  static RadialGradient get meshBrandGlow => RadialGradient(
+        center: const Alignment(-0.8, -1.0),
+        radius: 1.4,
+        colors: [
+          primaryMedium.withValues(alpha: _isDark ? 0.16 : 0.14),
+          primaryMedium.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 1.0],
+      );
 
   static List<BoxShadow> get glowShadow => [
         BoxShadow(

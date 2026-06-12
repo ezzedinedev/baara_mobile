@@ -32,9 +32,8 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final grad = gradient ?? AppColors.primaryGradient;
     final disabledGradient = LinearGradient(
-      colors: grad.colors
-          .map((color) => color.withValues(alpha: 0.45))
-          .toList(),
+      colors:
+          grad.colors.map((color) => color.withValues(alpha: 0.45)).toList(),
       begin: grad.begin,
       end: grad.end,
     );

@@ -4,6 +4,7 @@ import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -153,6 +154,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 }
 
+/// Avatar initiales avec anneau halo doux, ombres en couches, squircle pill.
+/// Conserve la logique d'initiales — visuel uniquement amélioré.
 class _ProfileInitials extends StatelessWidget {
   const _ProfileInitials({required this.firstName, required this.lastName});
 
@@ -170,82 +173,113 @@ class _ProfileInitials extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 148,
-      height: 148,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-        boxShadow: AppColors.ambientShadow,
-      ),
-      child: Center(
-        child: Text(
-          _initials,
-          style: AppTextStyles.displayLg.copyWith(
-            color: AppColors.onPrimary,
-            fontSize: 42,
-            fontWeight: FontWeight.w900,
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Halo diffus (anneau doux, pas de blur)
+        Container(
+          width: 156,
+          height: 156,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primaryAccent.withValues(alpha: 0.10),
           ),
         ),
-      ),
+        // Avatar principal avec ombres en couches
+        Container(
+          width: 148,
+          height: 148,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+            boxShadow: [
+              ...AppColors.lightShadow,
+              ...AppColors.ambientShadow,
+            ],
+            border: Border.all(
+              color: AppColors.primaryAccent.withValues(alpha: 0.25),
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              _initials,
+              style: AppTextStyles.displayLg.copyWith(
+                color: AppColors.onPrimary,
+                fontSize: 42,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
 /// Entrée vers l'éditeur de parcours (expériences & formations).
+/// Conteneur en squircle, Material requis pour l'InkWell, PressScale spring.
 class _ParcoursTile extends StatelessWidget {
   const _ParcoursTile({required this.onTap});
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.25),
+    return PressScale(
+      onTap: onTap,
+      child: Material(
+        color: AppColors.surfaceCard,
+        // Squircle xl (rayon perçu 24) — cohérent avec les cartes du design 2026
+        borderRadius: AppShapes.cardRadius,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppShapes.cardRadius,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: ShapeDecoration(
+              shape: AppShapes.cardBordered(
+                AppColors.outlineVariant.withValues(alpha: 0.25),
+              ),
+              shadows: [
+                ...AppColors.lightShadow,
+                ...AppColors.ambientShadow,
+              ],
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                // Vignette squircle
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                    borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                  ),
+                  child: Icon(IconlyLight.work, color: AppColors.primaryAccent),
                 ),
-                child: const Icon(IconlyLight.work, color: AppColors.primary),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Expériences & formations',
-                      style: AppTextStyles.titleMd
-                          .copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Ajoutez ou modifiez votre parcours',
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.hintColor),
-                    ),
-                  ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expériences & formations',
+                        style: AppTextStyles.titleMd
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ajoutez ou modifiez votre parcours',
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.hintColor),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.outlineVariant),
-            ],
+                Icon(IconlyLight.arrow_right_2,
+                    color: AppColors.outlineVariant),
+              ],
+            ),
           ),
         ),
       ),
