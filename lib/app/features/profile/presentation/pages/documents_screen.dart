@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -21,30 +23,10 @@ class DocumentsScreen extends GetView<DocumentsController> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
-              child: Row(
-                children: [
-                  AppBackButton(onTap: () => Get.back<void>()),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Mes documents',
-                            style: AppTextStyles.titleLg
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        Text('Diplômes, certificats, lettres…',
-                            style: AppTextStyles.bodySm
-                                .copyWith(color: AppColors.hintColor)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          AppSubHeader(
+            title: 'Mes documents',
+            subtitle: 'Diplômes, certificats, lettres…',
+            onBack: () => Get.back<void>(),
           ),
           Expanded(
             child: Obx(() {
@@ -53,26 +35,28 @@ class DocumentsScreen extends GetView<DocumentsController> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   itemCount: 4,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, __) => const SkeletonBox(height: 76, radius: 16),
+                  itemBuilder: (_, __) =>
+                      const SkeletonBox(height: 76, radius: 16),
                 );
               }
               if (controller.errorMessage.value != null &&
                   controller.documents.isEmpty) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
               if (controller.documents.isEmpty) {
-                return RefreshIndicator(
-                  color: AppColors.primary,
+                return AppRefreshIndicator(
+                  color: AppColors.primaryAccent,
                   onRefresh: controller.load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: const [
                       SizedBox(height: 80),
                       EmptyState(
-                        icon: IconlyLight.document,
+                        illustration: EmptyDocumentsIllustration(),
                         title: 'Aucun document',
                         subtitle:
                             'Ajoutez vos diplômes, certificats et lettres. Ils sont '
@@ -82,8 +66,8 @@ class DocumentsScreen extends GetView<DocumentsController> {
                   ),
                 );
               }
-              return RefreshIndicator(
-                color: AppColors.primary,
+              return AppRefreshIndicator(
+                color: AppColors.primaryAccent,
                 onRefresh: controller.load,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -92,13 +76,16 @@ class DocumentsScreen extends GetView<DocumentsController> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final doc = controller.documents[index];
-                    return _DocumentCard(
-                      doc: doc,
-                      onOpen: () {
-                        AppHaptics.tap();
-                        controller.open(doc);
-                      },
-                      onDelete: () => _confirmDelete(context, doc),
+                    return RevealOnMount(
+                      delay: Duration(milliseconds: 60 * index),
+                      child: _DocumentCard(
+                        doc: doc,
+                        onOpen: () {
+                          AppHaptics.tap();
+                          controller.open(doc);
+                        },
+                        onDelete: () => _confirmDelete(context, doc),
+                      ),
                     );
                   },
                 ),
@@ -130,22 +117,16 @@ class DocumentsScreen extends GetView<DocumentsController> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
       ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+            const SheetHandle(),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
@@ -159,9 +140,18 @@ class DocumentsScreen extends GetView<DocumentsController> {
             const SizedBox(height: 8),
             ...DocumentType.all.map(
               (t) => ListTile(
-                leading: Icon(_iconFor(t.key), color: AppColors.primary),
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: ShapeDecoration(
+                    color: AppColors.surfaceIconSoft,
+                    shape: AppShapes.squircle(AppRadius.sm),
+                  ),
+                  child: Icon(_iconFor(t.key),
+                      color: AppColors.primaryAccent, size: 18),
+                ),
                 title: Text(t.label, style: AppTextStyles.titleMd),
-                trailing: const Icon(Icons.chevron_right_rounded,
+                trailing: Icon(IconlyLight.arrow_right_2,
                     color: AppColors.outlineVariant),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -176,11 +166,12 @@ class DocumentsScreen extends GetView<DocumentsController> {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, CandidateDocument doc) async {
+  Future<void> _confirmDelete(
+      BuildContext context, CandidateDocument doc) async {
     final ok = await showConfirmSheet(
       context: context,
       icon: IconlyLight.delete,
-      iconColor: AppColors.error,
+      iconColor: AppColors.errorAccent,
       title: 'Supprimer ce document ?',
       message: '« ${doc.title} » sera retiré de votre espace.',
       confirmLabel: 'Supprimer',
@@ -222,30 +213,31 @@ class _DocumentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(16),
+      shape: AppShapes.cardBordered(AppColors.outlineVariant),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(16),
+        customBorder: AppShapes.cardBordered(AppColors.outlineVariant),
         child: Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.2),
-            ),
+          decoration: ShapeDecoration(
+            color: Colors.transparent,
+            shape: AppShapes.cardBordered(AppColors.outlineVariant),
+            shadows: [
+              ...AppColors.lightShadow,
+            ],
           ),
           child: Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                decoration: ShapeDecoration(
+                  color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                  shape: AppShapes.squircle(AppRadius.sm),
                 ),
                 child: Icon(
                   doc.isImage ? IconlyBold.image : IconlyBold.document,
-                  color: AppColors.primary,
+                  color: AppColors.primaryAccent,
                 ),
               ),
               const SizedBox(width: 12),
@@ -273,7 +265,8 @@ class _DocumentCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(IconlyLight.delete, color: AppColors.error),
+                icon: Icon(IconlyLight.delete, color: AppColors.errorAccent),
+                tooltip: 'Supprimer',
                 onPressed: onDelete,
               ),
             ],

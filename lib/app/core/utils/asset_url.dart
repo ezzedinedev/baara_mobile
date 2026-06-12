@@ -1,6 +1,5 @@
 import '../constants/api_constants.dart';
 
-
 /// initials, etc.) si l'URL renvoie 404.
 String resolveAssetUrl(String value) {
   final trimmed = value.trim();

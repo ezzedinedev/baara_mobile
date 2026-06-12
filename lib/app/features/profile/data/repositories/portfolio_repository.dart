@@ -89,8 +89,8 @@ class PortfolioRepository {
 
   void _ensureSuccess(Map<String, dynamic> response) {
     final statusCode = response['statusCode'] as int?;
-    final success =
-        response['success'] as bool? ?? (statusCode != null && statusCode < 400);
+    final success = response['success'] as bool? ??
+        (statusCode != null && statusCode < 400);
     if (!success) {
       throw ApiException(
         message: response['message']?.toString() ?? 'Opération impossible.',

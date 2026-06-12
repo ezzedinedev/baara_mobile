@@ -28,8 +28,7 @@ class UpcomingInterview {
       contractType: offer?['contract_type']?.toString(),
       companyName: employer?['company_name']?.toString(),
       companyLogoUrl: employer?['logo_url']?.toString(),
-      interview:
-          interview == null ? null : InterviewInfo.fromJson(interview),
+      interview: interview == null ? null : InterviewInfo.fromJson(interview),
     );
   }
 }

@@ -36,7 +36,6 @@ class ApiConstants {
     return 'http://127.0.0.1:8000';
   }
 
-
   static bool _isLocalDevHost(String host) {
     if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
       return true;
@@ -63,10 +62,8 @@ class ApiConstants {
     if (uri == null || uri.scheme.isEmpty || uri.host.isEmpty) {
       throw ArgumentError('Configuration API invalide.');
     }
-    
-    if (!kDebugMode &&
-        uri.scheme != 'https' &&
-        !_isLocalDevHost(uri.host)) {
+
+    if (!kDebugMode && uri.scheme != 'https' && !_isLocalDevHost(uri.host)) {
       throw ArgumentError('Configuration API invalide.');
     }
 
@@ -84,7 +81,6 @@ class ApiConstants {
   }
 
   static String get baseUrl => '$resolvedHost/api/v1';
-
 
   /// donc les hôtes locaux vers [resolvedHost] (le MÊME hôte que l'API), et on
 
@@ -106,13 +102,16 @@ class ApiConstants {
   }
 
   static List<String> get baseUrlCandidates {
+    // IMPORTANT : l'hôte CORRECT pour la plateforme doit être en PREMIER.
+    // Sur émulateur Android, 127.0.0.1 = l'émulateur lui-même (mort) ; le bon
+    // hôte est 10.0.2.2. Le mettre en tête évite ~3,5 s de retry/backoff sur
+    // un localhost injoignable à chaque requête à froid (= « lent partout »).
     final hosts = <String>[
       if (apiBaseUrlOverride.trim().isNotEmpty)
         _sanitizeHost(apiBaseUrlOverride),
       if (webBaseUrl.trim().isNotEmpty) _sanitizeHost(webBaseUrl),
-      if (kDebugMode && defaultTargetPlatform == TargetPlatform.android)
-        'http://127.0.0.1:8000',
       _sanitizeHost(_defaultHost),
+      // Replis (uniquement si le défaut échoue) : iOS sim / desktop → 127.0.0.1.
       if (kDebugMode) 'http://10.0.2.2:8000',
       if (kDebugMode) 'http://127.0.0.1:8000',
     ];
@@ -165,8 +164,7 @@ class ApiConstants {
       '/profile/cv-builder/import/analyze';
   static const String profileCvImportImprove =
       '/profile/cv-builder/import/improve';
-  static const String profileCvImportApply =
-      '/profile/cv-builder/import/apply';
+  static const String profileCvImportApply = '/profile/cv-builder/import/apply';
   static const String profileCvImportDownload =
       '/profile/cv-builder/import/download';
 
@@ -239,7 +237,16 @@ class ApiConstants {
   static const String conversations = '/messages';
   static String conversation(String id) => '/messages/$id';
   static String conversationSend(String id) => '/messages/$id/send';
+  static String conversationUpload(String id) => '/messages/$id/upload';
   static String conversationRead(String id) => '/messages/$id/read';
+  // Cluster B — messagerie temps réel.
+  static String messageTyping(String conversationId) =>
+      '/messages/$conversationId/typing';
+  static String messageReact(String messageId) => '/messages/$messageId/react';
+  // Wave 2 — réponses suggérées IA pour une conversation → {suggestions:[3], fallback}.
+  // Peut renvoyer 502 (« assistant indisponible ») → fallback UX silencieux.
+  static String messageSuggestions(String conversationId) =>
+      '/messages/$conversationId/suggestions';
 
   static const String notifications = '/notifications';
   static String notification(String id) => '/notifications/$id';
@@ -252,6 +259,8 @@ class ApiConstants {
   // ─────────── Communauté / réseau professionnel ───────────
   // Backend : Api/V1/CommunityApiController, préfixe /community.
   static const String communityFeed = '/community/feed';
+  // Explore : posts publics tendance, même forme paginée que le feed.
+  static const String communityExplore = '/community/explore';
   static const String communitySuggestions = '/community/suggestions';
   static const String communitySearch = '/community/search';
   static const String communityPosts = '/community/posts';
@@ -259,14 +268,71 @@ class ApiConstants {
   static String communityPostReact(String id) => '/community/posts/$id/react';
   static String communityPostRepost(String id) => '/community/posts/$id/repost';
   static String communityPostReport(String id) => '/community/posts/$id/report';
-  static String communityPostComments(String id) => '/community/posts/$id/comments';
+  static String communityPostComments(String id) =>
+      '/community/posts/$id/comments';
   static String communityComment(String id) => '/community/comments/$id';
+  // Réaction (toggle) sur un commentaire : body {type?} (défaut 'like')
+  // → {reactions_count, my_reaction}.
+  static String communityCommentReact(String id) =>
+      '/community/comments/$id/react';
+  // ── Wave 2 — Contenu riche (sondages, enregistrés, aperçu de lien) ────────
+  // Voter à un sondage (toggle) : body {option_ids:[...]} → poll mis à jour.
+  static String communityPollVote(String id) => '/community/polls/$id/vote';
+  // Enregistrer (POST) / retirer (DELETE) une publication → {is_saved}.
+  static String communityPostSave(String id) => '/community/posts/$id/save';
+  // Publications enregistrées (paginé, même forme que le feed).
+  static const String communitySaved = '/community/saved';
+  // Aperçu live d'un lien pour le composer : ?url= → {url,title,description,image}.
+  static const String communityLinkPreview = '/community/link-preview';
+  // Édition (PUT) d'une publication / d'un commentaire par son auteur.
+  static String communityPostUpdate(String id) => '/community/posts/$id';
+  static String communityCommentUpdate(String id) => '/community/comments/$id';
+  // Fil d'un hashtag : même forme paginée que le feed + clé `tag`.
+  static String communityHashtag(String tag) =>
+      '/community/hashtag/${Uri.encodeComponent(tag)}';
+  // Hashtags tendance : data:[{tag,count}].
+  static const String communityTrendingHashtags =
+      '/community/trending-hashtags';
+  // Autocomplétion @mentions : data:[{id,name,avatar_url,headline}] (max 8).
+  static const String communityMentionables = '/community/mentionables';
+  // ── Wave 2 — Assistant IA (Mistral). Toutes peuvent renvoyer 502 (« indispo »).
+  // Compose : aide à la rédaction d'une publication ({draft, action}).
+  static const String communityAiCompose = '/community/ai/compose';
+  // Résumé IA d'une publication existante → {summary}.
+  static String communityPostSummarize(String id) =>
+      '/community/posts/$id/summarize';
+  // Traduction IA d'une publication ({lang}) → {translation, lang}.
+  static String communityPostTranslate(String id) =>
+      '/community/posts/$id/translate';
+
   static String communityUserFollow(String id) => '/community/users/$id/follow';
-  static String communityUserConnect(String id) => '/community/users/$id/connect';
+  static String communityUserConnect(String id) =>
+      '/community/users/$id/connect';
   static const String communityConnections = '/community/connections';
   static String communityConnectionRespond(String id) =>
       '/community/connections/$id/respond';
   static String communityUser(String id) => '/community/users/$id';
+  // Cluster D — Graphe social & sécurité.
+  // Blocage d'un membre : POST pour bloquer, DELETE pour débloquer (même chemin).
+  // Bloquer retire aussi connexion + follow côté serveur → {is_blocked: bool}.
+  static String communityUserBlock(String id) => '/community/users/$id/block';
+  // « Qui a vu mon profil » : {viewers:[...], total}.
+  static const String communityProfileViews = '/community/profile-views';
+  // Compétences du profil. POST {name} crée ; liste exposée via le profil user.
+  static const String communitySkills = '/community/skills';
+  // Suppression d'une compétence (DELETE) sur son propre profil.
+  static String communitySkill(String id) => '/community/skills/$id';
+  // Recommandation (endorse) d'une compétence : POST + DELETE → compteur.
+  static String communitySkillEndorse(String id) =>
+      '/community/skills/$id/endorse';
+
+  // Stories éphémères (24 h). Backend : Api/V1/StoryApiController.
+  static const String stories = '/stories';
+  static String storyView(String id) => '/stories/$id/view';
+  static String storyReact(String id) => '/stories/$id/react';
+  static String storyReply(String id) => '/stories/$id/reply';
+  static String storyViewers(String id) => '/stories/$id/viewers';
+  static String story(String id) => '/stories/$id';
 
   // ─────────── Temps réel (Laravel Reverb / protocole Pusher) ───────────
   // Endpoint d'auth des canaux privés (Sanctum) : POST {socket_id, channel_name}
@@ -288,7 +354,9 @@ class ApiConstants {
   );
 
   static String get reverbHost {
-    if (_reverbHostOverride.trim().isNotEmpty) return _reverbHostOverride.trim();
+    if (_reverbHostOverride.trim().isNotEmpty) {
+      return _reverbHostOverride.trim();
+    }
     final uri = Uri.tryParse(resolvedHost);
     return uri?.host ?? '127.0.0.1';
   }

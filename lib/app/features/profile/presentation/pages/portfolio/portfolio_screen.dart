@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -22,13 +24,29 @@ class PortfolioScreen extends GetView<PortfolioController> {
       floatingActionButton: Obx(
         () => controller.items.isEmpty
             ? const SizedBox.shrink()
-            : FloatingActionButton(
-                backgroundColor: AppColors.primary,
-                onPressed: () {
+            : PressScale(
+                onTap: () {
                   AppHaptics.tap();
                   Get.toNamed(AppRoutes.profilePortfolioEdit);
                 },
-                child: const Icon(Icons.add_rounded, color: AppColors.onPrimary),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: ShapeDecoration(
+                    color: AppColors.primary,
+                    shape: AppShapes.squircle(AppRadius.lg),
+                    shadows: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                      ...AppColors.ambientShadow,
+                    ],
+                  ),
+                  child:
+                      const Icon(IconlyLight.plus, color: AppColors.onPrimary),
+                ),
               ),
       ),
       body: Column(
@@ -48,28 +66,30 @@ class PortfolioScreen extends GetView<PortfolioController> {
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
               if (controller.items.isEmpty) {
                 return EmptyState(
-                  icon: IconlyLight.work,
+                  illustration: const EmptyPortfolioIllustration(),
                   title: 'Aucune réalisation',
                   subtitle:
                       'Ajoutez vos projets, créations et accomplissements pour valoriser votre profil.',
                   actionLabel: 'Ajouter un projet',
-                  onAction: () =>
-                      Get.toNamed(AppRoutes.profilePortfolioEdit),
+                  onAction: () => Get.toNamed(AppRoutes.profilePortfolioEdit),
                 );
               }
-              return RefreshIndicator(
-                color: AppColors.primary,
+              return AppRefreshIndicator(
+                color: AppColors.primaryAccent,
                 onRefresh: controller.load,
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 96),
                   itemCount: controller.items.length,
-                  itemBuilder: (context, index) =>
-                      _PortfolioCard(item: controller.items[index]),
+                  itemBuilder: (context, index) => RevealOnMount(
+                    delay: Duration(milliseconds: 60 * index),
+                    child: _PortfolioCard(item: controller.items[index]),
+                  ),
                 ),
               );
             }),
@@ -95,10 +115,13 @@ class _PortfolioCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppColors.lightShadow,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: [
+            ...AppColors.lightShadow,
+            ...AppColors.ambientShadow,
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,13 +131,13 @@ class _PortfolioCard extends StatelessWidget {
                 _TypeBadge(type: item.type),
                 const Spacer(),
                 Obx(() => controller.deletingId.value == item.id
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.error),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.errorAccent),
                         ),
                       )
                     : GestureDetector(
@@ -145,13 +168,13 @@ class _PortfolioCard extends StatelessWidget {
                     .map((t) => Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceSelected,
-                            borderRadius: BorderRadius.circular(999),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: AppShapes.pill,
                           ),
                           child: Text(t,
                               style: AppTextStyles.labelSm.copyWith(
-                                  color: AppColors.primary,
+                                  color: AppColors.surfaceSelected,
                                   fontWeight: FontWeight.w700)),
                         ))
                     .toList(),
@@ -161,13 +184,13 @@ class _PortfolioCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.link_rounded,
-                      size: 14, color: AppColors.primary),
+                  Icon(Icons.link_rounded,
+                      size: 14, color: AppColors.primaryAccent),
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(item.externalUrl!,
                         style: AppTextStyles.bodySm
-                            .copyWith(color: AppColors.primary),
+                            .copyWith(color: AppColors.primaryAccent),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                   ),
@@ -185,7 +208,7 @@ class _PortfolioCard extends StatelessWidget {
     final confirmed = await showConfirmSheet(
       context: context,
       icon: IconlyLight.delete,
-      iconColor: AppColors.error,
+      iconColor: AppColors.errorAccent,
       title: 'Supprimer ce projet ?',
       message: 'Cette action est définitive.',
       confirmLabel: 'Supprimer',
@@ -211,13 +234,13 @@ class _TypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceIconSoft,
-        borderRadius: BorderRadius.circular(999),
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: AppShapes.pill,
       ),
       child: Text(type.label,
           style: AppTextStyles.labelSm.copyWith(
-              color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
+              color: AppColors.onPrimary, fontWeight: FontWeight.w700)),
     );
   }
 }

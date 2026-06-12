@@ -1,6 +1,7 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,12 +11,19 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'package:opportune_bf/app/core/services/auth_token_store.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/training.dart';
 import '../controllers/training_player_controller.dart';
+
+/// Rayon squircle commun des cadres média (vidéo / PDF / image / Office) du
+/// lecteur de leçon — langage 2026 (coins continus).
+final BorderRadius _mediaRadius = AppShapes.squircleRadius(AppRadius.md);
 
 /// Lecteur de leçon multimédia restauré : affiche la leçon (module) courante
 /// selon son type (vidéo / PDF / image / texte / lien), permet de naviguer
@@ -63,7 +71,7 @@ class _TrainingLessonScreenState extends State<TrainingLessonScreen> {
           title: Text(widget.training.title, style: AppTextStyles.titleMd),
         ),
         body: const EmptyState(
-          icon: Icons.menu_book_outlined,
+          illustration: EmptyTrainingsIllustration(),
           title: 'Aucune leçon disponible',
           subtitle: 'Cette formation ne contient pas encore de leçon.',
         ),
@@ -77,6 +85,8 @@ class _TrainingLessonScreenState extends State<TrainingLessonScreen> {
 
     final controller = _controller;
     final body = SafeArea(
+      // La barre de nav gère sa propre marge basse (SafeArea interne).
+      bottom: false,
       child: Column(
         children: [
           _ProgressBar(current: currentIndex, total: modules.length),
@@ -154,7 +164,8 @@ class _TrainingLessonScreenState extends State<TrainingLessonScreen> {
     );
   }
 
-  Future<void> _onNext(TrainingModule lesson, int currentIndex, bool isLast) async {
+  Future<void> _onNext(
+      TrainingModule lesson, int currentIndex, bool isLast) async {
     AppHaptics.tap();
     final completed = await _markCompleted(lesson);
     if (!mounted) return;
@@ -182,17 +193,20 @@ class _TrainingLessonScreenState extends State<TrainingLessonScreen> {
     final url = lesson.effectiveUrl.trim();
     final uri = Uri.tryParse(url);
     if (url.isEmpty || uri == null || !uri.hasScheme) {
-      AppToast.error('Lien invalide', 'Le lien de la ressource est indisponible.');
+      AppToast.error(
+          'Lien invalide', 'Le lien de la ressource est indisponible.');
       return;
     }
     AppHaptics.tap();
     try {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened) {
-        AppToast.error('Ouverture impossible', 'Aucune application ne peut ouvrir ce lien.');
+        AppToast.error('Ouverture impossible',
+            'Aucune application ne peut ouvrir ce lien.');
       }
     } on Exception {
-      AppToast.error('Ouverture impossible', 'Aucune application ne peut ouvrir ce lien.');
+      AppToast.error(
+          'Ouverture impossible', 'Aucune application ne peut ouvrir ce lien.');
     }
   }
 }
@@ -221,7 +235,7 @@ class _ProgressBar extends StatelessWidget {
               value: value,
               minHeight: 6,
               backgroundColor: AppColors.surfaceHigh,
-              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+              valueColor: AlwaysStoppedAnimation(AppColors.primaryAccent),
             ),
           ),
         ],
@@ -241,12 +255,12 @@ class _LessonInfoCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.20),
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.20),
         ),
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,14 +270,16 @@ class _LessonInfoCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   lesson.title,
-                  style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               if (lesson.duration > 0) ...[
                 const SizedBox(width: 8),
                 Text(
                   '${lesson.duration} min',
-                  style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+                  style:
+                      AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
                 ),
               ],
             ],
@@ -310,33 +326,37 @@ class _NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final busy = controller?.updatingId.value == lessonId;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        boxShadow: AppColors.lightShadow,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: onPrev,
-              icon: const Icon(Icons.chevron_left_rounded),
-              label: const Text('Précédent'),
+    // Barre de navigation des leçons en verre liquide (chrome sticky 2026).
+    return GlassSurface(
+      borderRadius: BorderRadius.zero,
+      blurSigma: 18,
+      specular: false,
+      boxShadow: AppColors.ambientShadow,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onPrev,
+                icon: const Icon(IconlyLight.arrow_left_2),
+                label: const Text('Précédent'),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: GradientButton(
-              label: isLast ? 'TERMINER' : 'SUIVANT',
-              isLoading: busy,
-              borderRadius: 12,
-              height: 48,
-              textColor: AppColors.onPrimary,
-              onPressed: busy ? null : onNext,
+            const SizedBox(width: 10),
+            Expanded(
+              child: GradientButton(
+                label: isLast ? 'TERMINER' : 'SUIVANT',
+                isLoading: busy,
+                borderRadius: 12,
+                height: 48,
+                textColor: AppColors.onPrimary,
+                onPressed: busy ? null : onNext,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -351,9 +371,9 @@ class _LessonTypePill extends StatelessWidget {
     final color = _lessonColor(lesson);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        shape: AppShapes.squircle(AppRadius.xs),
       ),
       child: Text(
         lesson.typeLabel,
@@ -364,7 +384,7 @@ class _LessonTypePill extends StatelessWidget {
 }
 
 Color _lessonColor(TrainingModule lesson) {
-  if (lesson.isVideo) return AppColors.primary;
+  if (lesson.isVideo) return AppColors.primaryAccent;
   if (lesson.isPdf) return AppColors.errorBright;
   if (lesson.isImage) return AppColors.successDark;
   return AppColors.secondary;
@@ -454,7 +474,8 @@ void _openFullscreen(BuildContext context, Widget child) {
                   color: Colors.black54,
                   shape: const CircleBorder(),
                   child: IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: const Icon(IconlyLight.close_square,
+                        color: Colors.white),
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ),
@@ -482,7 +503,8 @@ class _FullscreenButton extends StatelessWidget {
         shape: const CircleBorder(),
         child: IconButton(
           tooltip: 'Plein écran',
-          icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 22),
+          icon: const Icon(Icons.fullscreen_rounded,
+              color: Colors.white, size: 22),
           onPressed: () {
             AppHaptics.tap();
             onTap();
@@ -501,27 +523,29 @@ class _LinkCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PressScale(
+      curve: AppMotion.spring,
       onTap: onOpen,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.22),
+          shape: AppShapes.cardBordered(
+            AppColors.outlineVariant.withValues(alpha: 0.22),
           ),
+          shadows: AppColors.lightShadow,
         ),
         child: Row(
           children: [
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.12),
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                shape: AppShapes.squircle(AppRadius.sm),
               ),
-              child: const Icon(Icons.link_rounded, color: AppColors.primary),
+              child: Icon(Icons.link_rounded, color: AppColors.primaryAccent),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -530,17 +554,19 @@ class _LinkCard extends StatelessWidget {
                 children: [
                   Text(
                     'Ouvrir la ressource',
-                    style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Le lien s\'ouvre dans votre navigateur.',
-                    style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+                    style: AppTextStyles.bodySm
+                        .copyWith(color: AppColors.hintColor),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: AppColors.hintColor),
+            Icon(IconlyLight.arrow_right_2, color: AppColors.hintColor),
           ],
         ),
       ),
@@ -556,25 +582,26 @@ class _MediaUnavailableCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.22),
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.22),
         ),
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         children: [
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.warning.withValues(alpha: 0.14),
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              color: AppColors.warningAccent.withValues(alpha: 0.14),
+              shape: AppShapes.squircle(AppRadius.md),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.cloud_off_rounded,
-              color: AppColors.warning,
+              color: AppColors.warningAccent,
               size: 28,
             ),
           ),
@@ -649,11 +676,12 @@ class _MediaErrorPane extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.warning.withValues(alpha: 0.14),
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: AppColors.warningAccent.withValues(alpha: 0.14),
+                shape: AppShapes.squircle(AppRadius.sm),
               ),
-              child: Icon(icon, color: AppColors.warning, size: 24),
+              child: Icon(icon, color: AppColors.warningAccent, size: 24),
             ),
             const SizedBox(height: 10),
             Text(
@@ -683,7 +711,8 @@ class _MediaErrorPane extends StatelessWidget {
               },
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Réessayer'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryAccent),
             ),
           ],
         ),
@@ -715,7 +744,9 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
   Future<void> _setup() async {
     try {
       final token = await const AuthTokenStore().readTokenOrNull();
-      final headers = token == null ? <String, String>{} : {'Authorization': 'Bearer $token'};
+      final headers = token == null
+          ? <String, String>{}
+          : {'Authorization': 'Bearer $token'};
       final ctrl = VideoPlayerController.networkUrl(
         Uri.parse(widget.url),
         httpHeaders: headers,
@@ -733,10 +764,11 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
           looping: false,
           allowFullScreen: true,
           allowMuting: true,
-          aspectRatio: ctrl.value.aspectRatio == 0 ? 16 / 9 : ctrl.value.aspectRatio,
+          aspectRatio:
+              ctrl.value.aspectRatio == 0 ? 16 / 9 : ctrl.value.aspectRatio,
           materialProgressColors: ChewieProgressColors(
-            playedColor: AppColors.primary,
-            handleColor: AppColors.primary,
+            playedColor: AppColors.primaryAccent,
+            handleColor: AppColors.primaryAccent,
             bufferedColor: AppColors.surfaceHigh,
             backgroundColor: AppColors.surfaceLow,
           ),
@@ -758,7 +790,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: _mediaRadius,
       child: AspectRatio(
         aspectRatio: 16 / 9,
         child: ColoredBox(
@@ -776,8 +808,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                   },
                 )
               : _chewie == null
-                  ? const _MediaLoadingFill(
-                      icon: Icons.play_circle_outline_rounded)
+                  ? const _MediaLoadingFill(icon: IconlyLight.play)
                   : Chewie(controller: _chewie!),
         ),
       ),
@@ -817,21 +848,21 @@ class _InlinePdfPlayerState extends State<_InlinePdfPlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: _mediaRadius,
       child: Container(
         height: 520,
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: _mediaRadius,
           border: Border.all(
             color: AppColors.outlineVariant.withValues(alpha: 0.18),
           ),
         ),
         child: !_ready
-            ? const _MediaLoadingFill(icon: Icons.picture_as_pdf_rounded)
+            ? const _MediaLoadingFill(icon: IconlyLight.paper)
             : _error != null
                 ? _MediaErrorPane(
-                    icon: Icons.picture_as_pdf_rounded,
+                    icon: IconlyLight.paper,
                     title: 'Lecture du document impossible',
                     message: _error!,
                     onRetry: () => setState(() => _error = null),
@@ -898,7 +929,7 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
         maxScale: PhotoViewComputedScale.covered * 4,
         backgroundDecoration: const BoxDecoration(color: Colors.black),
         loadingBuilder: (context, event) =>
-            const _MediaLoadingFill(icon: Icons.image_outlined),
+            const _MediaLoadingFill(icon: IconlyLight.image),
         errorBuilder: (_, __, ___) => Center(
           child: Icon(Icons.broken_image_outlined,
               color: AppColors.hintColor, size: 42),
@@ -908,12 +939,12 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: _mediaRadius,
       child: Container(
         height: 360,
         color: AppColors.surfaceHigh,
         child: !_ready
-            ? const _MediaLoadingFill(icon: Icons.image_outlined)
+            ? const _MediaLoadingFill(icon: IconlyLight.image)
             : Stack(
                 children: [
                   Positioned.fill(child: _photoView()),
@@ -970,7 +1001,7 @@ class _InlineYoutubePlayerState extends State<_InlineYoutubePlayer> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: _mediaRadius,
       child: YoutubePlayer(
         controller: _controller,
         aspectRatio: 16 / 9,
@@ -993,12 +1024,12 @@ class _InlineOfficeViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: _mediaRadius,
       child: Container(
         height: 520,
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: _mediaRadius,
           border: Border.all(
             color: AppColors.outlineVariant.withValues(alpha: 0.18),
           ),
@@ -1068,7 +1099,7 @@ class _OfficeWebViewState extends State<_OfficeWebView> {
   Widget build(BuildContext context) {
     if (_error) {
       return _MediaErrorPane(
-        icon: Icons.description_outlined,
+        icon: IconlyLight.paper,
         title: 'Document illisible',
         message:
             'Ce document n\'a pas pu être affiché. Vérifie ta connexion puis réessaie.',
@@ -1086,7 +1117,7 @@ class _OfficeWebViewState extends State<_OfficeWebView> {
         Positioned.fill(child: WebViewWidget(controller: _controller)),
         if (_loading)
           const Positioned.fill(
-            child: _MediaLoadingFill(icon: Icons.description_outlined),
+            child: _MediaLoadingFill(icon: IconlyLight.paper),
           ),
       ],
     );

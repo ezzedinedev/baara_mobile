@@ -4,6 +4,7 @@ abstract class ITrainingRepository {
   Future<List<Training>> getTrainings({int page = 1});
   Future<Training?> getTrainingById(String id);
   Future<bool> enrollInTraining(String trainingId);
+
   /// Met à jour la progression d'une formation.
   ///
   /// [completedModuleIds] = l'ENSEMBLE complet des modules terminés. Le backend

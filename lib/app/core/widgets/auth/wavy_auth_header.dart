@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_shapes.dart';
 import '../../theme/app_text_styles.dart';
-import '../../utils/haptics.dart';
-import '../common/app_icon_button.dart';
+import '../common/app_back_button.dart';
 import '../common/wavy_decorations.dart';
 
 /// [height] contrôle la hauteur totale (landing = ~60% écran, sign up = ~35%).
@@ -37,14 +37,20 @@ class WavyAuthHeader extends StatelessWidget {
     // les paddings pour rentrer dans 150dp. La vague (~40dp) reste lisible et
     // l'icone ne deborde plus sur petits ecrans (Tecno KG5j) ni sur appareils
     // avec status bar haute / notch.
-    final isCompact = height < 200;
+    // 200 inclus dans le compact : sinon icône 72 + titre + réserve 60 ne
+    // tiennent pas sous la status bar → overflow.
+    final isCompact = height < 220;
     final iconSize = isCompact ? 48.0 : 72.0;
     final iconInnerSize = isCompact ? 24.0 : 36.0;
     final topGap = isCompact ? 6.0 : 20.0;
     final bottomReserve = isCompact ? 36.0 : 60.0;
+    // La hauteur design s'AJOUTE à la status bar (au lieu d'être rognée par
+    // elle) → le contenu dispose toujours de `height` réels, plus d'overflow
+    // selon le notch/la status bar de l'appareil.
+    final topInset = MediaQuery.of(context).padding.top;
 
     return SizedBox(
-      height: height,
+      height: height + topInset,
       width: double.infinity,
       child: ClipPath(
         clipper: const WaveClipper(),
@@ -64,11 +70,9 @@ class WavyAuthHeader extends StatelessWidget {
               Positioned(
                 top: MediaQuery.of(context).padding.top + 8,
                 left: 14,
-                child: AppIconButton(
-                  onBrandHeader: true,
-                  icon: Icons.arrow_back_ios_new_rounded,
+                child: AppBackButton(
+                  onDark: true,
                   onTap: () {
-                    AppHaptics.tap();
                     if (onLeadingTap != null) {
                       onLeadingTap!();
                     } else {
@@ -93,10 +97,19 @@ class WavyAuthHeader extends StatelessWidget {
                         height: iconSize,
                         decoration: BoxDecoration(
                           color: AppColors.onPrimary.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
+                          borderRadius:
+                              AppShapes.squircleRadius(iconSize * 0.32),
                           border: Border.all(
                             color: AppColors.onPrimary.withValues(alpha: 0.24),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.onPrimary.withValues(alpha: 0.12),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
                         child: Icon(
                           foregroundIcon,
@@ -114,10 +127,9 @@ class WavyAuthHeader extends StatelessWidget {
                       Text(
                         title!,
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.displayMd.copyWith(
+                        style: AppTextStyles.displayHero.copyWith(
                           color: AppColors.onPrimary,
-                          fontSize: isCompact ? 22 : 30,
-                          fontWeight: FontWeight.w800,
+                          fontSize: isCompact ? 24 : 32,
                         ),
                       ),
                     if (subtitle != null) ...[
@@ -143,4 +155,3 @@ class WavyAuthHeader extends StatelessWidget {
     );
   }
 }
-

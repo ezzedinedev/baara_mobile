@@ -144,7 +144,38 @@ class AppTextStyles {
   static TextStyle get splashPercent => GoogleFonts.manrope(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: AppColors.primary,
+        color: AppColors.primaryAccent,
         letterSpacing: 0,
+      );
+
+  // ── Styles « expressive » 2026 (additifs, pour hero / chiffres clés) ──────
+  // Poids très lourds + letter-spacing serré pour une présence éditoriale
+  // moderne. Même police (Manrope) que le reste de la charte.
+
+  /// Hero display géant (titres d'accroche, salutations vitrine).
+  static TextStyle get displayHero => GoogleFonts.manrope(
+        fontSize: 34,
+        fontWeight: FontWeight.w800,
+        color: AppColors.titleColor,
+        letterSpacing: -1.0,
+        height: 1.04,
+      );
+
+  /// Variante encore plus imposante pour les très grands écrans / splash hero.
+  static TextStyle get displayXxl => GoogleFonts.manrope(
+        fontSize: 44,
+        fontWeight: FontWeight.w900,
+        color: AppColors.titleColor,
+        letterSpacing: -1.2,
+        height: 1.0,
+      );
+
+  /// Chiffre clé en avant (compteurs, scores, stats) — très lourd, serré.
+  static TextStyle get heroNumber => GoogleFonts.manrope(
+        fontSize: 30,
+        fontWeight: FontWeight.w900,
+        color: AppColors.titleColor,
+        letterSpacing: -0.8,
+        height: 1.0,
       );
 }

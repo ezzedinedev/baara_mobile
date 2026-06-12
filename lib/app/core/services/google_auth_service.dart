@@ -2,8 +2,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 /// Résultat d'une tentative de sign-in Google.
 class GoogleAuthResult {
-  const GoogleAuthResult._({this.idToken, this.email, this.displayName,
-      this.avatarUrl, this.cancelled = false, this.error});
+  const GoogleAuthResult._(
+      {this.idToken,
+      this.email,
+      this.displayName,
+      this.avatarUrl,
+      this.cancelled = false,
+      this.error});
 
   final String? idToken;
   final String? email;
@@ -73,7 +78,6 @@ class GoogleAuthService {
     }
   }
 
-  
   Future<void> signOut() async {
     try {
       await _googleSignIn.signOut();

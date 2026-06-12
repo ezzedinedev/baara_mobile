@@ -12,7 +12,8 @@ class TrainingRepositoryImpl implements ITrainingRepository {
 
   @override
   Future<List<Training>> getTrainings({int page = 1}) async {
-    final response = await _apiProvider.getJson('${ApiConstants.trainings}?page=$page');
+    final response =
+        await _apiProvider.getJson('${ApiConstants.trainings}?page=$page');
     if (response['success'] == true) {
       final data = response['data'];
       final List<dynamic> items = data is List ? data : (data['data'] ?? []);
@@ -23,7 +24,8 @@ class TrainingRepositoryImpl implements ITrainingRepository {
 
   @override
   Future<Training?> getTrainingById(String id) async {
-    final response = await _apiProvider.getJson('${ApiConstants.trainings}/$id');
+    final response =
+        await _apiProvider.getJson('${ApiConstants.trainings}/$id');
     if (response['success'] == true && response['data'] != null) {
       return TrainingModel.fromJson(response['data']);
     }
@@ -32,7 +34,8 @@ class TrainingRepositoryImpl implements ITrainingRepository {
 
   @override
   Future<bool> enrollInTraining(String trainingId) async {
-    final response = await _apiProvider.postJson(ApiConstants.trainingEnroll(trainingId), {});
+    final response = await _apiProvider
+        .postJson(ApiConstants.trainingEnroll(trainingId), {});
     return response['success'] == true;
   }
 

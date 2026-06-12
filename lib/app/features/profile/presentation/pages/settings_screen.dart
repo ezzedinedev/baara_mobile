@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/app/translations/app_translations.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 
+import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/settings_controller.dart';
 
-/// Paramètres — liste groupée style iOS Réglages : barre simple "Retour /
-/// Paramètres", cartes blanches groupées, icônes carrées arrondies colorées,
-/// lignes-titres + sous-lignes, valeurs à droite, toggles inline.
+/// Paramètres — liste groupée style iOS Réglages : en-tête simple, cartes
+/// groupées, icônes carrées arrondies colorées, lignes-titres + sous-lignes.
+///
+/// Règle d'affordance unifiée :
+/// - **chevron** → ouvre une page ou une feuille de choix ;
+/// - **interrupteur inline** → bascule binaire instantanée.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -22,9 +30,11 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.surfaceLow,
       body: Column(
-        children: const [
-          _TopBar(),
-          Expanded(child: SingleChildScrollView(child: SettingsBody())),
+        children: [
+          AppSubHeader(title: 'Paramètres', onBack: () => Get.back<void>()),
+          const Expanded(
+            child: SingleChildScrollView(child: SettingsBody()),
+          ),
         ],
       ),
     );
@@ -33,210 +43,249 @@ class SettingsScreen extends StatelessWidget {
 
 /// Corps des réglages (Compte / Préférences / Sécurité / À propos / …).
 /// Réutilisable : écran Paramètres autonome ET intégré sous le hero du Profil.
-class SettingsBody extends StatefulWidget {
+/// L'état vit dans [SettingsController] (réactif + persisté), plus de `setState`.
+class SettingsBody extends StatelessWidget {
   const SettingsBody({super.key});
 
   @override
-  State<SettingsBody> createState() => _SettingsBodyState();
-}
-
-class _SettingsBodyState extends State<SettingsBody> {
-  bool _notifications = true;
-  bool _networkActivity = false;
-
-  // Préférences de notification granulaires (clés backend existantes).
-  final _notifPrefs = <String, bool>{
-    'offer_updates': true,
-    'application_updates': true,
-    'match_alerts': true,
-    'message_alerts': true,
-    'training_updates': true,
-  };
-
-  /// Persiste une préférence côté backend (PUT /profile/preferences).
-  Future<bool> _persistPref(Map<String, dynamic> prefs) async {
-    final controller = Get.isRegistered<ProfileController>()
-        ? Get.find<ProfileController>()
-        : null;
-    if (controller == null) return false;
-    return controller.updatePreferences(prefs);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Résilience : selon le point d'entrée (shell à onglets, route dédiée…),
+    // le controller peut ne pas avoir été enregistré par un binding — on le
+    // crée à la volée tant que ProfileController est disponible.
+    final settings = Get.isRegistered<SettingsController>()
+        ? Get.find<SettingsController>()
+        : Get.put(SettingsController(Get.find<ProfileController>()));
     final theme = Get.find<AppThemeController>();
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        40,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-                // Tout sur un seul écran, mais regroupé par thème (libellés
-                // non cliquables) pour un classement clair.
-                const _GroupLabel('Compte'),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.person_rounded,
-                      color: AppColors.categoryBlue,
-                      title: 'Informations personnelles',
-                      onTap: () {
-                        AppHaptics.tap();
-                        Get.toNamed(AppRoutes.profileEdit);
-                      },
-                    ),
-                    _HeaderRow(
-                      icon: Icons.work_rounded,
-                      color: AppColors.categoryPurple,
-                      title: 'Expériences & formations',
-                      onTap: () {
-                        AppHaptics.tap();
-                        Get.toNamed(AppRoutes.profileParcours);
-                      },
-                    ),
-                    _HeaderRow(
-                      icon: Icons.folder_rounded,
-                      color: AppColors.categoryCyan,
-                      title: 'Mes documents',
-                      onTap: () {
-                        AppHaptics.tap();
-                        Get.toNamed(AppRoutes.profileDocuments);
-                      },
-                    ),
-                  ],
+          const SectionLabel('Compte'),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.profile,
+                color: AppColors.categoryBlue,
+                title: 'Informations personnelles',
+                subtitle: 'Gérez les détails de votre compte',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.profileEdit);
+                },
+              ),
+              _HeaderRow(
+                icon: IconlyLight.work,
+                color: AppColors.categoryPurple,
+                title: 'Expériences & formations',
+                subtitle: 'Votre parcours et vos diplômes',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.profileParcours);
+                },
+              ),
+              // Badge = nombre réel de candidatures envoyées (compteur vivant).
+              Obx(() {
+                final count = Get.isRegistered<OfferController>()
+                    ? Get.find<OfferController>().appliedOfferIds.length
+                    : 0;
+                return _HeaderRow(
+                  icon: IconlyLight.paper,
+                  color: AppColors.successDark,
+                  title: 'Mes candidatures',
+                  subtitle: 'Suivez l\'état de vos postulations',
+                  badge: count,
+                  onTap: () {
+                    AppHaptics.tap();
+                    Get.toNamed(AppRoutes.myApplications);
+                  },
+                );
+              }),
+            ],
+          ),
+          const SectionLabel('Préférences'),
+          _Group(
+            rows: [
+              Obx(
+                () => _HeaderRow(
+                  icon: IconlyLight.notification,
+                  color: AppColors.categoryOrange,
+                  title: 'Notifications',
+                  subtitle: 'Offres, messages et suivi des candidatures',
+                  valueLabel: settings.notificationsEnabled.value
+                      ? 'Activées'
+                      : 'Désactivées',
+                  onTap: () => _openNotifications(context, settings),
                 ),
-                const SizedBox(height: 18),
-                const _GroupLabel('Préférences'),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.notifications_rounded,
-                      color: AppColors.categoryOrange,
-                      title: 'Notifications',
-                      valueLabel: _notifications ? 'Activées' : 'Désactivées',
-                      onTap: () => _openNotifications(context),
-                    ),
-                    Obx(
-                      () => _HeaderRow(
-                        icon: Icons.brush_rounded,
-                        color: AppColors.primary,
-                        title: 'Apparence',
-                        valueLabel: theme.isDarkMode.value ? 'Sombre' : 'Clair',
-                        onTap: () {
-                          AppHaptics.tap();
-                          final next = !theme.isDarkMode.value;
-                          theme.setDarkMode(next);
-                          _persistPref({'theme': next ? 'dark' : 'light'});
-                        },
-                      ),
-                    ),
-                    _HeaderRow(
-                      icon: Icons.language_rounded,
-                      color: AppColors.categoryBlue,
-                      title: 'Langue',
-                      valueLabel: Get.locale?.languageCode == 'en'
-                          ? 'English'
-                          : 'Français',
-                      onTap: () => _pickLanguage(context),
-                    ),
-                  ],
+              ),
+              Obx(
+                () => _HeaderRow(
+                  icon: IconlyLight.show,
+                  color: AppColors.primary,
+                  title: 'Apparence',
+                  subtitle: 'Thème clair ou sombre',
+                  valueLabel: theme.isDarkMode.value ? 'Sombre' : 'Clair',
+                  onTap: () => _pickAppearance(context, settings, theme),
                 ),
-                const SizedBox(height: 18),
-                const _GroupLabel('Communauté & réseau'),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.groups_rounded,
-                      color: AppColors.primary,
-                      title: 'Mon fil communauté',
-                      onTap: () {
-                        AppHaptics.tap();
-                        Get.toNamed(AppRoutes.community);
-                      },
-                    ),
-                    _HeaderRow(
-                      icon: Icons.diversity_3_rounded,
-                      color: AppColors.secondary,
-                      title: 'Activité du réseau',
-                      subtitle: 'Abonnés, mentions et publications',
-                      trailing: Switch.adaptive(
-                        value: _networkActivity,
-                        activeThumbColor: AppColors.onPrimary,
-                        activeTrackColor: AppColors.successSwitch,
-                        onChanged: (v) async {
-                          AppHaptics.tap();
-                          setState(() => _networkActivity = v);
-                          final ok = await _persistPref({'team_activity': v});
-                          if (!ok && mounted) {
-                            setState(() => _networkActivity = !v);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
+              ),
+              // Pas d'Obx : Get.locale n'est pas un observable .obs ; changer la
+              // langue déclenche déjà un rebuild global via GetMaterialApp.
+              _HeaderRow(
+                icon: IconlyLight.message,
+                color: AppColors.categoryBlue,
+                title: 'Langue',
+                subtitle: 'Langue de l\'application',
+                valueLabel:
+                    Get.locale?.languageCode == 'en' ? 'English' : 'Français',
+                onTap: () => _pickLanguage(context, settings),
+              ),
+            ],
+          ),
+          const SectionLabel('Communauté & réseau'),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.discovery,
+                color: AppColors.primary,
+                title: 'Mon fil communauté',
+                subtitle: 'Publications et professionnels à suivre',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.community);
+                },
+              ),
+              _HeaderRow(
+                icon: IconlyLight.show,
+                color: AppColors.categoryCyan,
+                title: 'Vues de profil',
+                subtitle: 'Qui a consulté votre profil',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.communityProfileViews);
+                },
+              ),
+              Obx(
+                () => _HeaderRow(
+                  icon: IconlyLight.unlock,
+                  color: AppColors.categoryPurple,
+                  title: 'Visibilité du profil',
+                  subtitle: 'Qui peut voir votre profil',
+                  valueLabel: settings.profileVisibility.value == 'connections'
+                      ? 'Mes connexions'
+                      : 'Public',
+                  onTap: () => _pickVisibility(context, settings),
                 ),
-                const SizedBox(height: 18),
-                const _GroupLabel('Sécurité & confidentialité'),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.lock_rounded,
-                      color: AppColors.categoryGray,
-                      title: 'Confidentialité',
-                      onTap: () => _showPrivacy(context),
-                    ),
-                    _HeaderRow(
-                      icon: Icons.shield_rounded,
-                      color: AppColors.categoryBlue,
-                      title: 'Changer le mot de passe',
-                      onTap: () {
-                        AppHaptics.tap();
-                        Get.toNamed(AppRoutes.forgotPassword);
-                      },
-                    ),
-                  ],
+              ),
+              Obx(
+                () => _HeaderRow(
+                  icon: IconlyLight.activity,
+                  color: AppColors.secondary,
+                  title: 'Activité du réseau',
+                  subtitle: 'Abonnés, mentions et publications',
+                  trailing: Switch.adaptive(
+                    value: settings.networkActivity.value,
+                    activeThumbColor: AppColors.onPrimary,
+                    activeTrackColor: AppColors.successSwitch,
+                    onChanged: (v) {
+                      AppHaptics.tap();
+                      settings.setNetworkActivity(v);
+                    },
+                  ),
                 ),
-                const SizedBox(height: 18),
-                const _GroupLabel('À propos'),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.info_rounded,
-                      color: AppColors.categoryBlue,
-                      title: 'Version',
-                      valueLabel: 'v1.0.0',
-                      onTap: () => _showAbout(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                _Group(
-                  rows: [
-                    _HeaderRow(
-                      icon: Icons.logout_rounded,
-                      color: AppColors.error,
-                      title: 'Se déconnecter',
-                      titleColor: AppColors.error,
-                      hideChevron: true,
-                      onTap: () => _confirmLogout(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
+              ),
+            ],
+          ),
+          const SectionLabel('Sécurité & confidentialité'),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.shield_done,
+                color: AppColors.categoryGray,
+                title: 'Confidentialité',
+                subtitle: 'Vos données et leur partage',
+                onTap: () => _showPrivacy(context),
+              ),
+              _HeaderRow(
+                icon: IconlyLight.password,
+                color: AppColors.categoryBlue,
+                title: 'Changer le mot de passe',
+                subtitle: 'Protégez l\'accès à votre compte',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.forgotPassword);
+                },
+              ),
+            ],
+          ),
+          const SectionLabel('À propos'),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.info_circle,
+                color: AppColors.categoryBlue,
+                title: 'Version',
+                subtitle: 'OpporTune BF',
+                valueLabel: 'v1.0.0',
+                onTap: () => _showAbout(context),
+              ),
+            ],
+          ),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.logout,
+                color: AppColors.error,
+                title: 'Se déconnecter',
+                titleColor: AppColors.errorAccent,
+                hideChevron: true,
+                onTap: () => _confirmLogout(context),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Feuille de notifications granulaire — un interrupteur maître + les
-  /// canaux (offres, candidatures, suggestions IA, messages, formations).
-  /// Chaque bascule persiste immédiatement via PUT /profile/preferences.
-  Future<void> _openNotifications(BuildContext context) async {
+  /// Feuille de notifications granulaire — un interrupteur maître + les canaux.
+  /// Chaque bascule persiste via [SettingsController] (local + backend).
+  Future<void> _openNotifications(
+    BuildContext context,
+    SettingsController settings,
+  ) async {
     AppHaptics.tap();
     const channels = <String, ({IconData icon, Color color, String label})>{
-      'offer_updates': (icon: Icons.work_outline_rounded, color: AppColors.categoryBlue, label: 'Nouvelles offres'),
-      'application_updates': (icon: Icons.assignment_turned_in_outlined, color: AppColors.successDark, label: 'Suivi des candidatures'),
-      'match_alerts': (icon: Icons.auto_awesome_rounded, color: AppColors.secondary, label: 'Suggestions IA'),
-      'message_alerts': (icon: Icons.chat_bubble_outline_rounded, color: AppColors.primary, label: 'Messages'),
-      'training_updates': (icon: Icons.school_outlined, color: AppColors.categoryOrange, label: 'Formations'),
+      'offer_updates': (
+        icon: IconlyLight.work,
+        color: AppColors.categoryBlue,
+        label: 'Nouvelles offres'
+      ),
+      'application_updates': (
+        icon: IconlyLight.paper,
+        color: AppColors.successDark,
+        label: 'Suivi des candidatures'
+      ),
+      'match_alerts': (
+        icon: Icons.auto_awesome_rounded,
+        color: AppColors.secondary,
+        label: 'Suggestions IA'
+      ),
+      'message_alerts': (
+        icon: IconlyLight.message,
+        color: AppColors.primary,
+        label: 'Messages'
+      ),
+      'training_updates': (
+        icon: Icons.school_outlined,
+        color: AppColors.categoryOrange,
+        label: 'Formations'
+      ),
     };
 
     await showModalBottomSheet<void>(
@@ -244,76 +293,363 @@ class _SettingsBodyState extends State<SettingsBody> {
       backgroundColor: AppColors.surfaceCard,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.outlineVariant,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('Notifications',
-                    style: AppTextStyles.titleLg
-                        .copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 12),
-                SwitchListTile.adaptive(
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Notifications',
+                  style: AppTextStyles.titleLg
+                      .copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: AppSpacing.md),
+              Obx(
+                () => SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
                   title: Text('Activer les notifications',
                       style: AppTextStyles.titleMd
                           .copyWith(fontWeight: FontWeight.w700)),
-                  value: _notifications,
+                  value: settings.notificationsEnabled.value,
                   activeThumbColor: AppColors.onPrimary,
                   activeTrackColor: AppColors.successSwitch,
-                  onChanged: (v) async {
+                  onChanged: (v) {
                     AppHaptics.tap();
-                    setSheet(() => _notifications = v);
-                    setState(() => _notifications = v);
-                    final ok = await _persistPref({'notifications_enabled': v});
-                    if (!ok) {
-                      setSheet(() => _notifications = !v);
-                      if (mounted) setState(() => _notifications = !v);
-                    }
+                    settings.setNotificationsEnabled(v);
                   },
                 ),
-                const Divider(height: 1),
-                for (final entry in channels.entries)
-                  SwitchListTile.adaptive(
+              ),
+              Divider(height: 1, color: AppColors.outlineVariant),
+              for (final entry in channels.entries)
+                Obx(
+                  () => SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     secondary: _SquareIcon(
                         icon: entry.value.icon, color: entry.value.color),
                     title: Text(entry.value.label,
                         style: AppTextStyles.titleMd
                             .copyWith(fontWeight: FontWeight.w600)),
-                    value: _notifications && (_notifPrefs[entry.key] ?? true),
+                    value: settings.notificationsEnabled.value &&
+                        (settings.notifPrefs[entry.key] ?? true),
                     activeThumbColor: AppColors.onPrimary,
                     activeTrackColor: AppColors.successSwitch,
-                    onChanged: !_notifications
+                    onChanged: !settings.notificationsEnabled.value
                         ? null
-                        : (v) async {
+                        : (v) {
                             AppHaptics.tap();
-                            setSheet(() => _notifPrefs[entry.key] = v);
-                            setState(() => _notifPrefs[entry.key] = v);
-                            final ok = await _persistPref({entry.key: v});
-                            if (!ok) {
-                              setSheet(() => _notifPrefs[entry.key] = !v);
-                              if (mounted) {
-                                setState(() => _notifPrefs[entry.key] = !v);
-                              }
-                            }
+                            settings.setChannel(entry.key, v);
                           },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Feuille de choix d'apparence (Clair / Sombre) — cohérente avec la feuille
+  /// Langue : un chevron sur la ligne ouvre bien un sélecteur (plus de bascule
+  /// silencieuse cachée derrière un chevron trompeur).
+  Future<void> _pickAppearance(
+    BuildContext context,
+    SettingsController settings,
+    AppThemeController theme,
+  ) async {
+    AppHaptics.tap();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: AppSpacing.lg),
+              _sheetTitle('Apparence'),
+              const SizedBox(height: AppSpacing.sm),
+              Obx(() => _choiceTile(
+                    ctx,
+                    icon: Icons.light_mode_rounded,
+                    label: 'Clair',
+                    selected: !theme.isDarkMode.value,
+                    onTap: () {
+                      settings.setDarkMode(false);
+                    },
+                  )),
+              Obx(() => _choiceTile(
+                    ctx,
+                    icon: Icons.dark_mode_rounded,
+                    label: 'Sombre',
+                    selected: theme.isDarkMode.value,
+                    onTap: () {
+                      settings.setDarkMode(true);
+                    },
+                  )),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                child: Divider(height: 1, color: AppColors.outlineVariant),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              // Noir intense (AMOLED) — actif uniquement en sombre. En clair on
+              // grise la ligne et on affiche un hint explicatif.
+              Obx(() {
+                final dark = theme.isDarkMode.value;
+                return Opacity(
+                  opacity: dark ? 1 : 0.45,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                    child: SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: _SquareIcon(
+                        icon: Icons.contrast_rounded,
+                        color: AppColors.categoryGray,
+                      ),
+                      title: Text(
+                        'Noir intense (AMOLED)',
+                        style: AppTextStyles.titleMd
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        dark
+                            ? 'Fonds en vrai noir, idéal écrans OLED'
+                            : 'Disponible en mode sombre',
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.hintColor, fontSize: 12),
+                      ),
+                      value: dark && theme.amoled.value,
+                      activeThumbColor: AppColors.onPrimary,
+                      activeTrackColor: AppColors.successSwitch,
+                      onChanged: dark
+                          ? (v) {
+                              AppHaptics.tap();
+                              settings.setAmoled(v);
+                            }
+                          : null,
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: AppSpacing.md),
+              // Sélecteur d'accent — pastilles de presets, sélection en anneau.
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                  child: Text(
+                    'Couleur d\'accent',
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                child: Obx(() {
+                  final current = theme.accentSeed.value.toARGB32();
+                  return Wrap(
+                    spacing: AppSpacing.md,
+                    runSpacing: AppSpacing.md,
+                    children: [
+                      for (final preset in AppColors.accentPresets)
+                        _AccentDot(
+                          color: preset,
+                          selected: preset.toARGB32() == current,
+                          onTap: () {
+                            AppHaptics.tap();
+                            settings.setAccent(preset);
+                          },
+                        ),
+                    ],
+                  );
+                }),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickLanguage(
+    BuildContext context,
+    SettingsController settings,
+  ) async {
+    AppHaptics.tap();
+    final current = Get.locale?.languageCode == 'en' ? 'en' : 'fr';
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SheetHandle(),
+            const SizedBox(height: AppSpacing.lg),
+            _sheetTitle('Langue'),
+            const SizedBox(height: AppSpacing.sm),
+            _choiceTile(
+              ctx,
+              icon: Icons.language_rounded,
+              label: 'Français',
+              selected: current == 'fr',
+              onTap: () {
+                settings.setLanguage('fr');
+                Navigator.of(ctx).pop();
+              },
+            ),
+            _choiceTile(
+              ctx,
+              icon: Icons.language_rounded,
+              label: 'English',
+              selected: current == 'en',
+              onTap: () {
+                settings.setLanguage('en');
+                Navigator.of(ctx).pop();
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Feuille de choix de visibilité du profil communauté (Public / Mes
+  /// connexions) — même pattern que les autres sélecteurs de préférences.
+  Future<void> _pickVisibility(
+    BuildContext context,
+    SettingsController settings,
+  ) async {
+    AppHaptics.tap();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SheetHandle(),
+            const SizedBox(height: AppSpacing.lg),
+            _sheetTitle('Visibilité du profil'),
+            const SizedBox(height: AppSpacing.sm),
+            Obx(
+              () => _choiceTile(
+                ctx,
+                icon: Icons.public_rounded,
+                label: 'Public',
+                selected: settings.profileVisibility.value != 'connections',
+                onTap: () {
+                  settings.setProfileVisibility('public');
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            ),
+            Obx(
+              () => _choiceTile(
+                ctx,
+                icon: IconlyLight.user,
+                label: 'Mes connexions',
+                selected: settings.profileVisibility.value == 'connections',
+                onTap: () {
+                  settings.setProfileVisibility('connections');
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetTitle(String text) => Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: Text(text,
+              style:
+                  AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800)),
+        ),
+      );
+
+  Widget _choiceTile(
+    BuildContext ctx, {
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      child: Material(
+        color: selected
+            ? AppColors.primaryAccent.withValues(alpha: 0.10)
+            : Colors.transparent,
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+        child: InkWell(
+          onTap: () {
+            AppHaptics.tap();
+            onTap();
+          },
+          borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                    borderRadius: AppShapes.squircleRadius(AppRadius.xs),
+                  ),
+                  child: Icon(icon, color: AppColors.primaryAccent, size: 18),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(label, style: AppTextStyles.titleMd),
+                ),
+                if (selected)
+                  Icon(
+                    IconlyLight.tick_square,
+                    color: AppColors.primaryAccent,
+                    size: 20,
                   ),
               ],
             ),
@@ -323,76 +659,11 @@ class _SettingsBodyState extends State<SettingsBody> {
     );
   }
 
-  Future<void> _pickLanguage(BuildContext context) async {
-    AppHaptics.tap();
-    final current = Get.locale?.languageCode == 'en' ? 'en' : 'fr';
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Langue',
-                    style: AppTextStyles.titleLg
-                        .copyWith(fontWeight: FontWeight.w800)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _langTile(ctx, label: 'Français', code: 'fr', current: current),
-            _langTile(ctx, label: 'English', code: 'en', current: current),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _langTile(
-    BuildContext ctx, {
-    required String label,
-    required String code,
-    required String current,
-  }) {
-    final selected = current == code;
-    return ListTile(
-      leading: const Icon(Icons.language_rounded, color: AppColors.primary),
-      title: Text(label, style: AppTextStyles.titleMd),
-      trailing: selected
-          ? const Icon(Icons.check_rounded, color: AppColors.primary)
-          : null,
-      onTap: () {
-        AppHaptics.tap();
-        applyAppLocale(code);
-        _persistPref({'language': code});
-        Navigator.of(ctx).pop();
-        if (mounted) setState(() {});
-      },
-    );
-  }
-
   Future<void> _showPrivacy(BuildContext context) async {
     AppHaptics.tap();
     await showConfirmSheet(
       context: context,
-      icon: Icons.lock_rounded,
+      icon: IconlyLight.lock,
       iconColor: AppColors.categoryGray,
       title: 'Confidentialité',
       message:
@@ -407,8 +678,8 @@ class _SettingsBodyState extends State<SettingsBody> {
     AppHaptics.tap();
     await showConfirmSheet(
       context: context,
-      icon: Icons.info_rounded,
-      iconColor: AppColors.primary,
+      icon: IconlyLight.info_circle,
+      iconColor: AppColors.primaryAccent,
       title: 'OpporTune BF',
       message:
           'Version 1.0.0\n\nLa plateforme emploi, formations et opportunités '
@@ -420,8 +691,8 @@ class _SettingsBodyState extends State<SettingsBody> {
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showConfirmSheet(
       context: context,
-      icon: Icons.logout_rounded,
-      iconColor: AppColors.error,
+      icon: IconlyLight.logout,
+      iconColor: AppColors.errorAccent,
       title: 'Se déconnecter ?',
       message: 'Vous devrez vous reconnecter pour accéder à votre compte.',
       confirmLabel: 'Se déconnecter',
@@ -437,55 +708,8 @@ class _SettingsBodyState extends State<SettingsBody> {
   }
 }
 
-/// Barre supérieure simple : "‹ Retour" à gauche, titre centré.
-class _TopBar extends StatelessWidget {
-  const _TopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    return Container(
-      padding: EdgeInsets.fromLTRB(12, topPad + 6, 12, 10),
-      color: AppColors.surfaceLow,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: AppBackButton(onTap: () => Get.back<void>()),
-          ),
-          Text('Paramètres',
-              style: AppTextStyles.titleLg
-                  .copyWith(fontWeight: FontWeight.w800)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Libellé de section (non cliquable) au-dessus d'un groupe de réglages.
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
-      child: Text(
-        text.toUpperCase(),
-        style: AppTextStyles.labelSm.copyWith(
-          color: AppColors.hintColor,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.0,
-        ),
-      ),
-    );
-  }
-}
-
-/// Carte de groupe (blanche, arrondie) contenant des lignes séparées par
-/// des divisions fines — comme un groupe de la liste iOS Réglages.
+/// Carte de groupe (arrondie) contenant des lignes séparées par des divisions
+/// fines — comme un groupe de la liste iOS Réglages.
 class _Group extends StatelessWidget {
   const _Group({required this.rows});
   final List<Widget> rows;
@@ -494,10 +718,13 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 22),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.lightShadow,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        shadows: [
+          ...AppColors.lightShadow,
+          ...AppColors.ambientShadow,
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -531,6 +758,7 @@ class _HeaderRow extends StatelessWidget {
     this.onTap,
     this.titleColor,
     this.hideChevron = false,
+    this.badge = 0,
   });
 
   final IconData icon;
@@ -543,12 +771,15 @@ class _HeaderRow extends StatelessWidget {
   final Color? titleColor;
   final bool hideChevron;
 
+  /// Compteur affiché en pastille (ex. candidatures en cours). 0 = masqué.
+  final int badge;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        padding: const EdgeInsets.all(14),
         child: Row(
           children: [
             _SquareIcon(icon: icon, color: color),
@@ -579,6 +810,26 @@ class _HeaderRow extends StatelessWidget {
             if (trailing != null)
               trailing!
             else ...[
+              if (badge > 0)
+                Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  constraints: const BoxConstraints(minWidth: 22),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    badge > 99 ? '99+' : '$badge',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
               if (valueLabel != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
@@ -587,11 +838,51 @@ class _HeaderRow extends StatelessWidget {
                           .copyWith(color: AppColors.hintColor)),
                 ),
               if (!hideChevron)
-                const Icon(Icons.chevron_right_rounded,
+                Icon(IconlyLight.arrow_right_2,
                     color: AppColors.outlineVariant),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Pastille de couleur d'accent (preset). Sélection mise en évidence par un
+/// anneau ; tap → applique l'accent (live, via le ThemeController).
+class _AccentDot extends StatelessWidget {
+  const _AccentDot({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: AppMotion.fast,
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          border: Border.all(
+            color: selected ? AppColors.titleColor : Colors.transparent,
+            width: 2.5,
+          ),
+          boxShadow: selected ? AppColors.lightShadow : null,
+        ),
+        child: selected
+            ? const Icon(Icons.check_rounded,
+                color: AppColors.onPrimary, size: 22)
+            : null,
       ),
     );
   }
@@ -610,7 +901,7 @@ class _SquareIcon extends StatelessWidget {
       height: 32,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.squircleRadius(AppRadius.xs),
       ),
       child: Icon(icon, color: AppColors.onPrimary, size: 19),
     );

@@ -39,7 +39,7 @@ class ActionTile extends StatelessWidget {
                   color: AppColors.outlineVariant.withValues(alpha: 0.45),
                 ),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 24),
+              child: Icon(icon, color: AppColors.primaryAccent, size: 24),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(

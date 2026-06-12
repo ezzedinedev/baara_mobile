@@ -10,7 +10,7 @@ class OfferBinding extends Bindings {
   @override
   void dependencies() {
     // 1. Data Source / ApiProvider est normalement déjà injecté par InitialBinding
-    
+
     // 2. Repository implementation
     Get.lazyPut<IOfferRepository>(
       () => OfferRepositoryImpl(apiProvider: Get.find<ApiProvider>()),

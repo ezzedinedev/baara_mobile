@@ -20,7 +20,7 @@ class SoftCircleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolved = color ?? AppColors.primary;
+    final resolved = color ?? AppColors.primaryAccent;
     return Container(
       width: size,
       height: size,
@@ -64,7 +64,7 @@ class GradientCircleIcon extends StatelessWidget {
       ),
       child: Icon(
         icon,
-        color: AppColors.primary,
+        color: AppColors.primaryAccent,
         size: iconSize,
         semanticLabel: semanticLabel,
       ),

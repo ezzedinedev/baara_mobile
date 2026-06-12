@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
@@ -24,14 +25,17 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: EdgeInsets.only(bottom: bottomInset > 0 ? 12 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     WavyAuthHeader(
-                      height: 168,
+                      height: 200,
                       showLeading: true,
+                      foregroundIcon: IconlyLight.login,
+                      title: 'OpporTune',
                       onLeadingTap: () => Get.back(),
                     ),
                     Padding(
@@ -46,25 +50,29 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Connexion',
-                              style: AppTextStyles.displayMd.copyWith(
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.4,
+                            RevealOnMount(
+                              child: Text(
+                                'Connexion',
+                                style: AppTextStyles.displayHero
+                                    .copyWith(fontSize: 30),
                               ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              'Accédez à vos offres, messages et candidatures.',
-                              style: AppTextStyles.bodyMd.copyWith(
-                                color: AppColors.bodyColor,
+                            RevealOnMount(
+                              delay: const Duration(milliseconds: 60),
+                              child: Text(
+                                'Accédez à vos offres, messages et candidatures.',
+                                style: AppTextStyles.bodyMd.copyWith(
+                                  color: AppColors.bodyColor,
+                                  height: 1.45,
+                                ),
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),
                             AuthTextField(
                               label: 'Email',
                               hint: 'nom@exemple.com',
-                              icon: Icons.mail_outline_rounded,
+                              icon: IconlyLight.message,
                               controller: controller.emailCtrl,
                               keyboardType: TextInputType.emailAddress,
                               validator: controller.validateEmail,
@@ -73,7 +81,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                             AuthTextField(
                               label: 'Mot de passe',
                               hint: 'Votre mot de passe',
-                              icon: Icons.lock_outline_rounded,
+                              icon: IconlyLight.lock,
                               controller: controller.passwordCtrl,
                               obscureText: true,
                               validator: controller.validatePassword,
@@ -92,12 +100,13 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                     vertical: 6,
                                   ),
                                   minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Text(
                                   'Mot de passe oublié ?',
                                   style: AppTextStyles.bodySm.copyWith(
-                                    color: AppColors.primary,
+                                    color: AppColors.primaryAccent,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -109,9 +118,9 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),
-                            _OrDivider(),
+                            const AuthOrDivider(),
                             const SizedBox(height: AppSpacing.lg),
-                            _SocialButton(
+                            AuthSocialButton(
                               icon: const GoogleLogoAsset(size: 20),
                               label: 'Continuer avec Google',
                               onTap: controller.loginWithGoogle,
@@ -121,7 +130,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                               child: TextButton(
                                 onPressed: () {
                                   AppHaptics.tap();
-                                  Get.offNamed(AppRoutes.registerProfile);
+                                  Get.toNamed(AppRoutes.profileSelection);
                                 },
                                 child: RichText(
                                   text: TextSpan(
@@ -129,16 +138,42 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                       color: AppColors.bodyColor,
                                     ),
                                     children: [
-                                      const TextSpan(text: 'Pas encore de compte ? '),
+                                      const TextSpan(
+                                          text: 'Pas encore de compte ? '),
                                       TextSpan(
                                         text: "S'inscrire",
                                         style: AppTextStyles.titleMd.copyWith(
-                                          color: AppColors.primary,
+                                          color: AppColors.primaryAccent,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13,
                                         ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  AppHaptics.tap();
+                                  Get.toNamed(AppRoutes.recruiterLogin);
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 6,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'Espace recruteur',
+                                  style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.bodyColor,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
@@ -164,77 +199,6 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                   isLoading: controller.isLoading.value,
                   onPressed: controller.loginWithEmail,
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 1,
-            color: AppColors.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Text(
-            'ou',
-            style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 1,
-            color: AppColors.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final Widget icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return PressScale(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.55),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              label,
-              style: AppTextStyles.titleMd.copyWith(
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
-
 class AnimatedHeroDecoration extends StatefulWidget {
   const AnimatedHeroDecoration({
     super.key,
@@ -65,7 +64,6 @@ class _HeroDecorationPainter extends CustomPainter {
   final double t; // 0..1, wraps
   final Color tint;
   final double intensity;
-
 
   static const _orbs = <_OrbConfig>[
     _OrbConfig(
@@ -156,7 +154,6 @@ class _HeroDecorationPainter extends CustomPainter {
     _drawTopoRings(canvas, size);
     _drawSparkles(canvas, size);
   }
-
 
   void _drawSweepBeam(Canvas canvas, Size size) {
     // 2 balayages decalles dans le temps.
@@ -262,8 +259,8 @@ class _HeroDecorationPainter extends CustomPainter {
     for (int i = 0; i < _sparkleSeeds.length; i++) {
       final s = _sparkleSeeds[i];
       // Twinkle : sin^2 → 0..1 lisse.
-      final twinkle = math.pow(math.sin(t * twoPi * s.speed + s.phase), 2)
-          .toDouble();
+      final twinkle =
+          math.pow(math.sin(t * twoPi * s.speed + s.phase), 2).toDouble();
       final alpha = (s.maxAlpha * twinkle * intensity).clamp(0.0, 1.0);
       if (alpha < 0.02) continue;
       final dx = size.width * s.x;
@@ -343,16 +340,28 @@ class _SparkleSeed {
 }
 
 const _sparkleSeeds = <_SparkleSeed>[
-  _SparkleSeed(x: 0.10, y: 0.18, size: 1.6, speed: 1.4, phase: 0.0, maxAlpha: 0.65),
-  _SparkleSeed(x: 0.30, y: 0.62, size: 1.2, speed: 1.0, phase: 0.7, maxAlpha: 0.50),
-  _SparkleSeed(x: 0.45, y: 0.40, size: 1.8, speed: 1.6, phase: 1.4, maxAlpha: 0.75),
-  _SparkleSeed(x: 0.60, y: 0.78, size: 1.4, speed: 0.9, phase: 2.2, maxAlpha: 0.55),
-  _SparkleSeed(x: 0.72, y: 0.20, size: 1.6, speed: 1.2, phase: 0.4, maxAlpha: 0.60),
-  _SparkleSeed(x: 0.85, y: 0.45, size: 1.0, speed: 1.8, phase: 1.1, maxAlpha: 0.45),
-  _SparkleSeed(x: 0.20, y: 0.85, size: 1.3, speed: 1.3, phase: 1.9, maxAlpha: 0.50),
-  _SparkleSeed(x: 0.55, y: 0.10, size: 1.1, speed: 1.5, phase: 2.6, maxAlpha: 0.55),
-  _SparkleSeed(x: 0.92, y: 0.72, size: 1.7, speed: 1.0, phase: 0.9, maxAlpha: 0.65),
-  _SparkleSeed(x: 0.05, y: 0.50, size: 1.5, speed: 1.7, phase: 1.5, maxAlpha: 0.55),
-  _SparkleSeed(x: 0.40, y: 0.92, size: 1.2, speed: 1.1, phase: 2.0, maxAlpha: 0.45),
-  _SparkleSeed(x: 0.66, y: 0.55, size: 1.4, speed: 1.4, phase: 0.3, maxAlpha: 0.60),
+  _SparkleSeed(
+      x: 0.10, y: 0.18, size: 1.6, speed: 1.4, phase: 0.0, maxAlpha: 0.65),
+  _SparkleSeed(
+      x: 0.30, y: 0.62, size: 1.2, speed: 1.0, phase: 0.7, maxAlpha: 0.50),
+  _SparkleSeed(
+      x: 0.45, y: 0.40, size: 1.8, speed: 1.6, phase: 1.4, maxAlpha: 0.75),
+  _SparkleSeed(
+      x: 0.60, y: 0.78, size: 1.4, speed: 0.9, phase: 2.2, maxAlpha: 0.55),
+  _SparkleSeed(
+      x: 0.72, y: 0.20, size: 1.6, speed: 1.2, phase: 0.4, maxAlpha: 0.60),
+  _SparkleSeed(
+      x: 0.85, y: 0.45, size: 1.0, speed: 1.8, phase: 1.1, maxAlpha: 0.45),
+  _SparkleSeed(
+      x: 0.20, y: 0.85, size: 1.3, speed: 1.3, phase: 1.9, maxAlpha: 0.50),
+  _SparkleSeed(
+      x: 0.55, y: 0.10, size: 1.1, speed: 1.5, phase: 2.6, maxAlpha: 0.55),
+  _SparkleSeed(
+      x: 0.92, y: 0.72, size: 1.7, speed: 1.0, phase: 0.9, maxAlpha: 0.65),
+  _SparkleSeed(
+      x: 0.05, y: 0.50, size: 1.5, speed: 1.7, phase: 1.5, maxAlpha: 0.55),
+  _SparkleSeed(
+      x: 0.40, y: 0.92, size: 1.2, speed: 1.1, phase: 2.0, maxAlpha: 0.45),
+  _SparkleSeed(
+      x: 0.66, y: 0.55, size: 1.4, speed: 1.4, phase: 0.3, maxAlpha: 0.60),
 ];

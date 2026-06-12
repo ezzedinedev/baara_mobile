@@ -11,17 +11,18 @@ class _FakeMessagingRepository implements IMessagingRepository {
   String? lastMarkedConversationId;
 
   @override
-  Future<List<Conversation>> getConversations({int page = 1, int perPage = 20}) async {
+  Future<List<Conversation>> getConversations(
+      {int page = 1, int perPage = 20}) async {
     return conversations;
   }
 
   @override
-  Future<List<Message>> getMessages(
+  Future<MessagesPage> getMessages(
     String conversationId, {
     int page = 1,
     int perPage = 50,
   }) async {
-    return messages;
+    return MessagesPage(messages: messages);
   }
 
   @override
@@ -39,6 +40,44 @@ class _FakeMessagingRepository implements IMessagingRepository {
   @override
   Future<void> markAsRead(String conversationId) async {
     lastMarkedConversationId = conversationId;
+  }
+
+  @override
+  Future<void> sendTyping(String conversationId, bool typing) async {}
+
+  @override
+  Future<SmartReplies> smartReplies(String conversationId) async {
+    return SmartReplies.empty;
+  }
+
+  @override
+  Future<ReactionResult> reactToMessage(String messageId, String emoji) async {
+    return ReactionResult(
+      messageId: messageId,
+      emoji: emoji,
+      removed: false,
+      myEmoji: emoji,
+    );
+  }
+
+  @override
+  Future<Message> sendMediaMessage(
+    String conversationId,
+    String messageType, {
+    String? text,
+    String? filePath,
+    List<int>? fileBytes,
+    String? fileName,
+  }) async {
+    return messageToSend ??
+        Message(
+          id: 'media-msg',
+          text: text ?? '',
+          sentAt: DateTime.now(),
+          isMine: true,
+          senderName: 'Me',
+          messageType: messageType,
+        );
   }
 }
 

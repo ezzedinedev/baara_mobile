@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -25,6 +29,7 @@ class RegisterScreen extends GetView<RegisterController> {
             WavyAuthHeader(
               height: 180,
               showLeading: true,
+              foregroundIcon: IconlyLight.profile,
               onLeadingTap: () {
                 AppHaptics.tap();
                 if (controller.currentStep.value > 1) {
@@ -42,15 +47,18 @@ class RegisterScreen extends GetView<RegisterController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _StepProgress(current: step, total: 3),
-                    const SizedBox(height: 18),
-                    Text('Inscription', style: AppTextStyles.displayMd),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Inscription',
+                      style: AppTextStyles.displayHero.copyWith(fontSize: 30),
+                    ),
+                    const SizedBox(height: 6),
                     Text(
                       _titles[step - 1],
                       style: AppTextStyles.bodyMd
-                          .copyWith(color: AppColors.hintColor),
+                          .copyWith(color: AppColors.bodyColor),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 260),
                       switchInCurve: Curves.easeOut,
@@ -69,14 +77,7 @@ class RegisterScreen extends GetView<RegisterController> {
                         child: _stepForm(step),
                       ),
                     ),
-                    if (controller.errorMsg.value.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        controller.errorMsg.value,
-                        style: AppTextStyles.bodySm
-                            .copyWith(color: AppColors.error),
-                      ),
-                    ],
+                    AuthErrorBanner(message: controller.errorMsg.value),
                     const SizedBox(height: 28),
                     AuthCtaButton(
                       label: step == 3 ? 'Créer mon compte' : 'Continuer',
@@ -114,13 +115,15 @@ class RegisterScreen extends GetView<RegisterController> {
         children: [
           AuthTextField(
               label: 'Prénom',
+              hint: 'Votre prénom',
               controller: controller.firstNameCtrl,
-              icon: Icons.person_outline),
-          const SizedBox(height: 12),
+              icon: IconlyLight.profile),
+          const SizedBox(height: 16),
           AuthTextField(
               label: 'Nom',
+              hint: 'Votre nom',
               controller: controller.lastNameCtrl,
-              icon: Icons.person_outline),
+              icon: IconlyLight.profile),
         ],
       ),
     );
@@ -133,13 +136,17 @@ class RegisterScreen extends GetView<RegisterController> {
         children: [
           AuthTextField(
               label: 'Email',
+              hint: 'nom@exemple.com',
               controller: controller.emailCtrl,
-              icon: Icons.email_outlined),
-          const SizedBox(height: 12),
+              keyboardType: TextInputType.emailAddress,
+              icon: IconlyLight.message),
+          const SizedBox(height: 16),
           AuthTextField(
               label: 'Téléphone',
+              hint: '+226 ...',
               controller: controller.phoneCtrl,
-              icon: Icons.phone_outlined),
+              keyboardType: TextInputType.phone,
+              icon: IconlyLight.call),
         ],
       ),
     );
@@ -152,53 +159,21 @@ class RegisterScreen extends GetView<RegisterController> {
         children: [
           AuthTextField(
               label: 'Mot de passe',
+              hint: 'Au moins 8 caractères',
               controller: controller.passwordCtrl,
               obscureText: true,
-              icon: Icons.lock_outline),
-          const SizedBox(height: 12),
+              icon: IconlyLight.lock),
+          const SizedBox(height: 16),
           AuthTextField(
               label: 'Confirmation',
+              hint: 'Retapez le mot de passe',
               controller: controller.confirmPasswordCtrl,
               obscureText: true,
-              icon: Icons.lock_outline),
-          const SizedBox(height: 8),
-          Obx(() => InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () {
-                  AppHaptics.tap();
-                  controller.acceptedTerms.value =
-                      !controller.acceptedTerms.value;
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Checkbox(
-                        value: controller.acceptedTerms.value,
-                        activeColor: AppColors.primary,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        onChanged: (v) {
-                          AppHaptics.tap();
-                          controller.acceptedTerms.value = v ?? false;
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 11),
-                          child: Text(
-                            "J'accepte les conditions d'utilisation et la politique de confidentialité.",
-                            style: AppTextStyles.bodySm
-                                .copyWith(color: AppColors.bodyColor),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              icon: IconlyLight.password),
+          const SizedBox(height: 16),
+          Obx(() => _TermsTile(
+                value: controller.acceptedTerms.value,
+                onChanged: (v) => controller.acceptedTerms.value = v,
               )),
         ],
       ),
@@ -222,13 +197,14 @@ class _StepProgress extends StatelessWidget {
             for (var i = 1; i <= total; i++) ...[
               Expanded(
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
+                  duration: AppMotion.medium,
+                  curve: AppMotion.emphasized,
                   height: 6,
                   decoration: BoxDecoration(
                     color: i <= current
-                        ? AppColors.primary
+                        ? AppColors.primaryAccent
                         : AppColors.outlineVariant.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: AppShapes.pill,
                   ),
                 ),
               ),
@@ -242,6 +218,73 @@ class _StepProgress extends StatelessWidget {
           style: AppTextStyles.labelSm.copyWith(color: AppColors.hintColor),
         ),
       ],
+    );
+  }
+}
+
+/// Case à cocher « conditions d'utilisation » sous forme de tuile carte :
+/// surface douce, coche carrée verte animée, zone tap large (>=44).
+class _TermsTile extends StatelessWidget {
+  const _TermsTile({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+      onTap: () {
+        AppHaptics.tap();
+        onChanged(!value);
+      },
+      child: AnimatedContainer(
+        duration: AppMotion.short,
+        curve: AppMotion.emphasizedDecelerate,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: value ? AppColors.surfaceSelected : AppColors.surfaceCard,
+          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+          border: Border.all(
+            color: value
+                ? AppColors.primaryAccent.withValues(alpha: 0.55)
+                : AppColors.outlineVariant.withValues(alpha: 0.45),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: AppMotion.short,
+              curve: AppMotion.springEmphasized,
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: value ? AppColors.primary : Colors.transparent,
+                borderRadius: AppShapes.squircleRadius(AppRadius.xs),
+                border: Border.all(
+                  color: value ? AppColors.primary : AppColors.outlineVariant,
+                  width: 1.6,
+                ),
+              ),
+              child: value
+                  ? const Icon(IconlyLight.tick_square,
+                      size: 16, color: AppColors.onPrimary)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "J'accepte les conditions d'utilisation et la politique de confidentialité.",
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.bodyColor,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

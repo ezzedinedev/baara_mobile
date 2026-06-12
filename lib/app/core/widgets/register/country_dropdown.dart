@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -62,14 +63,14 @@ class RegisterCountryDropdown extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
+                borderSide: BorderSide(
+                  color: AppColors.primaryAccent,
                   width: 1.4,
                 ),
               ),
             ),
             icon: Icon(
-              Icons.keyboard_arrow_down_rounded,
+              IconlyLight.arrow_down_2,
               color: AppColors.hintColor,
             ),
             items: controller.countries.map((country) {

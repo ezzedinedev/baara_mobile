@@ -9,5 +9,9 @@ abstract class IProfileRepository {
   /// PUT /profile/preferences — n'envoyer que les champs modifiés.
   Future<void> updatePreferences(Map<String, dynamic> prefs);
 
+  /// Visibilité du profil communauté : PUT /profile {profile_visibility}.
+  /// 'public' | 'connections'. Retourne le profil mis à jour.
+  Future<Profile> setProfileVisibility(String visibility);
+
   Future<void> logout();
 }

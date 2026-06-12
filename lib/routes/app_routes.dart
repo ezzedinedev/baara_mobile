@@ -36,11 +36,14 @@ abstract class AppRoutes {
   static const communityProfile = '/communaute/membre/:id';
   static const communitySearch = '/communaute/recherche';
   static const communityConnections = '/communaute/connexions';
+  static const communityProfileViews = '/communaute/vues-profil';
   static const notifications = '/notifications';
   static const settings = '/settings';
   // IA
   static const iaScoreProfil = '/ia/score-profil';
   static const iaChatbot = '/ia/chatbot';
   static const iaAuditCv = '/ia/audit-cv';
+  // Match
+  static const offerMatch = '/offres/match';
   static const error404 = '/404';
 }

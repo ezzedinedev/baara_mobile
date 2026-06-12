@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -54,10 +57,10 @@ class CvManualEditorScreen extends GetView<CvEditorController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return const Center(
+                return Center(
                   child: CircularProgressIndicator(
                     valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
                   ),
                 );
               }
@@ -65,6 +68,7 @@ class CvManualEditorScreen extends GetView<CvEditorController> {
                   controller.candidateName.value.isEmpty) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
@@ -85,65 +89,115 @@ class _Form extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        24,
+      ),
       children: [
-        _SectionCard(
-          icon: IconlyLight.profile,
-          title: 'Identité & contact',
-          children: [
-            Obx(() => controller.candidateName.value.isEmpty
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _ReadOnlyRow(
-                        label: 'Nom', value: controller.candidateName.value),
-                  )),
-            _Field(label: 'Poste visé', ctrl: controller.roleCtrl, hint: 'Ex : Développeur Flutter'),
-            _Field(label: 'Ville', ctrl: controller.locationCtrl, hint: 'Ex : Ouagadougou'),
-            _Field(label: 'Téléphone', ctrl: controller.phoneCtrl, hint: '+226…', keyboard: TextInputType.phone),
-            _Field(label: 'Email', ctrl: controller.emailCtrl, hint: 'vous@email.com', keyboard: TextInputType.emailAddress),
-            _Field(label: 'LinkedIn', ctrl: controller.linkedinCtrl, hint: 'https://linkedin.com/in/…'),
-            _Field(label: 'Portfolio / site', ctrl: controller.portfolioCtrl, hint: 'https://…', isLast: true),
-          ],
+        RevealOnMount(
+          delay: Duration.zero,
+          child: _SectionCard(
+            icon: IconlyLight.profile,
+            title: 'Identité & contact',
+            children: [
+              Obx(() => controller.candidateName.value.isEmpty
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _ReadOnlyRow(
+                          label: 'Nom', value: controller.candidateName.value),
+                    )),
+              _Field(
+                  label: 'Poste visé',
+                  ctrl: controller.roleCtrl,
+                  hint: 'Ex : Développeur Flutter'),
+              _Field(
+                  label: 'Ville',
+                  ctrl: controller.locationCtrl,
+                  hint: 'Ex : Ouagadougou'),
+              _Field(
+                  label: 'Téléphone',
+                  ctrl: controller.phoneCtrl,
+                  hint: '+226…',
+                  keyboard: TextInputType.phone),
+              _Field(
+                  label: 'Email',
+                  ctrl: controller.emailCtrl,
+                  hint: 'vous@email.com',
+                  keyboard: TextInputType.emailAddress),
+              _Field(
+                  label: 'LinkedIn',
+                  ctrl: controller.linkedinCtrl,
+                  hint: 'https://linkedin.com/in/…'),
+              _Field(
+                  label: 'Portfolio / site',
+                  ctrl: controller.portfolioCtrl,
+                  hint: 'https://…',
+                  isLast: true),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          icon: IconlyLight.document,
-          title: 'Résumé',
-          children: [
-            _Field(label: 'Présentation', ctrl: controller.bioCtrl, hint: 'Quelques lignes sur votre profil…', maxLines: 4),
-            _Field(label: 'Objectif', ctrl: controller.objectiveCtrl, hint: 'Votre objectif professionnel…', maxLines: 3, isLast: true),
-          ],
+        const SizedBox(height: AppSpacing.lg),
+        RevealOnMount(
+          delay: const Duration(milliseconds: 60),
+          child: _SectionCard(
+            icon: IconlyLight.document,
+            title: 'Résumé',
+            children: [
+              _Field(
+                  label: 'Présentation',
+                  ctrl: controller.bioCtrl,
+                  hint: 'Quelques lignes sur votre profil…',
+                  maxLines: 4),
+              _Field(
+                  label: 'Objectif',
+                  ctrl: controller.objectiveCtrl,
+                  hint: 'Votre objectif professionnel…',
+                  maxLines: 3,
+                  isLast: true),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          icon: IconlyLight.star,
-          title: 'Compétences',
-          children: [
-            _ChipsEditor(
-              label: 'Compétences techniques',
-              items: controller.hardSkills,
-              onAdd: controller.addHardSkill,
-              onRemove: controller.removeHardSkill,
-            ),
-            const SizedBox(height: 16),
-            _ChipsEditor(
-              label: 'Compétences humaines',
-              items: controller.softSkills,
-              onAdd: controller.addSoftSkill,
-              onRemove: controller.removeSoftSkill,
-              isLast: true,
-            ),
-          ],
+        const SizedBox(height: AppSpacing.lg),
+        RevealOnMount(
+          delay: const Duration(milliseconds: 120),
+          child: _SectionCard(
+            icon: IconlyLight.star,
+            title: 'Compétences',
+            children: [
+              _ChipsEditor(
+                label: 'Compétences techniques',
+                items: controller.hardSkills,
+                onAdd: controller.addHardSkill,
+                onRemove: controller.removeHardSkill,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _ChipsEditor(
+                label: 'Compétences humaines',
+                items: controller.softSkills,
+                onAdd: controller.addSoftSkill,
+                onRemove: controller.removeSoftSkill,
+                isLast: true,
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        _SectionCard(
-          icon: IconlyLight.chat,
-          title: 'Langues',
-          children: [_LanguagesEditor(controller: controller)],
+        const SizedBox(height: AppSpacing.lg),
+        RevealOnMount(
+          delay: const Duration(milliseconds: 180),
+          child: _SectionCard(
+            icon: IconlyLight.chat,
+            title: 'Langues',
+            children: [_LanguagesEditor(controller: controller)],
+          ),
         ),
-        const SizedBox(height: 16),
-        _AssistantHint(controller: controller),
+        const SizedBox(height: AppSpacing.lg),
+        RevealOnMount(
+          delay: const Duration(milliseconds: 240),
+          child: _AssistantHint(controller: controller),
+        ),
       ],
     );
   }
@@ -161,37 +215,40 @@ class _AssistantHint extends StatelessWidget {
         AppHaptics.tap();
         Get.toNamed(AppRoutes.profileCvAssistant);
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      curve: AppMotion.spring,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
           color: AppColors.surfaceSelected,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.primaryLight),
+          shape: AppShapes.cardBordered(AppColors.primaryLight),
+          shadows: [...AppColors.ambientShadow],
         ),
-        child: Row(
-          children: [
-            const Icon(IconlyBold.chat, color: AppColors.primary, size: 24),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Obx(() => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Expériences & formations',
-                          style: AppTextStyles.titleMd
-                              .copyWith(fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${controller.experiencesCount.value} expérience(s) · ${controller.educationsCount.value} formation(s). '
-                        'Ajoutez-les en discutant avec l\'assistant IA.',
-                        style: AppTextStyles.bodySm.copyWith(
-                            color: AppColors.bodyColor, height: 1.4),
-                      ),
-                    ],
-                  )),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.primary, size: 22),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              Icon(IconlyBold.chat, color: AppColors.primaryAccent, size: 24),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Obx(() => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Expériences & formations',
+                            style: AppTextStyles.titleMd
+                                .copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${controller.experiencesCount.value} expérience(s) · ${controller.educationsCount.value} formation(s). '
+                          "Ajoutez-les en discutant avec l'assistant IA.",
+                          style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.bodyColor, height: 1.4),
+                        ),
+                      ],
+                    )),
+              ),
+              Icon(IconlyLight.arrow_right_2,
+                  color: AppColors.primaryAccent, size: 22),
+            ],
+          ),
         ),
       ),
     );
@@ -208,34 +265,53 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.lightShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    // Material(transparency) assure l'ancêtre Material pour les TextField/InkWell
+    // contenus dans la carte, sans rompre la chaîne requise par Flutter.
+    return Material(
+      type: MaterialType.transparency,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: [
+            ...AppColors.lightShadow,
+            ...AppColors.ambientShadow,
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                    color: AppColors.primaryLight, shape: BoxShape.circle),
-                child: Icon(icon, size: 19, color: AppColors.primaryDark),
+              Row(
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+                    ),
+                    child: SizedBox(
+                      width: 38,
+                      height: 38,
+                      child: Center(
+                        child:
+                            Icon(icon, size: 19, color: AppColors.primaryDark),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    title,
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(title,
-                  style: AppTextStyles.titleMd
-                      .copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: AppSpacing.lg),
+              ...children,
             ],
           ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
+        ),
       ),
     );
   }
@@ -267,7 +343,7 @@ class _Field extends StatelessWidget {
           Text(label,
               style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.titleColor, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: ctrl,
             maxLines: maxLines,
@@ -336,16 +412,17 @@ class _ChipsEditor extends StatelessWidget {
         Text(label,
             style: AppTextStyles.labelMd.copyWith(
                 color: AppColors.titleColor, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Obx(() => items.isEmpty
             ? const SizedBox.shrink()
             : Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: items
-                      .map((s) => _RemovableChip(label: s, onRemove: () => onRemove(s)))
+                      .map((s) =>
+                          _RemovableChip(label: s, onRemove: () => onRemove(s)))
                       .toList(),
                 ),
               )),
@@ -362,28 +439,31 @@ class _RemovableChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceSelected,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: AppShapes.pill,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label,
-              style: AppTextStyles.labelMd.copyWith(
-                  color: AppColors.primary, fontWeight: FontWeight.w700)),
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: () {
-              AppHaptics.tap();
-              onRemove();
-            },
-            child: const Icon(Icons.close_rounded,
-                size: 16, color: AppColors.primary),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12, right: 6, top: 6, bottom: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.primaryAccent,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(width: AppSpacing.xs),
+            GestureDetector(
+              onTap: () {
+                AppHaptics.tap();
+                onRemove();
+              },
+              child: Icon(IconlyLight.close_square,
+                  size: 16, color: AppColors.primaryAccent),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -441,15 +521,16 @@ class _InlineAdderState extends State<_InlineAdder> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         PressScale(
           onTap: _submit,
+          curve: AppMotion.spring,
           child: Container(
             width: 44,
             height: 44,
             decoration: const BoxDecoration(
                 color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(Icons.add_rounded, color: AppColors.onPrimary),
+            child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
           ),
         ),
       ],
@@ -474,7 +555,7 @@ class _LanguagesEditor extends StatelessWidget {
                   children: [
                     for (var i = 0; i < controller.languages.length; i++)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _LanguageRow(
                           name: controller.languages[i]['name'] ?? '',
                           level: controller.languages[i]['level'] ?? '',
@@ -499,30 +580,32 @@ class _LanguageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              level.isEmpty ? name : '$name · $level',
-              style:
-                  AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w700),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                level.isEmpty ? name : '$name · $level',
+                style:
+                    AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              AppHaptics.tap();
-              onRemove();
-            },
-            child: Icon(Icons.close_rounded,
-                size: 18, color: AppColors.hintColor),
-          ),
-        ],
+            GestureDetector(
+              onTap: () {
+                AppHaptics.tap();
+                onRemove();
+              },
+              child: Icon(IconlyLight.close_square,
+                  size: 18, color: AppColors.hintColor),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -579,35 +662,39 @@ class _LanguageAdderState extends State<_LanguageAdder> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+        const SizedBox(width: AppSpacing.sm),
+        DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _level,
-              isDense: true,
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor),
-              dropdownColor: AppColors.surfaceCard,
-              items: _levels
-                  .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                  .toList(),
-              onChanged: (v) => setState(() => _level = v ?? _level),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _level,
+                isDense: true,
+                style:
+                    AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor),
+                dropdownColor: AppColors.surfaceCard,
+                items: _levels
+                    .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                    .toList(),
+                onChanged: (v) => setState(() => _level = v ?? _level),
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         PressScale(
           onTap: _submit,
+          curve: AppMotion.spring,
           child: Container(
             width: 44,
             height: 44,
             decoration: const BoxDecoration(
                 color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(Icons.add_rounded, color: AppColors.onPrimary),
+            child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
           ),
         ),
       ],
@@ -621,51 +708,55 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         boxShadow: AppColors.lightShadow,
       ),
-      child: SafeArea(
-        top: false,
-        child: Obx(() => SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: controller.isSaving.value
-                    ? null
-                    : () async {
-                        final ok = await controller.save();
-                        if (ok) {
-                          AppToast.success('CV enregistré',
-                              'Vos modifications ont été sauvegardées.');
-                        } else {
-                          AppToast.error('Échec de l\'enregistrement',
-                              controller.errorMessage.value);
-                        }
-                      },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: const StadiumBorder(),
-                ),
-                child: controller.isSaving.value
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: SafeArea(
+          top: false,
+          child: Obx(() => SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: controller.isSaving.value
+                      ? null
+                      : () async {
+                          final ok = await controller.save();
+                          if (ok) {
+                            AppToast.success('CV enregistré',
+                                'Vos modifications ont été sauvegardées.');
+                          } else {
+                            AppToast.error('Échec de l\'enregistrement',
+                                controller.errorMessage.value);
+                          }
+                        },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: controller.isSaving.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.onPrimary),
+                          ),
+                        )
+                      : Text(
+                          'Enregistrer le CV',
+                          style: AppTextStyles.titleMd.copyWith(
+                              color: AppColors.onPrimary,
+                              fontWeight: FontWeight.w800),
                         ),
-                      )
-                    : Text('Enregistrer le CV',
-                        style: AppTextStyles.titleMd.copyWith(
-                            color: AppColors.onPrimary,
-                            fontWeight: FontWeight.w800)),
-              ),
-            )),
+                ),
+              )),
+        ),
       ),
     );
   }

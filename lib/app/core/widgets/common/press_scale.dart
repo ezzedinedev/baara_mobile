@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
 import '../../utils/haptics.dart';
-
 
 class PressScale extends StatefulWidget {
   const PressScale({
@@ -13,17 +13,22 @@ class PressScale extends StatefulWidget {
     this.duration = const Duration(milliseconds: 220),
     this.haptic = true,
     this.enabled = true,
+    this.curve,
   });
 
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-
   final double scale;
   final Duration duration;
   final bool haptic;
   final bool enabled;
+
+  /// Courbe du press « ressort » global. Par défaut [AppMotion.spring]
+  /// (overshoot doux au relâchement). Passer une autre courbe pour ajuster
+  /// localement sans toucher les usages existants.
+  final Curve? curve;
 
   @override
   State<PressScale> createState() => _PressScaleState();
@@ -63,8 +68,7 @@ class _PressScaleState extends State<PressScale>
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.maybeOf(context);
-    final reduceMotion =
-        mediaQuery?.disableAnimations == true ||
+    final reduceMotion = mediaQuery?.disableAnimations == true ||
         mediaQuery?.accessibleNavigation == true;
 
     if (!widget.enabled) {
@@ -99,7 +103,14 @@ class _PressScaleState extends State<PressScale>
         child: AnimatedBuilder(
           animation: _ctrl,
           builder: (_, child) {
-            final eased = Curves.easeInOut.transform(_ctrl.value);
+            // Press-down : easing standard (pas d'overshoot indésirable).
+            // Release : courbe « ressort » (défaut [AppMotion.spring]) pour un
+            // rebond doux. On garde l'overshoot dans [0,1] côté valeur du
+            // contrôleur, l'effet élastique se voit sur l'échelle.
+            final releaseCurve = widget.curve ?? AppMotion.spring;
+            final eased = _ctrl.status == AnimationStatus.reverse
+                ? releaseCurve.transform(_ctrl.value)
+                : Curves.easeInOut.transform(_ctrl.value);
             final s = 1.0 - (eased * (1.0 - widget.scale));
             return Transform.scale(scale: s, child: child);
           },

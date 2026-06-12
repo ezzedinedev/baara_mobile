@@ -1,8 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 
@@ -45,22 +48,30 @@ class TrainingCard extends StatelessWidget {
         ? '${training.lessons} ${training.lessons > 1 ? "leçons" : "leçon"}'
         : 'Leçons à venir';
 
+    final cardRadius = AppShapes.squircleRadius(AppRadius.xl);
     return PressScale(
+      curve: AppMotion.spring,
       onTap: onTap,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.onDark,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: cardRadius,
+          // Ombres en couches (profondeur 2026) : portée large + contact net.
           boxShadow: [
             BoxShadow(
               color: AppColors.primaryDark.withValues(alpha: 0.22),
-              blurRadius: 22,
-              offset: const Offset(0, 12),
+              blurRadius: 26,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: AppColors.primaryDark.withValues(alpha: 0.10),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: cardRadius,
           child: SizedBox(
             height: cardHeight,
             child: Stack(
@@ -109,8 +120,7 @@ class TrainingCard extends StatelessWidget {
                           if (training.level.isNotEmpty)
                             _LevelBadge(text: training.level),
                           const Spacer(),
-                          if (_isFree)
-                            const _FreeBadge(),
+                          if (_isFree) const _FreeBadge(),
                         ],
                       ),
                       const SizedBox(height: 14),
@@ -162,7 +172,7 @@ class TrainingCard extends StatelessWidget {
                           if (training.rating > 0) ...[
                             const SizedBox(width: 12),
                             _CardStat(
-                              icon: Icons.star_rounded,
+                              icon: IconlyBold.star,
                               label: training.rating.toStringAsFixed(1),
                             ),
                           ],
@@ -313,16 +323,16 @@ class _StatusPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.check_circle_rounded,
+            Icon(
+              IconlyBold.tick_square,
               size: 13,
-              color: AppColors.success,
+              color: AppColors.successAccent,
             ),
             const SizedBox(width: 5),
             Text(
               'Inscrit',
               style: AppTextStyles.labelSm.copyWith(
-                color: AppColors.success,
+                color: AppColors.successAccent,
                 fontWeight: FontWeight.w800,
                 fontSize: 11,
                 letterSpacing: 0.3,
@@ -349,8 +359,8 @@ class _StatusPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.arrow_forward_rounded,
-              size: 14, color: AppColors.primary),
+          Icon(IconlyLight.arrow_right_2,
+              size: 14, color: AppColors.primaryAccent),
           const SizedBox(width: 6),
           Text(
             'Découvrir',

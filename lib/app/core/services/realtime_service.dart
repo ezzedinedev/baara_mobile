@@ -7,8 +7,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
+import '../../features/messaging/domain/entities/message.dart';
 import '../../features/messaging/presentation/controllers/messages_controller.dart';
 import '../../features/notifications/presentation/controllers/notifications_controller.dart';
+import '../../features/community/presentation/controllers/story_controller.dart';
 
 /// Temps réel via Laravel Reverb — client pur-Dart du protocole Pusher
 /// (sur [WebSocketChannel]).
@@ -74,6 +76,7 @@ class RealtimeService extends GetxService {
     _started = false;
     _reconnectTimer?.cancel();
     _pingTimer?.cancel();
+    _storyReloadDebounce?.cancel();
     await _sub?.cancel();
     await _channel?.sink.close();
     _channel = null;
@@ -84,14 +87,23 @@ class RealtimeService extends GetxService {
   }
 
   // ── Connexion WebSocket ──────────────────────────────────────────────────
-  void _connect() {
+  Future<void> _connect() async {
     if (!_started) return;
     final scheme = ApiConstants.reverbUseTls ? 'wss' : 'ws';
-    final url = '$scheme://${ApiConstants.reverbHost}:${ApiConstants.reverbPort}'
+    final url =
+        '$scheme://${ApiConstants.reverbHost}:${ApiConstants.reverbPort}'
         '/app/${ApiConstants.reverbAppKey}'
         '?protocol=7&client=opportune-flutter&version=1.0.0&flash=false';
     try {
       final channel = WebSocketChannel.connect(Uri.parse(url));
+      // IMPORTANT : on attend `ready` pour capter l'échec de connexion ICI.
+      // Sinon l'exception (serveur Reverb hors-ligne sur l'émulateur) remonte
+      // au runZonedGuarded de main.dart et pollue Crashlytics à chaque essai.
+      await channel.ready;
+      if (!_started) {
+        await channel.sink.close();
+        return;
+      }
       _channel = channel;
       _sub = channel.stream.listen(
         _onFrame,
@@ -100,6 +112,8 @@ class RealtimeService extends GetxService {
         cancelOnError: true,
       );
     } catch (e) {
+      // Échec attendu si Reverb n'est pas démarré : reconnexion silencieuse
+      // (backoff), pas de remontée Crashlytics.
       _scheduleReconnect('connect failed: $e');
     }
   }
@@ -137,8 +151,20 @@ class RealtimeService extends GetxService {
       case 'message.sent':
         _handleMessageEvent(frame['data']);
         break;
+      case 'typing':
+        _handleTypingEvent(frame['data']);
+        break;
+      case 'messages.read':
+        _handleMessagesReadEvent(frame['data']);
+        break;
+      case 'message.reaction':
+        _handleReactionEvent(frame['data']);
+        break;
       case 'notification.created':
         _handleNotificationEvent();
+        break;
+      case 'story.created':
+        _handleStoryEvent();
         break;
     }
   }
@@ -183,7 +209,9 @@ class RealtimeService extends GetxService {
       );
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
-        if (body is Map && body['auth'] is String) return body['auth'] as String;
+        if (body is Map && body['auth'] is String) {
+          return body['auth'] as String;
+        }
       } else {
         _debug('authorize HTTP ${res.statusCode} for $channel');
       }
@@ -208,7 +236,107 @@ class RealtimeService extends GetxService {
     _withMessages((ctrl) {
       ctrl.loadConversations();
       if (convId != null && ctrl.activeConversationId.value == convId) {
-        ctrl.loadMessages(convId);
+        // Incrémental : parse le payload broadcast et ajoute localement.
+        // Fallback : reload REST complet si le parsing échoue.
+        final msg = _parseMessageFromBroadcast(data);
+        if (msg != null) {
+          final exists = ctrl.activeMessages.any((m) => m.id == msg.id);
+          if (!exists) {
+            ctrl.activeMessages.add(msg);
+            // Nouveau message reçu : propose des réponses suggérées (IA).
+            ctrl.maybeLoadSmartReplies();
+          }
+        } else {
+          ctrl.loadMessages(convId);
+        }
+      }
+    });
+  }
+
+  Message? _parseMessageFromBroadcast(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    try {
+      final sender = data['sender'] as Map<String, dynamic>?;
+      final firstName = sender?['first_name'] as String? ?? '';
+      final lastName = sender?['last_name'] as String? ?? '';
+      return Message(
+        id: data['id']?.toString() ?? '',
+        text: data['content']?.toString() ?? '',
+        sentAt: DateTime.tryParse(data['sent_at']?.toString() ?? '') ??
+            DateTime.now(),
+        isMine: _userId != null && data['sender_id']?.toString() == _userId,
+        senderName: '$firstName $lastName'.trim(),
+        messageType: data['message_type']?.toString() ?? 'text',
+        attachmentUrl:
+            ApiConstants.resolveMediaUrl(data['attachment_url']?.toString()),
+        fileName: data['file_name']?.toString(),
+        fileSize: int.tryParse(data['file_size']?.toString() ?? ''),
+        replyToStoryId: data['reply_to_story_id']?.toString(),
+        storySnapshot: data['story_snapshot'] is Map
+            ? StorySnapshot(
+                type: (data['story_snapshot']['type'] ?? 'text').toString(),
+                url: ApiConstants.resolveMediaUrl(
+                    data['story_snapshot']['url']?.toString()),
+                caption: data['story_snapshot']['caption']?.toString(),
+                backgroundColor:
+                    data['story_snapshot']['background_color']?.toString(),
+              )
+            : null,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Temps réel messagerie (Cluster B) ────────────────────────────────────
+  void _handleTypingEvent(dynamic raw) {
+    final data = _decode(raw);
+    if (data == null) return;
+    final userId = data['user_id']?.toString();
+    if (userId != null && userId == _userId) return; // mon propre event
+    final convId = data['conversation_id']?.toString();
+    if (convId == null) return;
+    final typing = data['typing'] == true;
+    _withMessages((ctrl) => ctrl.onPeerTyping(convId, userId ?? '', typing));
+  }
+
+  void _handleMessagesReadEvent(dynamic raw) {
+    final data = _decode(raw);
+    if (data == null) return;
+    final readerId = data['reader_id']?.toString();
+    if (readerId != null && readerId == _userId) return; // ma propre lecture
+    final convId = data['conversation_id']?.toString();
+    final readAt = DateTime.tryParse(data['read_at']?.toString() ?? '');
+    if (convId == null || readAt == null) return;
+    _withMessages((ctrl) => ctrl.onMessagesRead(convId, readAt));
+  }
+
+  void _handleReactionEvent(dynamic raw) {
+    final data = _decode(raw);
+    if (data == null) return;
+    final userId = data['user_id']?.toString();
+    // Ma réaction est déjà appliquée en optimiste côté controller.
+    if (userId != null && userId == _userId) return;
+    final messageId = data['message_id']?.toString();
+    final emoji = data['emoji']?.toString();
+    if (messageId == null || emoji == null) return;
+    final removed = data['removed'] == true;
+    _withMessages(
+      (ctrl) => ctrl.onMessageReaction(messageId, userId ?? '', emoji, removed),
+    );
+  }
+
+  Timer? _storyReloadDebounce;
+
+  void _handleStoryEvent() {
+    // Plusieurs stories peuvent arriver en rafale : on regroupe les
+    // rechargements (un seul appel feed après le calme) pour ne pas marteler
+    // le backend ni reconstruire la barre à chaque event.
+    if (!Get.isRegistered<StoryController>()) return;
+    _storyReloadDebounce?.cancel();
+    _storyReloadDebounce = Timer(const Duration(seconds: 2), () {
+      if (Get.isRegistered<StoryController>()) {
+        Get.find<StoryController>().loadStories();
       }
     });
   }
@@ -240,7 +368,8 @@ class RealtimeService extends GetxService {
         headers: ApiConstants.authHeaders(token),
       );
       final data = res['data'];
-      final user = (data is Map<String, dynamic>) ? (data['user'] ?? data) : null;
+      final user =
+          (data is Map<String, dynamic>) ? (data['user'] ?? data) : null;
       final id = (user is Map<String, dynamic>) ? user['id'] : null;
       return id?.toString();
     } catch (e) {

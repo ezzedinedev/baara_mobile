@@ -10,11 +10,16 @@ class ErrorStateView extends StatefulWidget {
     required this.message,
     required this.onRetry,
     this.compact = false,
+    this.illustration,
   });
 
   final String message;
   final Future<void> Function() onRetry;
   final bool compact;
+
+  /// Illustration de marque optionnelle. Si fournie (et non [compact]), elle
+  /// remplace l'icône animée par défaut. Sinon fallback sur l'animation cloud.
+  final Widget? illustration;
 
   @override
   State<ErrorStateView> createState() => _ErrorStateViewState();
@@ -59,7 +64,18 @@ class _ErrorStateViewState extends State<ErrorStateView>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!widget.compact) ...[
+            if (!widget.compact && widget.illustration != null) ...[
+              widget.illustration!,
+              const SizedBox(height: 18),
+              Text(
+                'Oups, ca n\'a pas marche',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.titleLg.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ] else if (!widget.compact) ...[
               AnimatedBuilder(
                 animation: _ctrl,
                 builder: (context, _) {
@@ -74,7 +90,7 @@ class _ErrorStateViewState extends State<ErrorStateView>
                           width: 130 - 24 * t,
                           height: 130 - 24 * t,
                           decoration: BoxDecoration(
-                            color: AppColors.error
+                            color: AppColors.errorAccent
                                 .withValues(alpha: 0.05 + 0.05 * t),
                             shape: BoxShape.circle,
                           ),
@@ -83,7 +99,7 @@ class _ErrorStateViewState extends State<ErrorStateView>
                           width: 100 - 16 * t,
                           height: 100 - 16 * t,
                           decoration: BoxDecoration(
-                            color: AppColors.error
+                            color: AppColors.errorAccent
                                 .withValues(alpha: 0.08 + 0.06 * t),
                             shape: BoxShape.circle,
                           ),
@@ -92,13 +108,14 @@ class _ErrorStateViewState extends State<ErrorStateView>
                           width: 72,
                           height: 72,
                           decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.16),
+                            color:
+                                AppColors.errorAccent.withValues(alpha: 0.16),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.cloud_off_rounded,
                             size: 32,
-                            color: AppColors.error,
+                            color: AppColors.errorAccent,
                           ),
                         ),
                       ],
@@ -144,8 +161,7 @@ class _ErrorStateViewState extends State<ErrorStateView>
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(AppColors.onPrimary),
+                        valueColor: AlwaysStoppedAnimation(AppColors.onPrimary),
                       ),
                     )
                   : const Icon(Icons.refresh_rounded, size: 18),

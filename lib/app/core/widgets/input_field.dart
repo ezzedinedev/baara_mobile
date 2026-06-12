@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:iconly/iconly.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -68,7 +69,8 @@ class _InputFieldState extends State<InputField> {
         fillColor: widget.filled ? AppColors.surfaceLow : null,
         prefixIcon: prefix,
         suffixIcon: suffixIcon ?? widget.suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide.none,
@@ -81,7 +83,7 @@ class _InputFieldState extends State<InputField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+          borderSide: BorderSide(color: AppColors.primaryAccent, width: 1.4),
         ),
       );
     }
@@ -95,7 +97,8 @@ class _InputFieldState extends State<InputField> {
         validator: widget.validator,
         inputFormatters: widget.inputFormatters,
         maxLines: widget.isPassword ? 1 : widget.maxLines,
-        style: AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor, fontSize: 15),
+        style: AppTextStyles.bodyMd
+            .copyWith(color: AppColors.titleColor, fontSize: 15),
         decoration: decoration(suffixIcon: suffix),
       );
     }
@@ -116,7 +119,8 @@ class _InputFieldState extends State<InputField> {
             padding: const EdgeInsets.only(top: 5),
             child: Text(
               widget.helper!,
-              style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor, fontSize: 10),
+              style: AppTextStyles.bodySm
+                  .copyWith(color: AppColors.hintColor, fontSize: 10),
             ),
           )
         : null;
@@ -130,7 +134,7 @@ class _InputFieldState extends State<InputField> {
             return field(
               suffix: IconButton(
                 icon: Icon(
-                  _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscure ? IconlyLight.show : IconlyLight.hide,
                   color: AppColors.hintColor,
                   size: 20,
                 ),

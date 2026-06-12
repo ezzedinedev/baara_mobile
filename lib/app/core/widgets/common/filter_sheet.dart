@@ -82,7 +82,9 @@ Future<Map<String, String?>?> showFilterSheet({
                                   AppHaptics.tap();
                                   setSheet(() {
                                     draft[group.key] =
-                                        draft[group.key] == option ? null : option;
+                                        draft[group.key] == option
+                                            ? null
+                                            : option;
                                   });
                                 },
                               ),
@@ -158,11 +160,12 @@ class _Chip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withValues(alpha: 0.14)
+              ? AppColors.primaryAccent.withValues(alpha: 0.14)
               : AppColors.surfaceLow,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.outlineVariant,
+            color:
+                selected ? AppColors.primaryAccent : AppColors.outlineVariant,
           ),
         ),
         child: Text(

@@ -37,7 +37,8 @@ class OtpVerificationController extends GetxController {
       if (!initial) isResending.value = true;
       await _authRepository.resendOtp(phone);
       if (!initial) {
-        AppToast.success('Code envoyé', 'Un nouveau code a été envoyé au $phone.');
+        AppToast.success(
+            'Code envoyé', 'Un nouveau code a été envoyé au $phone.');
       }
     } catch (e) {
       if (!initial) AppToast.error('Échec', userFacingError(e));

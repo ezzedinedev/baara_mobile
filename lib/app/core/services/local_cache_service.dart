@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class LocalCacheService {
   LocalCacheService._();
 
@@ -80,8 +79,10 @@ class LocalCacheService {
   /// nouvel utilisateur voit les donnees du precedent.
   Future<void> clearAll() async {
     final prefs = await _ensure();
-    final keys =
-        prefs.getKeys().where((k) => k.startsWith(_prefix)).toList(growable: false);
+    final keys = prefs
+        .getKeys()
+        .where((k) => k.startsWith(_prefix))
+        .toList(growable: false);
     for (final k in keys) {
       await prefs.remove(k);
     }

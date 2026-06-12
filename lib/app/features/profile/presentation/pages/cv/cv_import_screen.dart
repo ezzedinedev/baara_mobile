@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
@@ -22,7 +25,7 @@ class CvImportScreen extends GetView<CvImportController> {
         children: [
           WavyContentHeader(
             title: 'Importer un CV',
-            subtitle: 'Améliorez un CV existant avec l\'IA',
+            subtitle: "Améliorez un CV existant avec l'IA",
             height: 200,
             gradient: AppColors.heroProfileGradient,
             onLeadingTap: () => Get.back<void>(),
@@ -33,7 +36,7 @@ class CvImportScreen extends GetView<CvImportController> {
                 case CvImportStep.analyzing:
                   return const _Busy(label: 'Analyse de votre CV en cours…');
                 case CvImportStep.improving:
-                  return const _Busy(label: 'Amélioration par l\'IA en cours…');
+                  return const _Busy(label: "Amélioration par l'IA en cours…");
                 case CvImportStep.applying:
                   return const _Busy(label: 'Application à votre CV…');
                 case CvImportStep.review:
@@ -61,27 +64,43 @@ class _PickStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _UploadZone(onTap: controller.pickAndAnalyze),
+          RevealOnMount(
+            child: _UploadZone(onTap: controller.pickAndAnalyze),
+          ),
           Obx(() {
             final err = controller.errorMessage.value;
             if (err == null) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: _ErrorBanner(message: err),
+              padding: const EdgeInsets.only(top: AppSpacing.lg),
+              child: RevealOnMount(
+                child: _ErrorBanner(message: err),
+              ),
             );
           }),
           const SizedBox(height: 28),
           Text('Comment ça marche ?', style: AppTextStyles.titleMd),
-          const SizedBox(height: 16),
-          const _HowItWorksStep(number: 1, label: 'Importez votre CV (PDF, DOCX, TXT)'),
+          const SizedBox(height: AppSpacing.lg),
+          RevealOnMount(
+            delay: const Duration(milliseconds: 60),
+            child: const _HowItWorksStep(
+                number: 1, label: 'Importez votre CV (PDF, DOCX, TXT)'),
+          ),
           const SizedBox(height: 14),
-          const _HowItWorksStep(number: 2, label: 'L\'IA analyse et l\'améliore'),
+          RevealOnMount(
+            delay: const Duration(milliseconds: 120),
+            child: const _HowItWorksStep(
+                number: 2, label: "L'IA analyse et l'améliore"),
+          ),
           const SizedBox(height: 14),
-          const _HowItWorksStep(number: 3, label: 'Appliquez-le à votre profil'),
+          RevealOnMount(
+            delay: const Duration(milliseconds: 180),
+            child: const _HowItWorksStep(
+                number: 3, label: 'Appliquez-le à votre profil'),
+          ),
         ],
       ),
     );
@@ -97,102 +116,90 @@ class _ReviewStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final score = controller.cvScore.value;
     final scoreColor = score >= 75
-        ? AppColors.success
-        : (score >= 45 ? AppColors.warning : AppColors.error);
+        ? AppColors.successAccent
+        : (score >= 45 ? AppColors.warningAccent : AppColors.errorAccent);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _FileChip(name: controller.filename.value ?? 'Votre CV'),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+          const SizedBox(height: AppSpacing.xl),
+          DecoratedBox(
+            decoration: ShapeDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: AppColors.lightShadow,
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 76,
-                  height: 76,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: score / 100),
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, v, _) => SizedBox(
-                          width: 76,
-                          height: 76,
-                          child: CircularProgressIndicator(
-                            value: v,
-                            strokeWidth: 8,
-                            backgroundColor: AppColors.surfaceHigh,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(scoreColor),
-                            strokeCap: StrokeCap.round,
-                          ),
-                        ),
-                      ),
-                      Text('$score',
-                          style: AppTextStyles.headlineMd.copyWith(
-                              fontWeight: FontWeight.w900, color: scoreColor)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Score de votre CV',
-                          style: AppTextStyles.titleMd
-                              .copyWith(fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Notre IA peut le réécrire pour le rendre plus clair, mieux structuré et compatible ATS.',
-                        style: AppTextStyles.bodySm
-                            .copyWith(color: AppColors.bodyColor, height: 1.4),
-                      ),
-                    ],
-                  ),
-                ),
+              shape: AppShapes.cardBordered(AppColors.outlineVariant),
+              shadows: [
+                ...AppColors.lightShadow,
+                ...AppColors.ambientShadow,
               ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Row(
+                children: [
+                  ScoreRing(
+                    value: score,
+                    color: scoreColor,
+                    size: 76,
+                    strokeWidth: 8,
+                    valueFontSize: 24,
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Score de votre CV',
+                            style: AppTextStyles.titleMd
+                                .copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          "Notre IA peut le réécrire pour le rendre plus clair, mieux structuré et compatible ATS.",
+                          style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.bodyColor, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           if ((controller.summary.value ?? '').isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
+            const SizedBox(height: AppSpacing.lg),
+            DecoratedBox(
               decoration: BoxDecoration(
                 color: AppColors.surfaceLow,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppShapes.squircleRadius(AppRadius.md),
               ),
-              child: Text(controller.summary.value!,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Text(
+                  controller.summary.value!,
                   style: AppTextStyles.bodySm
-                      .copyWith(color: AppColors.bodyColor, height: 1.5)),
+                      .copyWith(color: AppColors.bodyColor, height: 1.5),
+                ),
+              ),
             ),
           ],
           Obx(() {
             final err = controller.errorMessage.value;
             if (err == null) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.only(top: AppSpacing.lg),
               child: _ErrorBanner(message: err),
             );
           }),
           const SizedBox(height: 24),
           _PrimaryButton(
-            label: 'Améliorer avec l\'IA',
+            label: "Améliorer avec l'IA",
             icon: IconlyBold.discovery,
             onPressed: controller.improve,
           ),
           const SizedBox(height: 10),
-          _TextButton(label: 'Choisir un autre fichier', onPressed: controller.reset),
+          _TextButton(
+              label: 'Choisir un autre fichier', onPressed: controller.reset),
         ],
       ),
     );
@@ -207,45 +214,50 @@ class _ImprovedStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+          DecoratedBox(
+            decoration: ShapeDecoration(
               color: AppColors.successSoft,
-              borderRadius: BorderRadius.circular(20),
+              shape: AppShapes.cardBordered(
+                AppColors.successAccent.withValues(alpha: 0.25),
+              ),
+              shadows: [...AppColors.ambientShadow],
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_awesome_rounded,
-                    color: AppColors.success, size: 28),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Votre CV a été amélioré',
-                          style: AppTextStyles.titleMd
-                              .copyWith(fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text(
-                        'L\'IA a réécrit et structuré le contenu. Appliquez-le pour mettre à jour votre profil.',
-                        style: AppTextStyles.bodySm.copyWith(
-                            color: AppColors.bodyColor, height: 1.4),
-                      ),
-                    ],
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Row(
+                children: [
+                  Icon(Icons.auto_awesome_rounded,
+                      color: AppColors.successAccent, size: 28),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Votre CV a été amélioré',
+                            style: AppTextStyles.titleMd
+                                .copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          "L'IA a réécrit et structuré le contenu. Appliquez-le pour mettre à jour votre profil.",
+                          style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.bodyColor, height: 1.4),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Obx(() {
             final err = controller.errorMessage.value;
             if (err == null) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.only(top: AppSpacing.lg),
               child: _ErrorBanner(message: err),
             );
           }),
@@ -255,7 +267,10 @@ class _ImprovedStep extends StatelessWidget {
             icon: IconlyBold.tick_square,
             onPressed: () async {
               final ok = await controller.apply();
-              if (ok) AppToast.success('CV mis à jour', 'Votre profil a été enrichi.');
+              if (ok) {
+                AppToast.success(
+                    'CV mis à jour', 'Votre profil a été enrichi.');
+              }
             },
           ),
         ],
@@ -280,14 +295,14 @@ class _DoneStep extends StatelessWidget {
               height: 88,
               decoration: const BoxDecoration(
                   color: AppColors.primaryLight, shape: BoxShape.circle),
-              child: const Icon(Icons.check_rounded,
+              child: const Icon(IconlyLight.tick_square,
                   size: 44, color: AppColors.primaryDark),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Text('CV mis à jour !',
                 style: AppTextStyles.titleLg
                     .copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Votre CV importé a été appliqué à votre profil OpporTune.',
               textAlign: TextAlign.center,
@@ -296,7 +311,7 @@ class _DoneStep extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             _PrimaryButton(
-              label: 'Voir l\'aperçu',
+              label: "Voir l'aperçu",
               icon: IconlyBold.show,
               onPressed: () => Get.offNamed(AppRoutes.profileCvPreview),
             ),
@@ -319,8 +334,9 @@ class _Busy extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+          CircularProgressIndicator(
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(AppColors.primaryAccent)),
           const SizedBox(height: 18),
           Text(label,
               style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor)),
@@ -335,24 +351,28 @@ class _FileChip extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceSelected,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
       ),
-      child: Row(
-        children: [
-          const Icon(IconlyBold.document, color: AppColors.primary, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(name,
-                style: AppTextStyles.labelMd
-                    .copyWith(fontWeight: FontWeight.w700),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(IconlyBold.document, color: AppColors.primaryAccent, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                name,
+                style:
+                    AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w700),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-          ),
-        ],
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -363,23 +383,27 @@ class _ErrorBanner extends StatelessWidget {
   final String message;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.errorSoft,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded,
-              color: AppColors.error, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(message,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline_rounded,
+                color: AppColors.errorAccent, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
                 style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.errorStrong, height: 1.4)),
-          ),
-        ],
+                    .copyWith(color: AppColors.errorStrong, height: 1.4),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,9 +429,11 @@ class _PrimaryButton extends StatelessWidget {
         shape: const StadiumBorder(),
       ),
       icon: Icon(icon, size: 18, color: AppColors.onPrimary),
-      label: Text(label,
-          style: AppTextStyles.titleMd.copyWith(
-              color: AppColors.onPrimary, fontWeight: FontWeight.w800)),
+      label: Text(
+        label,
+        style: AppTextStyles.titleMd
+            .copyWith(color: AppColors.onPrimary, fontWeight: FontWeight.w800),
+      ),
     );
   }
 }
@@ -423,9 +449,11 @@ class _TextButton extends StatelessWidget {
         AppHaptics.tap();
         onPressed();
       },
-      child: Text(label,
-          style: AppTextStyles.labelMd.copyWith(
-              color: AppColors.bodyColor, fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: AppTextStyles.labelMd
+            .copyWith(color: AppColors.bodyColor, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
@@ -442,38 +470,49 @@ class _UploadZone extends StatelessWidget {
         AppHaptics.tap();
         onTap();
       },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      curve: AppMotion.spring,
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.surfaceLow,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
           border: Border.all(color: AppColors.primaryLight, width: 1.6),
         ),
-        child: Column(
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceIconSoft,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(IconlyLight.upload,
-                  color: AppColors.primary, size: 32),
-            ),
-            const SizedBox(height: 18),
-            Text('Choisir un fichier',
-                style: AppTextStyles.titleMd, textAlign: TextAlign.center),
-            const SizedBox(height: 6),
-            Text(
-              'PDF, DOCX, TXT · max 10 Mo',
-              style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+          child: _UploadZoneContent(),
         ),
       ),
+    );
+  }
+}
+
+class _UploadZoneContent extends StatelessWidget {
+  const _UploadZoneContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceIconSoft,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(IconlyLight.upload,
+              color: AppColors.primaryAccent, size: 32),
+        ),
+        const SizedBox(height: 18),
+        Text('Choisir un fichier',
+            style: AppTextStyles.titleMd, textAlign: TextAlign.center),
+        const SizedBox(height: 6),
+        Text(
+          'PDF, DOCX, TXT · max 10 Mo',
+          style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -494,8 +533,10 @@ class _HowItWorksStep extends StatelessWidget {
           alignment: Alignment.center,
           decoration: const BoxDecoration(
               color: AppColors.primary, shape: BoxShape.circle),
-          child: Text('$number',
-              style: AppTextStyles.labelSm.copyWith(color: AppColors.onPrimary)),
+          child: Text(
+            '$number',
+            style: AppTextStyles.labelSm.copyWith(color: AppColors.onPrimary),
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(child: Text(label, style: AppTextStyles.bodyMd)),

@@ -10,8 +10,6 @@ class UserModel extends User {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    // L'API renvoie un id UUID (String). Nom : `name` si présent, sinon
-    // composé depuis first_name/last_name.
     final composedName = [json['first_name'], json['last_name']]
         .map((e) => e?.toString().trim() ?? '')
         .where((s) => s.isNotEmpty)

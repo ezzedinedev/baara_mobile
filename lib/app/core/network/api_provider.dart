@@ -17,7 +17,8 @@ class LoggingInterceptor implements ApiInterceptor {
   void onRequest(http.BaseRequest request) {
     if (kDebugMode) {
       final uri = request.url;
-      debugPrint('[API] ${request.method} ${uri.scheme}://${uri.host}${uri.path}');
+      debugPrint(
+          '[API] ${request.method} ${uri.scheme}://${uri.host}${uri.path}');
     }
   }
 
@@ -26,7 +27,8 @@ class LoggingInterceptor implements ApiInterceptor {
     if (kDebugMode) {
       final uri = response.request?.url;
       if (uri != null) {
-        debugPrint('[API] ${response.statusCode} ${uri.scheme}://${uri.host}${uri.path}');
+        debugPrint(
+            '[API] ${response.statusCode} ${uri.scheme}://${uri.host}${uri.path}');
       }
     }
   }
@@ -45,9 +47,11 @@ class RetryPolicy {
   final List<int> retryableStatusCodes;
 
   const RetryPolicy({
-    this.maxRetries = 3,
-    this.baseDelay = const Duration(milliseconds: 500),
-    this.retryableStatusCodes = const [408, 429, 500, 502, 503, 504],
+    this.maxRetries = 2,
+    this.baseDelay = const Duration(milliseconds: 400),
+    // 500 retiré : erreur serveur déterministe (bug) → retry = latence inutile.
+    // On ne retente que les codes réellement transitoires.
+    this.retryableStatusCodes = const [408, 429, 502, 503, 504],
   });
 
   bool shouldRetry(int statusCode, int attempt) {
@@ -196,9 +200,8 @@ class ApiProvider {
         request.headers.addAll(authedHeaders);
 
         _notifyRequest(request);
-        final streamed = await _client
-            .send(request)
-            .timeout(ApiConstants.connectTimeout);
+        final streamed =
+            await _client.send(request).timeout(ApiConstants.connectTimeout);
         final response = await http.Response.fromStream(streamed)
             .timeout(ApiConstants.receiveTimeout);
         _notifyResponse(response);
@@ -286,17 +289,22 @@ class ApiProvider {
         request.files.addAll(files);
 
         _notifyRequest(request);
-        final streamedResponse = await request.send().timeout(ApiConstants.connectTimeout);
-        final response = await http.Response.fromStream(streamedResponse).timeout(ApiConstants.receiveTimeout);
+        final streamedResponse =
+            await request.send().timeout(ApiConstants.connectTimeout);
+        final response = await http.Response.fromStream(streamedResponse)
+            .timeout(ApiConstants.receiveTimeout);
         _notifyResponse(response);
-        
+
         _lastWorkingBaseUrl = baseUrl;
         return _parseResponse(response);
       } catch (e) {
         lastError = e as Exception;
       }
     }
-    throw ApiException(message: 'Multipart upload failed', endpoint: endpoint, previous: lastError);
+    throw ApiException(
+        message: 'Multipart upload failed',
+        endpoint: endpoint,
+        previous: lastError);
   }
 
   Future<Map<String, dynamic>> sendMultipart(

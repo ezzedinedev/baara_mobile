@@ -2,7 +2,8 @@ import '../entities/chat_message.dart';
 
 abstract class IIaRepository {
   // Chatbot
-  Future<Map<String, dynamic>> sendChatMessage({required String message, String? sessionId});
+  Future<Map<String, dynamic>> sendChatMessage(
+      {required String message, String? sessionId});
   Future<List<Map<String, dynamic>>> getChatSessions();
   Future<List<ChatMessage>> getChatMessages(String sessionId);
 

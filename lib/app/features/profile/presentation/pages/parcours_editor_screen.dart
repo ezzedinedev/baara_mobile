@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -16,6 +18,8 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
 
   @override
   Widget build(BuildContext context) {
+    // Scaffold fournit l'ancêtre Material pour tous les TextField/InkWell
+    // présents dans le sheet _EntryFormSheet.
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -42,13 +46,12 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                     ),
                   ),
                   Obx(() => controller.isSaving.value
-                      ? const Padding(
-                          padding: EdgeInsets.only(right: 6),
+                      ? Padding(
+                          padding: const EdgeInsets.only(right: 6),
                           child: SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.primary),
+                            child: const AppLoader(strokeWidth: 2),
                           ),
                         )
                       : const SizedBox.shrink()),
@@ -61,10 +64,16 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
               if (controller.isLoading.value) {
                 return ListView(
                   padding: const EdgeInsets.all(16),
-                  children: const [
-                    SkeletonBox(height: 90, radius: 16),
-                    SizedBox(height: 12),
-                    SkeletonBox(height: 90, radius: 16),
+                  children: [
+                    SkeletonBox(
+                        height: 90,
+                        radius:
+                            AppShapes.squircleRadius(AppRadius.md).topLeft.x),
+                    const SizedBox(height: 12),
+                    SkeletonBox(
+                        height: 90,
+                        radius:
+                            AppShapes.squircleRadius(AppRadius.md).topLeft.x),
                   ],
                 );
               }
@@ -73,6 +82,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                   controller.educations.isEmpty) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
@@ -89,11 +99,14 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                     final e = controller.experiences[i];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _EntryCard(
-                        title: _str(e, ['title', 'job_title'], 'Expérience'),
-                        subtitle: _str(e, ['company', 'company_name'], ''),
-                        period: _period(e),
-                        onDelete: () => controller.removeExperience(i),
+                      child: RevealOnMount(
+                        delay: Duration(milliseconds: 50 * i),
+                        child: _EntryCard(
+                          title: _str(e, ['title', 'job_title'], 'Expérience'),
+                          subtitle: _str(e, ['company', 'company_name'], ''),
+                          period: _period(e),
+                          onDelete: () => controller.removeExperience(i),
+                        ),
                       ),
                     );
                   }),
@@ -112,12 +125,15 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                     final e = controller.educations[i];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _EntryCard(
-                        title: _str(e, ['degree', 'diploma'], 'Formation'),
-                        subtitle: _str(
-                            e, ['institution', 'school', 'university'], ''),
-                        period: _period(e),
-                        onDelete: () => controller.removeEducation(i),
+                      child: RevealOnMount(
+                        delay: Duration(milliseconds: 50 * i),
+                        child: _EntryCard(
+                          title: _str(e, ['degree', 'diploma'], 'Formation'),
+                          subtitle: _str(
+                              e, ['institution', 'school', 'university'], ''),
+                          period: _period(e),
+                          onDelete: () => controller.removeEducation(i),
+                        ),
                       ),
                     );
                   }),
@@ -158,7 +174,8 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
         _FieldSpec('company', 'Entreprise', IconlyLight.work, required: true),
         _FieldSpec('location', 'Ville', IconlyLight.location),
         _FieldSpec('start_date', 'Début (ex : 2020)', IconlyLight.calendar),
-        _FieldSpec('end_date', 'Fin (ex : 2023 / Présent)', IconlyLight.calendar),
+        _FieldSpec(
+            'end_date', 'Fin (ex : 2023 / Présent)', IconlyLight.calendar),
         _FieldSpec('description', 'Missions', IconlyLight.document,
             multiline: true),
       ],
@@ -198,8 +215,10 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xxl),
+        ),
       ),
       builder: (ctx) => _EntryFormSheet(title: title, fields: fields),
     );
@@ -257,6 +276,7 @@ class _EntryFormSheetState extends State<_EntryFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // showModalBottomSheet fournit un Material racine pour les TextField.
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -267,16 +287,7 @@ class _EntryFormSheetState extends State<_EntryFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
+              const SheetHandle(),
               const SizedBox(height: 16),
               Text(widget.title,
                   style: AppTextStyles.titleLg
@@ -287,15 +298,16 @@ class _EntryFormSheetState extends State<_EntryFormSheet> {
                   label: f.label,
                   controller: _ctrls[f.key]!,
                   icon: f.icon,
-                  keyboardType:
-                      f.multiline ? TextInputType.multiline : TextInputType.text,
+                  keyboardType: f.multiline
+                      ? TextInputType.multiline
+                      : TextInputType.text,
                 ),
                 const SizedBox(height: 12),
               ],
               if (_error != null) ...[
                 Text(_error!,
                     style: AppTextStyles.bodySm
-                        .copyWith(color: AppColors.error)),
+                        .copyWith(color: AppColors.errorAccent)),
                 const SizedBox(height: 12),
               ],
               GradientButton(
@@ -326,9 +338,9 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+            shape: AppShapes.squircle(AppRadius.sm),
           ),
           child: Icon(icon, color: color, size: 18),
         ),
@@ -356,12 +368,12 @@ class _EntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.2),
-        ),
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        shadows: [
+          ...AppColors.lightShadow,
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +401,7 @@ class _EntryCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(IconlyLight.delete, color: AppColors.error),
+            icon: Icon(IconlyLight.delete, color: AppColors.errorAccent),
             onPressed: () {
               AppHaptics.tap();
               onDelete();
@@ -408,32 +420,31 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          AppHaptics.tap();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.4),
-            ),
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: ShapeDecoration(
+          color: Colors.transparent,
+          shape: AppShapes.squircle(
+            AppRadius.md,
+            side: AppColors.primaryAccent.withValues(alpha: 0.4),
+            width: 1.4,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(label,
-                  style: AppTextStyles.titleMd.copyWith(
-                      color: AppColors.primary, fontWeight: FontWeight.w800)),
-            ],
-          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(IconlyLight.plus, color: AppColors.primaryAccent, size: 20),
+            const SizedBox(width: 8),
+            Text(label,
+                style: AppTextStyles.titleMd.copyWith(
+                    color: AppColors.primaryAccent,
+                    fontWeight: FontWeight.w800)),
+          ],
         ),
       ),
     );

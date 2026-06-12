@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 
 import '../../theme/app_colors.dart';
 import '../../utils/haptics.dart';
-
-
 
 class AppBackButton extends StatelessWidget {
   const AppBackButton({super.key, this.onTap, this.onDark = false});
@@ -21,27 +20,31 @@ class AppBackButton extends StatelessWidget {
         : AppColors.outlineVariant.withValues(alpha: 0.40);
     final iconColor = onDark ? AppColors.onPrimary : AppColors.titleColor;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          AppHaptics.tap();
-          if (onTap != null) {
-            onTap!();
-          } else {
-            Navigator.of(context).maybePop();
-          }
-        },
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: bg,
-            shape: BoxShape.circle,
-            border: Border.all(color: borderColor),
+    return Semantics(
+      button: true,
+      label: 'Retour',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            AppHaptics.tap();
+            if (onTap != null) {
+              onTap!();
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+          borderRadius: BorderRadius.circular(22),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor),
+            ),
+            child: Icon(IconlyLight.arrow_left_2, color: iconColor, size: 26),
           ),
-          child: Icon(Icons.chevron_left_rounded, color: iconColor, size: 26),
         ),
       ),
     );

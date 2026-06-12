@@ -71,7 +71,8 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<void> register(Map<String, dynamic> userData) async {
-    final response = await _apiProvider.postJson(ApiConstants.register, userData);
+    final response =
+        await _apiProvider.postJson(ApiConstants.register, userData);
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Registration failed');
     }

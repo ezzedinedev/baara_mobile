@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
@@ -36,50 +40,72 @@ class _CommunityConnectionsScreenState
       body: Obx(() {
         if (_controller.isLoadingConnections.value &&
             _controller.pendingConnections.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return ListView.separated(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            itemCount: 7,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+            itemBuilder: (_, __) => const MessageTileSkeleton(),
+          );
         }
         if (_controller.pendingConnections.isEmpty) {
           return const Center(
             child: EmptyState(
-              icon: Icons.people_outline_rounded,
+              illustration: EmptyPeopleIllustration(),
               title: 'Aucune demande',
               subtitle: 'Vous n\'avez pas de demande de connexion en attente.',
             ),
           );
         }
-        return RefreshIndicator(
-          color: AppColors.primary,
+        return AppRefreshIndicator(
+          color: AppColors.primaryAccent,
           onRefresh: _controller.loadPendingConnections,
-          child: ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: _controller.pendingConnections.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (_, i) {
-              final req = _controller.pendingConnections[i];
-              return NetworkUserTile(
-                user: req.user,
-                onTap: () => Get.toNamed(
-                  AppRoutes.communityProfile.replaceFirst(':id', req.user.id),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Refuser',
-                      icon: const Icon(Icons.close_rounded,
-                          color: AppColors.error),
-                      onPressed: () => _respond(req.connectionId, false),
+          child: AnimationLimiter(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              itemCount: _controller.pendingConnections.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.md),
+              itemBuilder: (_, i) {
+                final req = _controller.pendingConnections[i];
+                return AnimationConfiguration.staggeredList(
+                  position: i,
+                  duration: AppMotion.medium,
+                  child: SlideAnimation(
+                    verticalOffset: AppMotion.listSlideOffset,
+                    curve: AppMotion.emphasizedDecelerate,
+                    child: FadeInAnimation(
+                      curve: AppMotion.emphasizedDecelerate,
+                      child: NetworkUserTile(
+                        user: req.user,
+                        onTap: () => Get.toNamed(
+                          AppRoutes.communityProfile
+                              .replaceFirst(':id', req.user.id),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _RespondButton(
+                              icon: IconlyLight.close_square,
+                              color: AppColors.errorAccent,
+                              tooltip: 'Refuser',
+                              onTap: () => _respond(req.connectionId, false),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            _RespondButton(
+                              icon: IconlyLight.tick_square,
+                              color: AppColors.primaryAccent,
+                              filled: true,
+                              tooltip: 'Accepter',
+                              onTap: () => _respond(req.connectionId, true),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    IconButton(
-                      tooltip: 'Accepter',
-                      icon: const Icon(Icons.check_circle_rounded,
-                          color: AppColors.primary),
-                      onPressed: () => _respond(req.connectionId, true),
-                    ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              },
+            ),
           ),
         );
       }),
@@ -89,5 +115,45 @@ class _CommunityConnectionsScreenState
   Future<void> _respond(String connectionId, bool accept) async {
     AppHaptics.tap();
     await _controller.respondToConnection(connectionId, accept);
+  }
+}
+
+/// Bouton circulaire d'action pour répondre à une demande (accepter / refuser).
+/// [filled] = action principale (fond tonal plein), sinon contour discret.
+class _RespondButton extends StatelessWidget {
+  const _RespondButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    required this.tooltip,
+    this.filled = false,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final String tooltip;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: PressScale(
+        onTap: onTap,
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: filled ? 0.14 : 0.0),
+            borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+            border: Border.all(
+              color: color.withValues(alpha: filled ? 0.4 : 0.3),
+            ),
+          ),
+          child: Icon(icon, size: 19, color: color),
+        ),
+      ),
+    );
   }
 }

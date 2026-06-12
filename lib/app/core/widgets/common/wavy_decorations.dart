@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 
 class WaveClipper extends CustomClipper<Path> {
@@ -79,7 +80,7 @@ class WavyHeaderLeadingButton extends StatelessWidget {
             ),
           ),
           child: const Icon(
-            Icons.chevron_left_rounded,
+            IconlyLight.arrow_left_2,
             color: AppColors.onPrimary,
             size: 26,
           ),
@@ -139,7 +140,8 @@ class WavyHeaderActionButton extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(color: AppColors.onPrimary, width: 1.4),
                   ),
-                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
                   child: Text(
                     badgeCount! > 99 ? '99+' : '$badgeCount',
                     textAlign: TextAlign.center,

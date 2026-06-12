@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import 'skeleton_box.dart';
 
-
-
 class OfferCardSkeleton extends StatelessWidget {
   const OfferCardSkeleton({super.key, this.height = 280});
 

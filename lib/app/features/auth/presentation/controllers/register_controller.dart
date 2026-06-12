@@ -32,9 +32,12 @@ class RegisterController extends GetxController {
   final selectedCountryIso = 'BF'.obs;
 
   final countries = const <RegisterCountryOption>[
-    RegisterCountryOption(isoCode: 'BF', flag: '🇧🇫', name: 'Burkina Faso', dialCode: '+226'),
-    RegisterCountryOption(isoCode: 'CI', flag: '🇨🇮', name: 'Côte d\'Ivoire', dialCode: '+225'),
-    RegisterCountryOption(isoCode: 'SN', flag: '🇸🇳', name: 'Sénégal', dialCode: '+221'),
+    RegisterCountryOption(
+        isoCode: 'BF', flag: '🇧🇫', name: 'Burkina Faso', dialCode: '+226'),
+    RegisterCountryOption(
+        isoCode: 'CI', flag: '🇨🇮', name: 'Côte d\'Ivoire', dialCode: '+225'),
+    RegisterCountryOption(
+        isoCode: 'SN', flag: '🇸🇳', name: 'Sénégal', dialCode: '+221'),
   ];
 
   final stepOneFormKey = GlobalKey<FormState>();
@@ -67,14 +70,17 @@ class RegisterController extends GetxController {
     }
   }
 
-  String? validateCountry(String? v) => (v == null || v.isEmpty) ? 'Champ requis' : null;
+  String? validateCountry(String? v) =>
+      (v == null || v.isEmpty) ? 'Champ requis' : null;
 
   void onContinue() async {
     if (currentStep.value == 1 && stepOneFormKey.currentState!.validate()) {
       currentStep.value = 2;
-    } else if (currentStep.value == 2 && stepTwoFormKey.currentState!.validate()) {
+    } else if (currentStep.value == 2 &&
+        stepTwoFormKey.currentState!.validate()) {
       currentStep.value = 3;
-    } else if (currentStep.value == 3 && stepThreeFormKey.currentState!.validate()) {
+    } else if (currentStep.value == 3 &&
+        stepThreeFormKey.currentState!.validate()) {
       if (!acceptedTerms.value) {
         errorMsg.value = "Acceptez les conditions d'utilisation";
         return;
@@ -112,8 +118,13 @@ class RegisterController extends GetxController {
 
   @override
   void onClose() {
-    firstNameCtrl.dispose(); lastNameCtrl.dispose(); emailCtrl.dispose();
-    phoneCtrl.dispose(); countryCtrl.dispose(); passwordCtrl.dispose(); confirmPasswordCtrl.dispose();
+    firstNameCtrl.dispose();
+    lastNameCtrl.dispose();
+    emailCtrl.dispose();
+    phoneCtrl.dispose();
+    countryCtrl.dispose();
+    passwordCtrl.dispose();
+    confirmPasswordCtrl.dispose();
     super.onClose();
   }
 }

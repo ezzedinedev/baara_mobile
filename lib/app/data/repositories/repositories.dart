@@ -38,7 +38,7 @@ class AuthRepository {
       },
     );
   }
- 
+
   Future<Map<String, dynamic>> register({
     required String firstName,
     required String lastName,
@@ -116,7 +116,8 @@ class OfferRepository {
 
   String _encodeParams(Map<String, dynamic> params) {
     return params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
+        .map((e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
         .join('&');
   }
 }
@@ -142,7 +143,8 @@ class TrainingRepository {
       if (format != null) 'format': format,
     };
     final query = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
+        .map((e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}')
         .join('&');
     return _apiProvider.getJson('${ApiConstants.trainings}?$query');
   }
@@ -161,5 +163,4 @@ class ProfileRepository {
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) {
     return _apiProvider.putJson(ApiConstants.profile, data);
   }
-
 }

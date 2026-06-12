@@ -76,7 +76,10 @@ class PortfolioItem {
 
   static List<String> _strList(dynamic v) {
     if (v is List) {
-      return v.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).toList();
+      return v
+          .map((e) => e.toString())
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
     }
     return const [];
   }

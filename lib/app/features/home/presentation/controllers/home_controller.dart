@@ -1,9 +1,15 @@
 import 'package:get/get.dart';
 
 import '../../../../core/services/realtime_service.dart';
+import '../../../messaging/presentation/controllers/messages_controller.dart';
+import '../../../community/presentation/controllers/community_controller.dart';
 
 class HomeController extends GetxController {
   final currentTabIndex = 0.obs;
+
+  // Index des onglets (cf. _LazyTabStack dans home_screen).
+  static const _networkTab = 2;
+  static const _messagesTab = 3;
 
   // Stubs for compatibility with FcmService
   final activeConversationId = RxnString();
@@ -22,5 +28,13 @@ class HomeController extends GetxController {
 
   void changeTab(int index) {
     currentTabIndex.value = index;
+    // Rafraîchit les compteurs à l'entrée de l'onglet → badges (non-lus,
+    // demandes) toujours exacts, même après lecture/réception ailleurs.
+    if (index == _messagesTab && Get.isRegistered<MessagesController>()) {
+      Get.find<MessagesController>().loadConversations();
+    } else if (index == _networkTab &&
+        Get.isRegistered<CommunityController>()) {
+      Get.find<CommunityController>().loadPendingConnections();
+    }
   }
 }

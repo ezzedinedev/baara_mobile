@@ -16,7 +16,8 @@ class InterviewDetails {
   factory InterviewDetails.fromJson(Map<String, dynamic> json) {
     return InterviewDetails(
       id: json['id']?.toString() ?? '',
-      scheduledAt: DateTime.tryParse(json['scheduled_at']?.toString() ?? '') ?? DateTime.now(),
+      scheduledAt: DateTime.tryParse(json['scheduled_at']?.toString() ?? '') ??
+          DateTime.now(),
       location: json['location'] ?? '',
       notes: json['notes'],
       navigation: InterviewNavigation.fromJson(json['navigation'] ?? {}),

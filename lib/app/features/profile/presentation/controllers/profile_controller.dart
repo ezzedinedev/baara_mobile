@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:opportune_bf/app/core/services/auth_token_store.dart';
+import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
 import 'package:opportune_bf/app/core/services/realtime_service.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
@@ -36,6 +37,7 @@ class ProfileController extends GetxController {
       isLoadingProfile.value = true;
       errorMessage.value = null;
       profile.value = await _repository.getProfile();
+      _applyServerTheme();
     } catch (e) {
       errorMessage.value = "Erreur de chargement du profil";
     } finally {
@@ -46,6 +48,15 @@ class ProfileController extends GetxController {
 
   // Legacy method names for UI compatibility
   Future<void> loadProfile() => fetchProfile();
+
+  /// Applique le thème enregistré côté serveur (`preferences.apparence.theme`)
+  /// dès que le profil est chargé → le dark mode suit l'utilisateur d'un
+  /// appareil à l'autre. No-op si déjà aligné (cf. [AppThemeController]).
+  void _applyServerTheme() {
+    final p = profile.value;
+    if (p == null || !Get.isRegistered<AppThemeController>()) return;
+    Get.find<AppThemeController>().syncFromServer(p.themePref);
+  }
 
   /// Sélectionne une image en galerie et l'envoie comme nouvel avatar
   /// (POST /profile/avatar, champ `avatar`, ≤ 2 Mo).
@@ -109,6 +120,24 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       isSavingPreferences.value = false;
+    }
+  }
+
+  final isSavingVisibility = false.obs;
+
+  /// Change la visibilité du profil communauté ('public' | 'connections').
+  /// Persiste via PUT /profile et rafraîchit l'état local. Retourne `true`
+  /// en cas de succès (le caller gère son état optimiste).
+  Future<bool> setProfileVisibility(String visibility) async {
+    try {
+      isSavingVisibility.value = true;
+      profile.value = await _repository.setProfileVisibility(visibility);
+      return true;
+    } catch (e) {
+      AppToast.error('Visibilité non enregistrée', userFacingError(e));
+      return false;
+    } finally {
+      isSavingVisibility.value = false;
     }
   }
 

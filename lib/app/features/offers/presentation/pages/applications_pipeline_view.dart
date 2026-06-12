@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -26,12 +28,13 @@ class ApplicationsPipelineView extends GetView<ApplicationsController> {
       if (controller.errorMessage.value != null) {
         return ErrorStateView(
           message: controller.errorMessage.value!,
+          illustration: const ErrorIllustration(),
           onRetry: controller.load,
         );
       }
       if (controller.applications.isEmpty) {
         return EmptyState(
-          icon: IconlyLight.paper,
+          illustration: const EmptyApplicationsIllustration(),
           title: 'Aucune candidature',
           subtitle:
               'Vous n\'avez pas encore postulé. Explorez les offres et tentez votre chance !',
@@ -42,8 +45,8 @@ class ApplicationsPipelineView extends GetView<ApplicationsController> {
 
       final grouped = _groupByStatus(controller.applications);
 
-      return RefreshIndicator(
-        color: AppColors.primary,
+      return AppRefreshIndicator(
+        color: AppColors.primaryAccent,
         onRefresh: controller.load,
         child: ListView(
           scrollDirection: Axis.horizontal,
@@ -80,11 +83,9 @@ class _ColumnConfig {
 }
 
 const List<_ColumnConfig> _columns = [
-  _ColumnConfig(ApplicationStatus.newApp, 'Envoyées', Icons.send_rounded),
-  _ColumnConfig(
-      ApplicationStatus.shortlisted, 'Présélection', Icons.star_rounded),
-  _ColumnConfig(
-      ApplicationStatus.interview, 'Entretien', Icons.event_available_rounded),
+  _ColumnConfig(ApplicationStatus.newApp, 'Envoyées', IconlyLight.send),
+  _ColumnConfig(ApplicationStatus.shortlisted, 'Présélection', IconlyBold.star),
+  _ColumnConfig(ApplicationStatus.interview, 'Entretien', IconlyLight.calendar),
   _ColumnConfig(
       ApplicationStatus.rejected, 'Refusées', Icons.do_not_disturb_on_rounded),
 ];
@@ -93,13 +94,13 @@ const List<_ColumnConfig> _columns = [
 Color _statusColor(ApplicationStatus status) {
   switch (status) {
     case ApplicationStatus.newApp:
-      return AppColors.secondary;
+      return AppColors.primaryAccent;
     case ApplicationStatus.shortlisted:
-      return AppColors.success;
+      return AppColors.successAccent;
     case ApplicationStatus.interview:
-      return AppColors.warning;
+      return AppColors.warningAccent;
     case ApplicationStatus.rejected:
-      return AppColors.error;
+      return AppColors.errorAccent;
   }
 }
 
@@ -135,9 +136,9 @@ class _PipelineColumn extends StatelessWidget {
           // En-tête coloré + compteur.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: soft,
-              borderRadius: BorderRadius.circular(16),
+              shape: AppShapes.squircle(AppRadius.md),
             ),
             child: Row(
               children: [
@@ -146,8 +147,8 @@ class _PipelineColumn extends StatelessWidget {
                 Expanded(
                   child: Text(
                     config.label,
-                    style: AppTextStyles.titleMd.copyWith(
-                        color: accent, fontWeight: FontWeight.w800),
+                    style: AppTextStyles.titleMd
+                        .copyWith(color: accent, fontWeight: FontWeight.w800),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -194,10 +195,9 @@ class _EmptyColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant),
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
       ),
       alignment: Alignment.center,
       padding: const EdgeInsets.all(16),
@@ -233,8 +233,9 @@ class _PipelineCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppColors.lightShadow,
+          borderRadius: AppShapes.squircleRadius(AppRadius.md),
+          // Profondeur en couches (2026) + liseré d'accent de colonne.
+          boxShadow: [...AppColors.lightShadow, ...AppColors.ambientShadow],
           border: Border(left: BorderSide(color: accent, width: 3)),
         ),
         child: Column(
@@ -251,26 +252,15 @@ class _PipelineCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 company,
-                style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
             if (matchPct > 0) ...[
               const SizedBox(height: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSelected,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '$matchPct% match',
-                  style: AppTextStyles.labelSm.copyWith(
-                      color: AppColors.primary, fontWeight: FontWeight.w700),
-                ),
-              ),
+              MatchScorePill(score: matchPct, dense: true),
             ],
           ],
         ),

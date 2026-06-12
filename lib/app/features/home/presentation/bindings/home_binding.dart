@@ -12,6 +12,10 @@ import 'package:opportune_bf/app/features/trainings/presentation/controllers/tra
 import 'package:opportune_bf/app/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:opportune_bf/app/features/profile/domain/repositories/i_profile_repository.dart';
 import 'package:opportune_bf/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:opportune_bf/app/features/profile/presentation/controllers/settings_controller.dart';
+import 'package:opportune_bf/app/features/profile/data/repositories/document_repository_impl.dart';
+import 'package:opportune_bf/app/features/profile/domain/repositories/i_document_repository.dart';
+import 'package:opportune_bf/app/features/profile/presentation/controllers/documents_controller.dart';
 
 import 'package:opportune_bf/app/features/messaging/data/repositories/messaging_repository_impl.dart';
 import 'package:opportune_bf/app/features/messaging/domain/repositories/i_messaging_repository.dart';
@@ -20,6 +24,7 @@ import 'package:opportune_bf/app/features/messaging/presentation/controllers/mes
 import 'package:opportune_bf/app/features/community/data/repositories/community_repository_impl.dart';
 import 'package:opportune_bf/app/features/community/domain/repositories/i_community_repository.dart';
 import 'package:opportune_bf/app/features/community/presentation/controllers/community_controller.dart';
+import 'package:opportune_bf/app/features/community/presentation/controllers/story_controller.dart';
 
 import 'package:opportune_bf/app/features/notifications/data/repositories/notification_repository_impl.dart';
 import 'package:opportune_bf/app/features/notifications/domain/repositories/i_notification_repository.dart';
@@ -31,30 +36,42 @@ class HomeBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(() => HomeController());
-    
+
     // TAB: Offers
-    Get.lazyPut<IOfferRepository>(() => OfferRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<IOfferRepository>(
+        () => OfferRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => OfferController(Get.find<IOfferRepository>()));
 
     // TAB: Trainings
-    Get.lazyPut<ITrainingRepository>(() => TrainingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<ITrainingRepository>(
+        () => TrainingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => TrainingsController(Get.find<ITrainingRepository>()));
 
     // TAB: Profile
-    Get.lazyPut<IProfileRepository>(() => ProfileRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<IProfileRepository>(
+        () => ProfileRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => ProfileController(Get.find<IProfileRepository>()));
+    Get.lazyPut(() => SettingsController(Get.find<ProfileController>()));
+    Get.lazyPut<IDocumentRepository>(
+        () => DocumentRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut(() => DocumentsController(Get.find<IDocumentRepository>()));
 
     // TAB: Messaging
-    Get.lazyPut<IMessagingRepository>(() => MessagingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<IMessagingRepository>(
+        () => MessagingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => MessagesController(Get.find<IMessagingRepository>()));
 
     // SECTION: Communauté (aperçu sur l'accueil + écran dédié /communaute)
-    Get.lazyPut<ICommunityRepository>(() => CommunityRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut<ICommunityRepository>(
+        () => CommunityRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => CommunityController(Get.find<ICommunityRepository>()));
+    Get.lazyPut(() => StoryController(Get.find<ICommunityRepository>()));
 
     // Notifications : badge non-lus sur la cloche de l'accueil (controller
     // partagé avec l'écran /notifications).
-    Get.lazyPut<INotificationRepository>(() => NotificationRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
-    Get.lazyPut(() => NotificationsController(Get.find<INotificationRepository>()));
+    Get.lazyPut<INotificationRepository>(
+        () => NotificationRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+    Get.lazyPut(
+        () => NotificationsController(Get.find<INotificationRepository>()));
   }
 }

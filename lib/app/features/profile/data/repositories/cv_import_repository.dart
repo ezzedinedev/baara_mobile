@@ -45,7 +45,8 @@ class CvImportRepository {
   }
 
   /// Étape 3 — applique les champs au CV de l'utilisateur connecté (persist).
-  Future<Map<String, dynamic>> apply(Map<String, dynamic> extractedFields) async {
+  Future<Map<String, dynamic>> apply(
+      Map<String, dynamic> extractedFields) async {
     final response = await _apiProvider.postJson(
       ApiConstants.profileCvImportApply,
       {'extracted_fields': extractedFields},
@@ -55,8 +56,8 @@ class CvImportRepository {
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
     final statusCode = response['statusCode'] as int?;
-    final success =
-        response['success'] as bool? ?? (statusCode != null && statusCode < 400);
+    final success = response['success'] as bool? ??
+        (statusCode != null && statusCode < 400);
     if (!success) {
       throw ApiException(
         message: response['message']?.toString() ??

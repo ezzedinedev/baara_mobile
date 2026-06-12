@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 
-
 class BrandCard extends StatelessWidget {
   const BrandCard({
     super.key,
@@ -20,6 +19,7 @@ class BrandCard extends StatelessWidget {
   final double radius;
   final Color? borderColor;
   final BrandCardShadow shadow;
+
   /// Override de la couleur de fond. `null` = `AppColors.surfaceCard`.
   final Color? color;
   final VoidCallback? onTap;

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
 
 enum AppToastVariant { success, error, info, warning }
-
 
 class AppToast {
   AppToast._();
@@ -111,6 +111,7 @@ class _AppToastBodyState extends State<_AppToastBody>
     with TickerProviderStateMixin {
   /// Anime l'icone : scale 0 → 1 avec elasticOut (effet bounce premium).
   late final AnimationController _iconCtrl;
+
   /// Anime la barre de progression : 1.0 → 0.0 sur la duree du toast.
   late final AnimationController _progressCtrl;
 
@@ -141,25 +142,25 @@ class _AppToastBodyState extends State<_AppToastBody>
         return (
           color: AppColors.successStrong,
           softBg: AppColors.successSoft,
-          icon: Icons.check_circle_rounded,
+          icon: IconlyBold.tick_square,
         );
       case AppToastVariant.error:
         return (
-          color: AppColors.error,
-          softBg: AppColors.error.withValues(alpha: 0.12),
+          color: AppColors.errorAccent,
+          softBg: AppColors.errorAccent.withValues(alpha: 0.12),
           icon: Icons.error_rounded,
         );
       case AppToastVariant.warning:
         return (
-          color: AppColors.warning,
-          softBg: AppColors.warning.withValues(alpha: 0.14),
+          color: AppColors.warningAccent,
+          softBg: AppColors.warningAccent.withValues(alpha: 0.14),
           icon: Icons.warning_amber_rounded,
         );
       case AppToastVariant.info:
         return (
-          color: AppColors.primary,
+          color: AppColors.primaryAccent,
           softBg: AppColors.surfaceIconSoft,
-          icon: Icons.info_rounded,
+          icon: IconlyLight.info_circle,
         );
     }
   }
@@ -283,7 +284,7 @@ class _AppToastBodyState extends State<_AppToastBody>
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Icon(
-                          Icons.close_rounded,
+                          IconlyLight.close_square,
                           size: 16,
                           color: AppColors.hintColor,
                         ),

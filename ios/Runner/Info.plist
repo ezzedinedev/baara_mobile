@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>OpporTune utilise votre position pour partager un lieu dans vos messages et vous guider vers vos entretiens.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OpporTune utilise le micro pour enregistrer vos messages vocaux.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

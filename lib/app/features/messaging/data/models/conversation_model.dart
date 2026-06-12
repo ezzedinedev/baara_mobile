@@ -1,3 +1,5 @@
+import 'package:opportune_bf/app/core/constants/api_constants.dart';
+
 import '../../domain/entities/conversation.dart';
 
 class ConversationModel extends Conversation {
@@ -9,30 +11,25 @@ class ConversationModel extends Conversation {
     required super.unreadCount,
     required super.isOnline,
     super.avatar,
+    super.lastSeenAt,
   });
 
   /// Mappe une conversation telle que renvoyee par
   /// `MessageApiController@conversations` (serialisation Eloquent brute).
   ///
-  /// Forme reelle d'un item :
-  /// {
-  ///   "id": "uuid-v4",
-  ///   "last_message_at": "2026-05-30T09:12:00.000000Z",
-  ///   "unread_employer": 0,
-  ///   "unread_candidate": 2,
-  ///   "latest_message": { "content": "...", "sent_at": "..." },
-  ///   "candidate": { "user": { "first_name": "...", "last_name": "...",
-  ///                            "avatar_url": "..." } },
-  ///   "employer":  { "company_name": "...", "logo_url": "..." }
-  /// }
-  ///
-  /// Le nom affiche depend du point de vue ([viewerType]) :
-  ///  - un candidat voit l'entreprise (`employer.company_name`),
-  ///  - un recruteur voit le candidat (`candidate.user.first_name + last_name`).
+
   factory ConversationModel.fromJson(
     Map<String, dynamic> json, {
     String? viewerType,
   }) {
+    // Conversation DIRECTE (DM reseau, reponse a une story) : l'interlocuteur
+    // est `direct_user` (pose par le backend), pas employer/candidate.
+    final directUser = json['direct_user'] as Map<String, dynamic>?;
+    final directName = directUser == null
+        ? null
+        : _fullName(directUser['first_name'], directUser['last_name']);
+    final directAvatar = directUser?['avatar_url'] as String?;
+
     final employer = json['employer'] as Map<String, dynamic>?;
     final candidate = json['candidate'] as Map<String, dynamic>?;
     final candidateUser = candidate?['user'] as Map<String, dynamic>?;
@@ -45,16 +42,18 @@ class ConversationModel extends Conversation {
 
     final isRecruiterViewer = viewerType == 'recruiter';
 
-    // Choisit l'interlocuteur en priorite selon le role, avec repli sur
-    // l'autre cote si la donnee preferee manque.
-    final String title = (isRecruiterViewer
+    // Direct d'abord ; sinon choix selon le role avec repli sur l'autre cote.
+    final String title = directName ??
+        (isRecruiterViewer
             ? (candidateName ?? companyName)
             : (companyName ?? candidateName)) ??
         'Inconnu';
 
-    final avatar = isRecruiterViewer
-        ? (candidateUser?['avatar_url'] ?? employer?['logo_url'])
-        : (employer?['logo_url'] ?? candidateUser?['avatar_url']);
+    final rawAvatar = directAvatar ??
+        (isRecruiterViewer
+            ? (candidateUser?['avatar_url'] ?? employer?['logo_url'])
+            : (employer?['logo_url'] ?? candidateUser?['avatar_url']));
+    final avatar = ApiConstants.resolveMediaUrl(rawAvatar as String?);
 
     final latest = json['latest_message'] as Map<String, dynamic>?;
     final lastMessage =
@@ -66,7 +65,9 @@ class ConversationModel extends Conversation {
         _parseDate(latest?['sent_at']) ??
         DateTime.now();
 
-    final unread = ((isRecruiterViewer
+    // Direct : `unread_for_me` ; sinon compteur selon le role.
+    final unread = (json['unread_for_me'] as num?)?.toInt() ??
+        ((isRecruiterViewer
                 ? json['unread_employer']
                 : json['unread_candidate']) as num?)
             ?.toInt() ??
@@ -79,8 +80,12 @@ class ConversationModel extends Conversation {
       lastMessage: lastMessage,
       lastMessageTime: lastTime,
       unreadCount: unread,
-      isOnline: json['is_online'] == true,
-      avatar: avatar as String?,
+      // `is_online`/`last_seen_at` peuvent venir de `direct_user` (DM) ou de
+      // la racine de l'item selon le backend : on lit les deux.
+      isOnline: directUser?['is_online'] == true || json['is_online'] == true,
+      avatar: avatar,
+      lastSeenAt: _parseDate(directUser?['last_seen_at']) ??
+          _parseDate(json['last_seen_at']),
     );
   }
 

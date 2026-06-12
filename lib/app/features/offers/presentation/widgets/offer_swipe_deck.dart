@@ -4,6 +4,8 @@ import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -51,7 +53,7 @@ class OfferSwipeDeck extends StatelessWidget {
                   compact: true,
                 )
               : EmptyState(
-                  icon: IconlyLight.work,
+                  illustration: const EmptyOffersIllustration(),
                   title: 'Aucune offre',
                   subtitle: 'Revenez bientôt : de nouvelles offres arrivent.',
                   actionLabel: 'Actualiser',
@@ -84,7 +86,10 @@ class OfferSwipeDeck extends StatelessWidget {
                         child: Opacity(
                           opacity: 0.34,
                           child: _OfferDeckCard(
-                              offer: third, matchScore: controller.scoreForOffset(2), compact: compact, muted: true),
+                              offer: third,
+                              matchScore: controller.scoreForOffset(2),
+                              compact: compact,
+                              muted: true),
                         ),
                       ),
                     ),
@@ -98,7 +103,10 @@ class OfferSwipeDeck extends StatelessWidget {
                         child: Opacity(
                           opacity: 0.66,
                           child: _OfferDeckCard(
-                              offer: second, matchScore: controller.scoreForOffset(1), compact: compact, muted: true),
+                              offer: second,
+                              matchScore: controller.scoreForOffset(1),
+                              compact: compact,
+                              muted: true),
                         ),
                       ),
                     ),
@@ -163,30 +171,30 @@ class OfferSwipeDeck extends StatelessWidget {
               children: [
                 _OfferActionButton(
                     icon: Icons.replay_rounded,
-                    color: AppColors.warning,
+                    color: AppColors.warningAccent,
                     onTap: controller.rewindOffer,
                     size: 46,
                     iconSize: 22),
                 const SizedBox(width: 10),
                 _OfferActionButton(
-                    icon: Icons.close_rounded,
-                    color: AppColors.error,
+                    icon: IconlyLight.close_square,
+                    color: AppColors.errorAccent,
                     onTap: controller.swipeOfferLeft,
                     size: 58,
                     iconSize: 30),
                 const SizedBox(width: 14),
                 _OfferActionButton(
-                    icon: Icons.favorite_rounded,
-                    color: AppColors.success,
+                    icon: IconlyBold.heart,
+                    color: AppColors.successAccent,
                     onTap: controller.swipeOfferRight,
                     size: 58,
                     iconSize: 30),
                 const SizedBox(width: 10),
                 _OfferActionButton(
-                    icon: Icons.info_outline_rounded,
-                    color: AppColors.primary,
-                    onTap: () => _showDetails(context, top,
-                        controller.scoreForOffset(0)),
+                    icon: IconlyLight.info_circle,
+                    color: AppColors.primaryAccent,
+                    onTap: () => _showDetails(
+                        context, top, controller.scoreForOffset(0)),
                     size: 46,
                     iconSize: 22),
               ],
@@ -203,8 +211,11 @@ class OfferSwipeDeck extends StatelessWidget {
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top:
+              Radius.circular(AppShapes.squircleRadius(AppRadius.xl).topLeft.x),
+        ),
       ),
       builder: (_) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
@@ -212,17 +223,7 @@ class OfferSwipeDeck extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceHighest,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SheetHandle(topPadding: 0, bottomPadding: 14),
             Text(offer.title,
                 style: AppTextStyles.headlineMd.copyWith(fontSize: 22)),
             const SizedBox(height: 4),
@@ -233,22 +234,28 @@ class OfferSwipeDeck extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _OfferMetaChip(
-                    icon: Icons.work_outline_rounded, text: offer.contractType),
+                GlassChip(
+                    icon: IconlyLight.work,
+                    label: offer.contractType,
+                    style: GlassChipStyle.tonal),
                 if (offer.sector.isNotEmpty)
-                  _OfferMetaChip(
-                      icon: Icons.apartment_rounded, text: offer.sector),
+                  GlassChip(
+                      icon: Icons.apartment_rounded,
+                      label: offer.sector,
+                      style: GlassChipStyle.tonal),
                 if ((offer.deadlineLabel ?? '').isNotEmpty)
-                  _OfferMetaChip(
-                      icon: Icons.schedule_rounded,
-                      text: offer.deadlineLabel!),
-                _OfferMetaChip(
+                  GlassChip(
+                      icon: IconlyLight.calendar,
+                      label: offer.deadlineLabel!,
+                      style: GlassChipStyle.tonal),
+                GlassChip(
                     icon: offer.isRemote
                         ? Icons.wifi_tethering_rounded
-                        : Icons.location_on_outlined,
-                    text: (offer.experienceLabel ?? '').isNotEmpty
+                        : IconlyLight.location,
+                    label: (offer.experienceLabel ?? '').isNotEmpty
                         ? offer.experienceLabel!
-                        : offer.location),
+                        : offer.location,
+                    style: GlassChipStyle.tonal),
               ],
             ),
             if (offer.requiredSkills.isNotEmpty) ...[
@@ -257,17 +264,9 @@ class OfferSwipeDeck extends StatelessWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: offer.requiredSkills
-                    .map((s) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceIconSoft,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(s,
-                              style: AppTextStyles.bodySm.copyWith(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w700)),
+                    .map((s) => GlassChip(
+                          label: s,
+                          style: GlassChipStyle.tonal,
                         ))
                     .toList(),
               ),
@@ -285,36 +284,10 @@ class OfferSwipeDeck extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Compatibilité estimée : $score%',
                 style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    color: AppColors.primaryAccent,
+                    fontWeight: FontWeight.w700)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _OfferMetaChip extends StatelessWidget {
-  const _OfferMetaChip({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceIconSoft,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primaryDark),
-          const SizedBox(width: 6),
-          Text(text,
-              style: AppTextStyles.bodySm.copyWith(
-                  color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
-        ],
       ),
     );
   }
@@ -335,13 +308,6 @@ class _OfferDeckCard extends StatelessWidget {
   final bool muted;
   final VoidCallback? onApply;
 
-  String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final softText = AppColors.onPrimary.withValues(alpha: 0.85);
@@ -356,8 +322,11 @@ class _OfferDeckCard extends StatelessWidget {
                 colors: [AppColors.primaryDark, AppColors.onDark],
               )
             : AppColors.landingHeroGradient,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: muted ? [] : AppColors.ambientShadow,
+        borderRadius: AppShapes.squircleRadius(AppRadius.xl),
+        // Ombres en couches pour une profondeur de deck plus marquée (2026).
+        boxShadow: muted
+            ? const []
+            : [...AppColors.lightShadow, ...AppColors.ambientShadow],
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -391,21 +360,11 @@ class _OfferDeckCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: compact ? 38 : 46,
-                      height: compact ? 38 : 46,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.onPrimary.withValues(alpha: 0.20),
-                        border: Border.all(
-                            color: AppColors.onPrimary.withValues(alpha: 0.32)),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(_initials(offer.company),
-                          style: AppTextStyles.titleMd.copyWith(
-                              color: AppColors.onPrimary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: compact ? 13 : 16)),
+                    BrandAvatar(
+                      seed: offer.company,
+                      label: offer.company,
+                      size: compact ? 38 : 46,
+                      imageUrl: offer.companyLogo,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -420,19 +379,10 @@ class _OfferDeckCard extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                   fontSize: compact ? 12 : 13)),
                           const SizedBox(height: 2),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.onPrimary.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
-                            ),
-                            child: Text(offer.contractType,
-                                style: AppTextStyles.labelSm.copyWith(
-                                    color: AppColors.onPrimary,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: compact ? 9 : 10,
-                                    letterSpacing: 0.4)),
+                          GlassChip(
+                            label: offer.contractType,
+                            style: GlassChipStyle.glass,
+                            dense: true,
                           ),
                         ],
                       ),
@@ -442,7 +392,8 @@ class _OfferDeckCard extends StatelessWidget {
                       children: [
                         if (onApply != null) _DeckFavoriteButton(offer: offer),
                         if (onApply != null) const SizedBox(height: 6),
-                        _CircularScoreBadge(score: matchScore, compact: compact),
+                        _CircularScoreBadge(
+                            score: matchScore, compact: compact),
                       ],
                     ),
                   ],
@@ -470,7 +421,7 @@ class _OfferDeckCard extends StatelessWidget {
                 SizedBox(height: compact ? 6 : 8),
                 Row(
                   children: [
-                    Icon(Icons.location_on_rounded, size: 14, color: muteText),
+                    Icon(IconlyLight.location, size: 14, color: muteText),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(offer.location,
@@ -486,42 +437,32 @@ class _OfferDeckCard extends StatelessWidget {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: offer.requiredSkills.take(3).map((skill) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.onPrimary.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(
-                              color:
-                                  AppColors.onPrimary.withValues(alpha: 0.20)),
-                        ),
-                        child: Text(skill,
-                            style: AppTextStyles.labelSm.copyWith(
-                                color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 10,
-                                letterSpacing: 0.2)),
-                      );
-                    }).toList(),
+                    children: offer.requiredSkills
+                        .take(3)
+                        .map((skill) => GlassChip(
+                              label: skill,
+                              style: GlassChipStyle.glass,
+                              dense: true,
+                            ))
+                        .toList(),
                   ),
                 ],
                 const Spacer(),
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.fromLTRB(compact ? 10 : 12, compact ? 8 : 10,
-                      compact ? 10 : 12, compact ? 8 : 10),
+                  padding: EdgeInsets.fromLTRB(compact ? 10 : 12,
+                      compact ? 8 : 10, compact ? 10 : 12, compact ? 8 : 10),
                   decoration: BoxDecoration(
                     color: AppColors.onPrimary.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppShapes.squircleRadius(AppRadius.sm),
                     border: Border.all(
                         color: AppColors.onPrimary.withValues(alpha: 0.20)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.payments_rounded,
-                          size: compact ? 14 : 16, color: AppColors.primaryLight),
+                          size: compact ? 14 : 16,
+                          color: AppColors.primaryLight),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(offer.salary,
@@ -549,7 +490,8 @@ class _OfferDeckCard extends StatelessWidget {
                                 vertical: compact ? 6 : 8),
                             decoration: BoxDecoration(
                               color: AppColors.onPrimary,
-                              borderRadius: BorderRadius.circular(AppRadius.pill),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
                               boxShadow: [
                                 BoxShadow(
                                     color: AppColors.secondaryDeep
@@ -563,13 +505,13 @@ class _OfferDeckCard extends StatelessWidget {
                               children: [
                                 Text('Postuler',
                                     style: AppTextStyles.titleMd.copyWith(
-                                        color: AppColors.primary,
+                                        color: AppColors.primaryAccent,
                                         fontWeight: FontWeight.w800,
                                         fontSize: compact ? 11 : 12)),
                                 const SizedBox(width: 4),
-                                Icon(Icons.arrow_forward_rounded,
+                                Icon(IconlyLight.arrow_right_2,
                                     size: compact ? 12 : 14,
-                                    color: AppColors.primary),
+                                    color: AppColors.primaryAccent),
                               ],
                             ),
                           ),
@@ -596,7 +538,8 @@ class _CircularScoreBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = compact ? 44.0 : 56.0;
     final ratio = (score / 100).clamp(0.0, 1.0);
-    final ringColor = score >= 75 ? AppColors.primaryLight : AppColors.warning;
+    final ringColor =
+        score >= 75 ? AppColors.primaryLight : AppColors.warningAccent;
 
     return SizedBox(
       width: size,
@@ -648,7 +591,9 @@ class _OfferDeckIndicators extends StatelessWidget {
       children: List.generate(count, (index) {
         final isActive = controller.currentOfferIndex.value % count == index;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          // Étirement du point actif en ressort (langage motion 2026).
+          duration: AppMotion.medium,
+          curve: AppMotion.spring,
           margin: const EdgeInsets.symmetric(horizontal: 3),
           height: 6,
           width: isActive ? 24 : 7,
@@ -678,7 +623,9 @@ class _OfferActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return PressScale(
+      scale: 0.9,
+      haptic: false,
       onTap: () {
         AppHaptics.tap();
         onTap();
@@ -721,8 +668,8 @@ class _DeckFavoriteButton extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.onPrimary.withValues(alpha: 0.18),
-              border:
-                  Border.all(color: AppColors.onPrimary.withValues(alpha: 0.32)),
+              border: Border.all(
+                  color: AppColors.onPrimary.withValues(alpha: 0.32)),
             ),
             alignment: Alignment.center,
             child: AnimatedSwitcher(
@@ -732,7 +679,7 @@ class _DeckFavoriteButton extends StatelessWidget {
               child: Icon(saved ? IconlyBold.heart : IconlyLight.heart,
                   key: ValueKey(saved),
                   size: 18,
-                  color: saved ? AppColors.error : AppColors.onPrimary),
+                  color: saved ? AppColors.errorAccent : AppColors.onPrimary),
             ),
           ),
         ),

@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
+import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
 import '../../domain/repositories/i_offer_repository.dart';
@@ -17,7 +19,7 @@ class OfferController extends GetxController {
   final isLoading = false.obs;
   final isLoadingMore = false.obs;
   final errorMessage = ''.obs;
-  
+
   // Pagination
   final currentPage = 1.obs;
   final hasNextPage = true.obs;
@@ -34,9 +36,17 @@ class OfferController extends GetxController {
   final searchQuery = ''.obs;
   final activeContract = RxnString();
   final remoteOnly = false.obs;
+  // Persistant ici (plus dans build()) : la saisie de recherche survit aux
+  // rebuilds (liste + bascule liste/découverte).
+  final searchCtrl = TextEditingController();
 
-  bool get hasActiveFilter =>
-      activeContract.value != null || remoteOnly.value;
+  bool get hasActiveFilter => activeContract.value != null || remoteOnly.value;
+
+  @override
+  void onClose() {
+    searchCtrl.dispose();
+    super.onClose();
+  }
 
   /// Offres visibles après recherche + filtres. La liste s'appuie dessus ;
   /// le deck swipe (Découverte) garde l'ensemble complet.
@@ -66,13 +76,18 @@ class OfferController extends GetxController {
   // ── Recommandations IA (match feed) ────────────────────────────────────
   final matchedOffers = <MatchedOffer>[].obs;
   final isLoadingMatches = false.obs;
+  // Distingue « pas de suggestions » d'un « échec de chargement » (avant : tout
+  // était avalé, la section disparaissait sans explication).
+  final matchesError = RxnString();
 
   Future<void> loadMatchedOffers() async {
     if (isLoadingMatches.value) return;
     try {
       isLoadingMatches.value = true;
+      matchesError.value = null;
       matchedOffers.assignAll(await _repository.getMatchedOffers(limit: 12));
-    } catch (_) {
+    } catch (e) {
+      matchesError.value = userFacingError(e);
     } finally {
       isLoadingMatches.value = false;
     }
@@ -160,13 +175,17 @@ class OfferController extends GetxController {
   Future<void> _applySwiped(Offer offer) async {
     if (offer.id.isEmpty) return;
     if (appliedOfferIds.contains(offer.id)) {
-      AppToast.warning('Déjà postulé', 'Vous avez déjà candidaté à ${offer.title}.');
+      AppToast.warning(
+          'Déjà postulé', 'Vous avez déjà candidaté à ${offer.title}.');
       return;
     }
     try {
       await _repository.applyToOffer(offer.id);
       appliedOfferIds.add(offer.id);
-      AppToast.success('Candidature envoyée', '${offer.company} · ${offer.title}');
+      // Burst de confetti de célébration (sans écran dédié) en plus du toast.
+      showCelebration();
+      AppToast.success(
+          'Candidature envoyée', '${offer.company} · ${offer.title}');
     } catch (e) {
       AppToast.error('Candidature non envoyée', userFacingError(e));
     }
@@ -194,7 +213,7 @@ class OfferController extends GetxController {
 
     try {
       final result = await _repository.getOffers(page: currentPage.value);
-      
+
       if (refresh) {
         offers.assignAll(result);
       } else {
@@ -203,7 +222,6 @@ class OfferController extends GetxController {
 
       hasNextPage.value = result.isNotEmpty; // Simplification pour l'exemple
       if (result.isNotEmpty) currentPage.value++;
-      
     } catch (e) {
       errorMessage.value = "Erreur de chargement";
     } finally {
@@ -223,7 +241,7 @@ class OfferController extends GetxController {
 
   Future<void> toggleSaveOffer(Offer offer) async {
     final isSaved = isOfferSaved(offer.id);
-    final success = isSaved 
+    final success = isSaved
         ? await _repository.unsaveOffer(offer.id)
         : await _repository.saveOffer(offer.id);
 

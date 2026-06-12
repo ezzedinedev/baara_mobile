@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
@@ -47,26 +48,25 @@ Future<void> showReportSheet(
             ),
             const SizedBox(height: AppSpacing.lg),
             Text('Signaler la publication',
-                style:
-                    AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800)),
+                style: AppTextStyles.titleLg
+                    .copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text('Pourquoi signalez-vous ce contenu ?',
-                style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.hintColor)),
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.hintColor)),
             const SizedBox(height: AppSpacing.md),
             for (final entry in reasons.entries)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading:
-                    Icon(Icons.flag_outlined, color: AppColors.hintColor),
+                leading: Icon(IconlyLight.danger, color: AppColors.hintColor),
                 title: Text(entry.value, style: AppTextStyles.titleMd),
                 onTap: () async {
                   AppHaptics.tap();
                   Navigator.of(ctx).pop();
                   final ok = await controller.reportPost(postId, entry.key);
                   if (ok) {
-                    AppToast.success(
-                        'Merci', 'Le signalement a été transmis à la modération.');
+                    AppToast.success('Merci',
+                        'Le signalement a été transmis à la modération.');
                   } else {
                     AppToast.error(
                         'Échec', 'Le signalement n\'a pas pu être envoyé.');

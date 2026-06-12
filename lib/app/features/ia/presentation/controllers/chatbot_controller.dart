@@ -13,8 +13,10 @@ class ChatbotController extends GetxController {
   final isSending = false.obs;
   final isLoadingHistory = false.obs;
   final errorMessage = RxnString();
-  
+
   final ScrollController scrollController = ScrollController();
+  // Persistant ici (plus dans build()) : la saisie survit aux rebuilds.
+  final TextEditingController inputCtrl = TextEditingController();
 
   @override
   void onInit() {
@@ -25,6 +27,7 @@ class ChatbotController extends GetxController {
   @override
   void onClose() {
     scrollController.dispose();
+    inputCtrl.dispose();
     super.onClose();
   }
 
@@ -39,15 +42,16 @@ class ChatbotController extends GetxController {
 
       final history = await _repository.chatSession(lastSessionId);
       sessionId.value = lastSessionId;
-      
+
       final mappedMessages = history.map((m) {
         return ChatMessage(
           role: m['role']?.toString() ?? 'user',
           content: m['content']?.toString() ?? '',
-          at: DateTime.tryParse(m['created_at']?.toString() ?? '') ?? DateTime.now(),
+          at: DateTime.tryParse(m['created_at']?.toString() ?? '') ??
+              DateTime.now(),
         );
       }).toList();
-      
+
       messages.assignAll(mappedMessages);
       _scrollToBottom();
     } catch (_) {
@@ -61,7 +65,8 @@ class ChatbotController extends GetxController {
     final trimmed = text.trim();
     if (trimmed.isEmpty || isSending.value) return;
 
-    messages.add(ChatMessage(role: 'user', content: trimmed, at: DateTime.now()));
+    messages
+        .add(ChatMessage(role: 'user', content: trimmed, at: DateTime.now()));
     isSending.value = true;
     errorMessage.value = null;
     _scrollToBottom();
@@ -73,23 +78,26 @@ class ChatbotController extends GetxController {
       );
 
       sessionId.value = result.sessionId ?? sessionId.value;
-      
+
       messages.add(ChatMessage(
         role: 'assistant',
         content: result.reply,
         at: DateTime.now(),
-        ctaActions: result.ctaActions.map((cta) => CtaAction(
-          type: cta['type']?.toString() ?? '',
-          id: cta['id']?.toString(),
-          label: cta['label']?.toString() ?? '',
-        )).toList(),
+        ctaActions: result.ctaActions
+            .map((cta) => CtaAction(
+                  type: cta['type']?.toString() ?? '',
+                  id: cta['id']?.toString(),
+                  label: cta['label']?.toString() ?? '',
+                ))
+            .toList(),
       ));
       _scrollToBottom();
     } catch (e) {
       errorMessage.value = "Erreur d'envoi";
       messages.add(ChatMessage(
         role: 'assistant',
-        content: "Désolé, j'ai rencontré un problème technique. Pouvez-vous réessayer ?",
+        content:
+            "Désolé, j'ai rencontré un problème technique. Pouvez-vous réessayer ?",
         at: DateTime.now(),
         isError: true,
       ));
@@ -103,10 +111,9 @@ class ChatbotController extends GetxController {
     sessionId.value = null;
     messages.clear();
     messages.add(ChatMessage(
-      role: 'assistant', 
-      content: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", 
-      at: DateTime.now()
-    ));
+        role: 'assistant',
+        content: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+        at: DateTime.now()));
   }
 
   void _scrollToBottom() {

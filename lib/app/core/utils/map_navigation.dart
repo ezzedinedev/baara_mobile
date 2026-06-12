@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/offers/data/models/interview_details_model.dart';
 
-
 enum MapTarget { googleMaps, waze, appleMaps }
 
 extension MapTargetMeta on MapTarget {
@@ -20,7 +19,6 @@ extension MapTargetMeta on MapTarget {
     }
   }
 }
-
 
 class MapNavigationLauncher {
   MapNavigationLauncher._();
@@ -44,11 +42,13 @@ class MapNavigationLauncher {
         return _launch(nav.appleMapsUrl);
     }
   }
+
   static Future<bool> openCoordinates(double lat, double lng) {
     return _launch(
       'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
     );
   }
+
   static Future<bool> openIcs(String icsUrl) => _launch(icsUrl);
 
   static Future<bool> _launch(String? url) async {

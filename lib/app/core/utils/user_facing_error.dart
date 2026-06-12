@@ -1,5 +1,64 @@
 import '../network/api_provider.dart';
 
+const String _genericError =
+    'Une erreur est survenue. Réessayez dans un instant.';
+const String _networkError =
+    'Connexion impossible. Vérifiez votre réseau ou réessayez dans un instant.';
+const String _serverError = 'Le serveur est indisponible. Réessayez plus tard.';
+
+/// Détecte un contenu technique/sensible (SQL, stack trace, chemins, classes
+/// internes, HTML d'erreur…) qui ne doit JAMAIS s'afficher à l'utilisateur —
+/// surface d'info exploitable par un attaquant.
+bool _looksTechnical(String s) {
+  final l = s.toLowerCase();
+  const markers = [
+    'sqlstate',
+    'sql:',
+    'queryexception',
+    'pdoexception',
+    'unknown column',
+    'integrity constraint',
+    'foreign key',
+    'stack trace',
+    '#0 ',
+    'errno',
+    'vendor\\',
+    'vendor/',
+    'illuminate\\',
+    'symfony',
+    'whoops',
+    'typeerror',
+    'is not a subtype',
+    'nosuchmethoderror',
+    'rangeerror',
+    '<!doctype',
+    '<html',
+    '<br',
+    'fatal error',
+    'undefined ',
+    '.php',
+    'at line',
+    'call to ',
+  ];
+  if (markers.any(l.contains)) return true;
+  // Un message anormalement long est presque toujours un dump technique.
+  if (s.length > 180) return true;
+  return false;
+}
+
+/// Nettoie un message backend : le renvoie s'il est « présentable », sinon un
+/// message générique sûr.
+String _safe(String message, {required String fallback}) {
+  final cleaned = message
+      .replaceFirst(RegExp(r'^ApiException:\s*'), '')
+      .replaceFirst(RegExp(r'^Exception:\s*'), '')
+      .replaceFirst(RegExp(r'\s*\(status:.*\)$'), '')
+      .trim();
+  if (cleaned.isEmpty || _looksTechnical(cleaned)) return fallback;
+  return cleaned;
+}
+
+/// Convertit n'importe quelle erreur en message affichable et **non sensible**.
 String userFacingError(Object error) {
   if (error is ApiException) {
     final code = error.statusCode;
@@ -10,20 +69,22 @@ String userFacingError(Object error) {
         raw.contains('failed host lookup') ||
         raw.contains('network is unreachable') ||
         code == null) {
-      return 'Connexion impossible. Vérifiez votre réseau ou réessayez dans un instant.';
+      return _networkError;
     }
     if (code == 401 || code == 403) {
-      return 'Email ou mot de passe incorrect.';
+      // 403 peut porter une règle métier présentable (ex. demande de message) ;
+      // sinon message d'auth générique.
+      return _safe(error.message, fallback: 'Action non autorisée.');
     }
     if (code == 422 || code == 400) {
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Vérifiez les informations saisies.';
+      return _safe(error.message,
+          fallback: 'Vérifiez les informations saisies.');
     }
     if (code >= 500) {
-      return 'Le serveur est indisponible. Réessayez plus tard.';
+      // Jamais le détail d'un 500 (peut contenir du SQL en debug serveur).
+      return _serverError;
     }
-    return error.message;
+    return _safe(error.message, fallback: _genericError);
   }
 
   final text = error.toString();
@@ -31,23 +92,13 @@ String userFacingError(Object error) {
       text.contains('ClientException') ||
       text.contains('HandshakeException') ||
       text.contains('Failed to fetch')) {
-    return 'Connexion impossible. Vérifiez votre réseau ou réessayez dans un instant.';
+    return _networkError;
   }
-
 
   if (error is Error) {
-    return 'Une erreur inattendue est survenue. Réessayez dans un instant.';
+    // Les `Error` Dart (TypeError…) sont des bugs internes : jamais affichés.
+    return _genericError;
   }
 
-  final cleaned = text
-      .replaceFirst(RegExp(r'^ApiException:\s*'), '')
-      .replaceFirst(RegExp(r'^Exception:\s*'), '')
-      .replaceFirst(RegExp(r'\s*\(status:.*\)$'), '')
-      .trim();
-
-  // Garde-fou : si le message ressemble encore à un dump technique, message générique.
-  if (cleaned.isEmpty || cleaned.contains('TypeError') || cleaned.contains("is not a subtype")) {
-    return 'Une erreur inattendue est survenue. Réessayez dans un instant.';
-  }
-  return cleaned;
+  return _safe(text, fallback: _genericError);
 }

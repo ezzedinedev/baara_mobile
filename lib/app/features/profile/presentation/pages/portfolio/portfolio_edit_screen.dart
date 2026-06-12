@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -17,12 +20,14 @@ class PortfolioEditScreen extends GetView<PortfolioEditController> {
 
   @override
   Widget build(BuildContext context) {
+    // Scaffold fournit l'ancêtre Material pour tous les TextField/InkWell.
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
           WavyContentHeader(
-            title: controller.isEditing ? 'Modifier le projet' : 'Nouveau projet',
+            title:
+                controller.isEditing ? 'Modifier le projet' : 'Nouveau projet',
             subtitle: 'Valorisez une réalisation de votre portfolio',
             height: 200,
             gradient: AppColors.heroProfileGradient,
@@ -46,10 +51,26 @@ class PortfolioEditScreen extends GetView<PortfolioEditController> {
                           .toList(),
                     )),
                 const SizedBox(height: 18),
-                _Field(label: 'Titre *', ctrl: controller.titleCtrl, hint: 'Ex : Application mobile e-commerce'),
-                _Field(label: 'Description', ctrl: controller.descCtrl, hint: 'Le projet, votre rôle, le contexte…', maxLines: 5),
-                _Field(label: 'Résultats', ctrl: controller.resultsCtrl, hint: 'Impact, chiffres, reconnaissance…', maxLines: 3),
-                _Field(label: 'Lien (optionnel)', ctrl: controller.urlCtrl, hint: 'https://…', keyboard: TextInputType.url, isLast: true),
+                _Field(
+                    label: 'Titre *',
+                    ctrl: controller.titleCtrl,
+                    hint: 'Ex : Application mobile e-commerce'),
+                _Field(
+                    label: 'Description',
+                    ctrl: controller.descCtrl,
+                    hint: 'Le projet, votre rôle, le contexte…',
+                    maxLines: 5),
+                _Field(
+                    label: 'Résultats',
+                    ctrl: controller.resultsCtrl,
+                    hint: 'Impact, chiffres, reconnaissance…',
+                    maxLines: 3),
+                _Field(
+                    label: 'Lien (optionnel)',
+                    ctrl: controller.urlCtrl,
+                    hint: 'https://…',
+                    keyboard: TextInputType.url,
+                    isLast: true),
                 const SizedBox(height: 18),
                 const _Label('Technologies'),
                 const SizedBox(height: 8),
@@ -64,8 +85,8 @@ class PortfolioEditScreen extends GetView<PortfolioEditController> {
                   return Padding(
                     padding: const EdgeInsets.only(top: 16),
                     child: Text(err,
-                        style: AppTextStyles.bodySm
-                            .copyWith(color: AppColors.error, height: 1.4)),
+                        style: AppTextStyles.bodySm.copyWith(
+                            color: AppColors.errorAccent, height: 1.4)),
                   );
                 }),
               ],
@@ -108,7 +129,7 @@ class _TypeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.surfaceSelected : AppColors.surfaceLow,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: AppShapes.pill,
           border: Border.all(
             color: selected ? AppColors.primaryLight : AppColors.surfaceLow,
             width: 1.4,
@@ -116,7 +137,7 @@ class _TypeChip extends StatelessWidget {
         ),
         child: Text(type.label,
             style: AppTextStyles.labelMd.copyWith(
-              color: selected ? AppColors.primary : AppColors.bodyColor,
+              color: selected ? AppColors.primaryAccent : AppColors.bodyColor,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             )),
       ),
@@ -142,6 +163,7 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // TextField est dans un Scaffold → Material ancêtre garanti.
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
       child: Column(
@@ -214,16 +236,16 @@ class _TechEditorState extends State<_TechEditor> {
                       .map((t) => Container(
                             padding: const EdgeInsets.only(
                                 left: 12, right: 6, top: 6, bottom: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceSelected,
-                              borderRadius: BorderRadius.circular(999),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: AppShapes.pill,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(t,
                                     style: AppTextStyles.labelMd.copyWith(
-                                        color: AppColors.primary,
+                                        color: AppColors.onPrimary,
                                         fontWeight: FontWeight.w700)),
                                 const SizedBox(width: 4),
                                 GestureDetector(
@@ -231,8 +253,8 @@ class _TechEditorState extends State<_TechEditor> {
                                     AppHaptics.tap();
                                     widget.controller.removeTech(t);
                                   },
-                                  child: const Icon(Icons.close_rounded,
-                                      size: 16, color: AppColors.primary),
+                                  child: Icon(IconlyLight.close_square,
+                                      size: 16, color: AppColors.onPrimary),
                                 ),
                               ],
                             ),
@@ -243,6 +265,7 @@ class _TechEditorState extends State<_TechEditor> {
         Row(
           children: [
             Expanded(
+              // TextField dans Scaffold → Material ancêtre présent.
               child: TextField(
                 controller: _ctrl,
                 style: AppTextStyles.bodyMd,
@@ -250,8 +273,8 @@ class _TechEditorState extends State<_TechEditor> {
                 onSubmitted: (_) => _add(),
                 decoration: InputDecoration(
                   hintText: 'Ajouter une techno…',
-                  hintStyle: AppTextStyles.bodyMd
-                      .copyWith(color: AppColors.hintColor),
+                  hintStyle:
+                      AppTextStyles.bodyMd.copyWith(color: AppColors.hintColor),
                   filled: true,
                   fillColor: AppColors.inputFill,
                   contentPadding:
@@ -269,9 +292,11 @@ class _TechEditorState extends State<_TechEditor> {
               child: Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
-                    color: AppColors.primary, shape: BoxShape.circle),
-                child: const Icon(Icons.add_rounded, color: AppColors.onPrimary),
+                decoration: ShapeDecoration(
+                  color: AppColors.primary,
+                  shape: AppShapes.squircle(AppRadius.sm),
+                ),
+                child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
               ),
             ),
           ],
@@ -309,16 +334,16 @@ class _PhotosEditor extends StatelessWidget {
             child: Container(
               width: 84,
               height: 84,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: AppColors.surfaceLow,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.outlineVariant),
+                shape: AppShapes.squircle(AppRadius.sm,
+                    side: AppColors.outlineVariant, width: 1),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_a_photo_rounded,
-                      color: AppColors.primary, size: 22),
+                  Icon(IconlyLight.camera,
+                      color: AppColors.primaryAccent, size: 22),
                 ],
               ),
             ),
@@ -339,7 +364,7 @@ class _Thumb extends StatelessWidget {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppShapes.squircleRadius(AppRadius.sm),
           child: Image.file(
             File(path),
             width: 84,
@@ -358,7 +383,7 @@ class _Thumb extends StatelessWidget {
                 color: AppColors.onDark.withValues(alpha: 0.55),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close_rounded,
+              child: const Icon(IconlyLight.close_square,
                   size: 14, color: AppColors.onPrimary),
             ),
           ),
@@ -408,8 +433,8 @@ class _SaveBar extends StatelessWidget {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.onPrimary),
                         ),
                       )
                     : Text('Enregistrer',

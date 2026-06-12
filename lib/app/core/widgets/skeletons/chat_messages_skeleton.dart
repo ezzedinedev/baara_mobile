@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'skeleton_box.dart';
 
-
 class ChatMessagesSkeleton extends StatelessWidget {
   const ChatMessagesSkeleton({super.key, this.itemCount = 7});
 

@@ -41,10 +41,18 @@ devtools_options.yaml
 all_user_messages.txt
 
 # Symbolication related
+# Les symboles de debug Dart (--split-debug-info) permettent de
+# desymboliser les crashes obfusques. ULTRA sensibles : ne JAMAIS
+# commiter dans un depot public. Les archiver en stockage prive.
+# Voir docs/OBFUSCATION.md.
 app.*.symbols
+*.symbols
+build/symbols/
+/build/debug-info/
 
 # Obfuscation related
 app.*.map.json
+*.map.json
 
 # Android Studio will place build artifacts here
 /android/app/debug

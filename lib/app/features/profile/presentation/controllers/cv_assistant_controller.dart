@@ -64,13 +64,13 @@ class CvAssistantController extends GetxController {
 
     // Historique = tours déjà échangés, AVANT d'ajouter le message courant.
     // Plafonné aux 30 derniers (limite backend).
-    final history = messages
-        .map((m) => {'role': m.role, 'content': m.content})
-        .toList();
+    final history =
+        messages.map((m) => {'role': m.role, 'content': m.content}).toList();
     final recentHistory =
         history.length > 30 ? history.sublist(history.length - 30) : history;
 
-    messages.add(ChatMessage(role: 'user', content: trimmed, at: DateTime.now()));
+    messages
+        .add(ChatMessage(role: 'user', content: trimmed, at: DateTime.now()));
     isSending.value = true;
     errorMessage.value = null;
     _scrollToBottom();

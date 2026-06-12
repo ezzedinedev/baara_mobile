@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:opportune_bf/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -38,6 +42,7 @@ class TrainingPlayerScreen extends GetView<TrainingPlayerController> {
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
                   message: controller.errorMessage.value!,
+                  illustration: const ErrorIllustration(),
                   onRetry: controller.load,
                 );
               }
@@ -65,45 +70,57 @@ class _Content extends StatelessWidget {
 
     if (modules.isEmpty) {
       return const EmptyState(
-        icon: IconlyLight.document,
+        illustration: EmptyTrainingsIllustration(),
         title: 'Aucun module',
         subtitle: 'Cette formation ne contient pas encore de modules.',
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-      children: [
-        _ProgressCard(title: training.title),
-        const SizedBox(height: 18),
-        SectionHeader(title: 'Programme (${modules.length})'),
-        const SizedBox(height: 10),
-        ...modules.asMap().entries.map(
-              (e) => Obx(() {
-                final module = e.value;
-                return _ModuleCard(
-                  index: e.key + 1,
-                  module: module,
-                  completed: controller.isCompleted(module),
-                  busy: controller.updatingId.value == module.id,
-                  onOpen: () {
-                    AppHaptics.tap();
-                    Get.to(
-                      () => TrainingLessonScreen(
-                        training: training,
-                        initialIndex: e.key,
-                      ),
-                      transition: Transition.rightToLeft,
-                    );
-                  },
-                  onComplete: () {
-                    AppHaptics.tap();
-                    controller.markCompleted(module);
-                  },
-                );
-              }),
-            ),
-      ],
+    return AnimationLimiter(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        children: [
+          _ProgressCard(title: training.title),
+          const SizedBox(height: 18),
+          SectionHeader(title: 'Programme (${modules.length})'),
+          const SizedBox(height: 10),
+          ...modules.asMap().entries.map(
+                (e) => AnimationConfiguration.staggeredList(
+                  position: e.key,
+                  duration: AppMotion.medium,
+                  child: SlideAnimation(
+                    curve: AppMotion.emphasizedDecelerate,
+                    verticalOffset: AppMotion.listSlideOffset,
+                    child: FadeInAnimation(
+                      child: Obx(() {
+                        final module = e.value;
+                        return _ModuleCard(
+                          index: e.key + 1,
+                          module: module,
+                          completed: controller.isCompleted(module),
+                          busy: controller.updatingId.value == module.id,
+                          onOpen: () {
+                            AppHaptics.tap();
+                            Get.to(
+                              () => TrainingLessonScreen(
+                                training: training,
+                                initialIndex: e.key,
+                              ),
+                              transition: Transition.rightToLeft,
+                            );
+                          },
+                          onComplete: () {
+                            AppHaptics.tap();
+                            controller.markCompleted(module);
+                          },
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      ),
     );
   }
 }
@@ -117,10 +134,10 @@ class _ProgressCard extends StatelessWidget {
     final controller = Get.find<TrainingPlayerController>();
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.lightShadow,
+        shape: AppShapes.squircle(AppRadius.lg),
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +165,7 @@ class _ProgressCard extends StatelessWidget {
                     Text(
                       '${controller.completedCount}/${controller.totalCount}',
                       style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.primary,
+                        color: AppColors.primaryAccent,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -161,8 +178,7 @@ class _ProgressCard extends StatelessWidget {
                     value: progress,
                     minHeight: 8,
                     backgroundColor: AppColors.surfaceHigh,
-                    valueColor:
-                        const AlwaysStoppedAnimation(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation(AppColors.primaryAccent),
                   ),
                 ),
               ],
@@ -196,32 +212,35 @@ class _ModuleCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.lightShadow,
+        shape: AppShapes.cardBordered(
+          AppColors.outlineVariant.withValues(alpha: 0.18),
+        ),
+        shadows: AppColors.lightShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PressScale(
+            curve: AppMotion.spring,
             onTap: onOpen,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 36,
+                  height: 36,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: completed
-                        ? AppColors.success.withValues(alpha: 0.16)
+                        ? AppColors.successAccent.withValues(alpha: 0.16)
                         : AppColors.primaryLight,
-                    shape: BoxShape.circle,
+                    shape: AppShapes.squircle(AppRadius.xs),
                   ),
                   child: completed
-                      ? const Icon(IconlyBold.tick_square,
-                          size: 18, color: AppColors.success)
+                      ? Icon(IconlyBold.tick_square,
+                          size: 18, color: AppColors.successAccent)
                       : Text(
                           '$index',
                           style: AppTextStyles.labelMd.copyWith(
@@ -255,7 +274,7 @@ class _ModuleCard extends StatelessWidget {
                           Text(
                             module.typeLabel,
                             style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.primary,
+                              color: AppColors.primaryAccent,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -264,8 +283,7 @@ class _ModuleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded,
-                    color: AppColors.hintColor),
+                Icon(IconlyLight.arrow_right_2, color: AppColors.hintColor),
               ],
             ),
           ),
@@ -305,13 +323,13 @@ class _CompleteButton extends StatelessWidget {
     if (completed) {
       return Row(
         children: [
-          const Icon(IconlyBold.tick_square,
-              size: 18, color: AppColors.success),
+          Icon(IconlyBold.tick_square,
+              size: 18, color: AppColors.successAccent),
           const SizedBox(width: 8),
           Text(
             'Terminé',
             style: AppTextStyles.labelMd.copyWith(
-              color: AppColors.success,
+              color: AppColors.successAccent,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -321,13 +339,14 @@ class _CompleteButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: PressScale(
+        curve: AppMotion.spring,
         onTap: busy ? null : onComplete,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12),
+            shape: AppShapes.squircle(AppRadius.sm),
           ),
           child: busy
               ? const SizedBox(

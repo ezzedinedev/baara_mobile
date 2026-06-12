@@ -1,4 +1,14 @@
-import 'package:flutter/material.dart' show BuildContext, Column, CrossAxisAlignment, SizedBox, StatelessWidget, Text, TextAlign, TextStyle, Widget;
+import 'package:flutter/material.dart'
+    show
+        BuildContext,
+        Column,
+        CrossAxisAlignment,
+        SizedBox,
+        StatelessWidget,
+        Text,
+        TextAlign,
+        TextStyle,
+        Widget;
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../widgets.dart';
@@ -27,9 +37,10 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final titleWidget = Text(
       title,
-      style: titleStyle ?? AppTextStyles.displayXl.copyWith(
-        fontSize: fontSize,
-      ),
+      style: titleStyle ??
+          AppTextStyles.displayXl.copyWith(
+            fontSize: fontSize,
+          ),
       textAlign: center ? TextAlign.center : TextAlign.start,
     );
 
@@ -45,13 +56,18 @@ class AuthHeader extends StatelessWidget {
         : null;
 
     return Column(
-      crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 22),
-        OpportuneLogo(iconSize: logoSize, fontSize: fontSize, centerAlign: center),
+        OpportuneLogo(
+            iconSize: logoSize, fontSize: fontSize, centerAlign: center),
         SizedBox(height: spacing),
         titleWidget,
-        if (subtitleWidget != null) ...[const SizedBox(height: 14), subtitleWidget],
+        if (subtitleWidget != null) ...[
+          const SizedBox(height: 14),
+          subtitleWidget
+        ],
         const SizedBox(height: 44),
       ],
     );

@@ -10,7 +10,8 @@ class CandidateLoginController extends GetxController {
   final IAuthRepository _authRepository;
   final GoogleAuthService _googleAuth;
 
-  CandidateLoginController(this._authRepository, {GoogleAuthService? googleAuthService})
+  CandidateLoginController(this._authRepository,
+      {GoogleAuthService? googleAuthService})
       : _googleAuth = googleAuthService ?? GoogleAuthService();
 
   final emailCtrl = TextEditingController();
@@ -42,7 +43,8 @@ class CandidateLoginController extends GetxController {
     try {
       isLoading.value = true;
       errorMsg.value = '';
-      await _authRepository.loginWithEmail(emailCtrl.text.trim(), passwordCtrl.text);
+      await _authRepository.loginWithEmail(
+          emailCtrl.text.trim(), passwordCtrl.text);
       _loginAttempts.value = 0;
       Get.offAllNamed(AppRoutes.home);
     } catch (e) {
@@ -70,7 +72,8 @@ class CandidateLoginController extends GetxController {
         errorMsg.value = result.error ?? 'Erreur Google';
         return;
       }
-      await _authRepository.loginWithGoogle(result.idToken!, email: result.email);
+      await _authRepository.loginWithGoogle(result.idToken!,
+          email: result.email);
       Get.offAllNamed(AppRoutes.home);
     } catch (e) {
       errorMsg.value = "Échec de connexion Google";
@@ -80,5 +83,6 @@ class CandidateLoginController extends GetxController {
   }
 
   String? validateEmail(String? value) => Validators.email(value);
-  String? validatePassword(String? value) => Validators.password(value, minLength: 8);
+  String? validatePassword(String? value) =>
+      Validators.password(value, minLength: 8);
 }

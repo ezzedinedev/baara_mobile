@@ -3,7 +3,6 @@ import '../../constants/api_constants.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
-
 class BrandAvatar extends StatelessWidget {
   const BrandAvatar({
     super.key,
