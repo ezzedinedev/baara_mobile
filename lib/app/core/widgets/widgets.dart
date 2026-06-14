@@ -28,6 +28,7 @@ export 'common/animated_hero_decoration.dart';
 export 'common/app_animations.dart';
 export 'common/parallax_header.dart';
 export 'common/confirm_sheet.dart';
+export 'common/success_sheet.dart';
 export 'common/press_scale.dart';
 export 'common/sank_sheet_scaffold.dart';
 export 'common/app_icon_button.dart';

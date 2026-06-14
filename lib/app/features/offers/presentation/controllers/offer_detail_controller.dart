@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
+import 'package:opportune_bf/app/core/widgets/common/success_sheet.dart';
 import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../../../../data/models/ai_models.dart';
@@ -75,17 +76,36 @@ class OfferDetailController extends GetxController {
           'score': result.score,
         });
       } else {
-        // Pas d'écran de match dédié ici : on célèbre quand même la candidature
-        // envoyée par un burst de confetti + haptique succès, en plus du toast.
+        // Pas d'écran de match dédié ici : on célèbre la candidature envoyée
+        // par un burst de confetti + haptique succès, puis une feuille de
+        // confirmation (SuccessIllustration) si un contexte est disponible,
+        // sinon un toast de repli.
         AppHaptics.success();
         showCelebration();
-        AppToast.success('Candidature envoyée', '${o.company} · ${o.title}');
+        _showApplySuccess(o);
       }
     } catch (e) {
       AppToast.error('Candidature non envoyée', userFacingError(e));
     } finally {
       isApplying.value = false;
     }
+  }
+
+  /// Affiche la confirmation de candidature envoyée : feuille de succès
+  /// (SuccessIllustration) si un contexte est disponible, sinon toast de repli.
+  /// Méthode synchrone → pas d'usage de BuildContext à travers un gap async.
+  void _showApplySuccess(Offer o) {
+    final ctx = Get.context;
+    if (ctx == null) {
+      AppToast.success('Candidature envoyée', '${o.company} · ${o.title}');
+      return;
+    }
+    showSuccessSheet(
+      ctx,
+      title: 'Candidature envoyée !',
+      message: '${o.company} · ${o.title}\n'
+          'Votre candidature a bien été transmise au recruteur.',
+    );
   }
 
   /// Toggle favori optimiste : on bascule l'état localement tout de suite, puis

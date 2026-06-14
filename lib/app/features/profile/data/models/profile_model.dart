@@ -25,6 +25,7 @@ class ProfileModel extends Profile {
     super.githubUrl,
     super.portfolioUrl,
     super.desiredRole,
+    super.presentationVideoUrl,
     super.notificationsEnabled,
     super.notificationChannels,
     super.teamActivity,
@@ -92,6 +93,7 @@ class ProfileModel extends Profile {
       githubUrl: cv['github_url'],
       portfolioUrl: cv['portfolio_url'],
       desiredRole: cv['desired_role'],
+      presentationVideoUrl: profile['presentation_video_url'] as String?,
       notificationsEnabled: _parseBool(notif['enabled'], fallback: true),
       notificationChannels: {
         for (final k in _channelKeys) k: _parseBool(notif[k], fallback: true),

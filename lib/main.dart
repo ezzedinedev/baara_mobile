@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
+import 'app/core/services/deep_link_service.dart';
 import 'app/core/services/fcm_service.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
@@ -83,8 +84,29 @@ void _wireCrashlytics() {
   };
 }
 
-class OpportuneBFApp extends StatelessWidget {
+class OpportuneBFApp extends StatefulWidget {
   const OpportuneBFApp({super.key});
+
+  @override
+  State<OpportuneBFApp> createState() => _OpportuneBFAppState();
+}
+
+class _OpportuneBFAppState extends State<OpportuneBFApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Liens entrants (partage / deep links) : init après le premier frame pour
+    // que le GetMaterialApp et la route initiale soient prêts à recevoir un push.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DeepLinkService.instance.init();
+    });
+  }
+
+  @override
+  void dispose() {
+    DeepLinkService.instance.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

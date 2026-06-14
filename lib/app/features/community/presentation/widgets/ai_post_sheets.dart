@@ -203,14 +203,26 @@ class _AiHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primaryAccent.withValues(alpha: 0.14),
-          ),
-          child: Icon(icon, color: AppColors.primaryAccent, size: 22),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryAccent.withValues(alpha: 0.14),
+              ),
+              child: Icon(icon, color: AppColors.primaryAccent, size: 22),
+            ),
+            // Étincelle IA — identité visuelle commune.
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Icon(Icons.auto_awesome_rounded,
+                  size: 16, color: AppColors.primaryAccent),
+            ),
+          ],
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -223,7 +235,7 @@ class _AiHeader extends StatelessWidget {
                     AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
               ),
               Text(
-                'Généré par l\'assistant',
+                'Généré par l\'assistant IA',
                 style:
                     AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
               ),

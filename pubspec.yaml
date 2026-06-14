@@ -47,6 +47,9 @@ dependencies:
   confetti: ^0.8.0
   just_audio: ^0.10.5
   emoji_picker_flutter: ^4.3.0
+  custom_refresh_indicator: ^4.0.1
+  share_plus: ^10.1.4
+  app_links: ^6.3.2
 
 dev_dependencies:
   flutter_test:

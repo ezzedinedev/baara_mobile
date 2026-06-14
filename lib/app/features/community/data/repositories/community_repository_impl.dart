@@ -38,6 +38,39 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     return _fetchFeedPage('${ApiConstants.communityExplore}$query', page);
   }
 
+  @override
+  Future<FeedPage> getUserPosts(String userId, {int page = 1}) async {
+    return _fetchFeedPage(
+        '${ApiConstants.communityUserPosts(userId)}?page=$page', page);
+  }
+
+  @override
+  Future<NetworkUserPage> getFollowers(String userId, {int page = 1}) {
+    return _fetchUserPage(
+        '${ApiConstants.communityUserFollowers(userId)}?page=$page', page);
+  }
+
+  @override
+  Future<NetworkUserPage> getUserConnections(String userId, {int page = 1}) {
+    return _fetchUserPage(
+        '${ApiConstants.communityUserConnections(userId)}?page=$page', page);
+  }
+
+  /// Mutualise le parsing d'une page de membres (abonnés / connexions).
+  Future<NetworkUserPage> _fetchUserPage(String endpoint, int page) async {
+    final res = await _apiProvider.getJson(endpoint);
+    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    final items = (data['items'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map((j) => NetworkUserModel.fromJson(j))
+        .toList();
+    return NetworkUserPage(
+      items: items,
+      currentPage: (data['current_page'] as num?)?.toInt() ?? page,
+      hasMore: data['has_more'] == true,
+    );
+  }
+
   /// Mutualise le parsing d'une page de feed (feed + explore, même forme).
   Future<FeedPage> _fetchFeedPage(String endpoint, int page) async {
     final res = await _apiProvider.getJson(endpoint);
@@ -417,6 +450,7 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     String? caption,
     String? backgroundColor,
     String visibility = 'connections',
+    List<String> mentions = const [],
   }) async {
     await _apiProvider.multipartPost(
       ApiConstants.stories,
@@ -425,6 +459,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
         if (caption != null && caption.isNotEmpty) 'caption': caption,
         if (backgroundColor != null && backgroundColor.isNotEmpty)
           'background_color': backgroundColor,
+        // @mentions : envoyées en `mentions[i]` (Laravel les reconstruit en
+        // tableau). Le backend notifie chaque mentionné (type mention_story).
+        for (var i = 0; i < mentions.length; i++) 'mentions[$i]': mentions[i],
       },
       files: [
         if (mediaPath != null)
@@ -472,6 +509,26 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     return list
         .whereType<Map<String, dynamic>>()
         .map((j) => NetworkUserModel.fromJson(j))
+        .toList();
+  }
+
+  @override
+  Future<List<SuggestionInsight>> getSuggestionInsights() async {
+    final res =
+        await _apiProvider.getJson(ApiConstants.communitySuggestionsInsight);
+    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    final list = data['insights'] as List? ?? const [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((j) {
+          final insight = (j['insight'] as String?)?.trim();
+          return SuggestionInsight(
+            userId: j['user_id']?.toString() ?? '',
+            insight: (insight == null || insight.isEmpty) ? null : insight,
+            ai: j['ai'] == true,
+          );
+        })
+        .where((s) => s.userId.isNotEmpty)
         .toList();
   }
 

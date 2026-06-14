@@ -12,6 +12,7 @@ import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/network_user_tile.dart';
+import 'suggestions_screen.dart';
 
 /// Demandes de connexion entrantes (`GET /community/connections`) à accepter
 /// ou refuser.
@@ -37,6 +38,17 @@ class _CommunityConnectionsScreenState
   Widget build(BuildContext context) {
     return SankSheetScaffold(
       title: 'Demandes de connexion',
+      actions: [
+        AppIconButton(
+          icon: IconlyLight.user,
+          tooltip: 'Personnes à suivre',
+          onBrandHeader: true,
+          onTap: () {
+            AppHaptics.tap();
+            Get.to<void>(() => const SuggestionsScreen());
+          },
+        ),
+      ],
       body: Obx(() {
         if (_controller.isLoadingConnections.value &&
             _controller.pendingConnections.isEmpty) {

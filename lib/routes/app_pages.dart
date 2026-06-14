@@ -54,6 +54,7 @@ import 'package:opportune_bf/app/features/community/presentation/bindings/commun
 import 'package:opportune_bf/app/features/community/presentation/pages/community_feed_screen.dart';
 import 'package:opportune_bf/app/features/community/presentation/pages/community_profile_screen.dart';
 import 'package:opportune_bf/app/features/community/presentation/pages/community_search_screen.dart';
+import 'package:opportune_bf/app/features/community/presentation/pages/community_network_list_screen.dart';
 import 'package:opportune_bf/app/features/community/presentation/pages/community_connections_screen.dart';
 import 'package:opportune_bf/app/features/community/presentation/pages/profile_views_screen.dart';
 
@@ -235,6 +236,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.communityProfile,
       page: () => const CommunityProfileScreen(),
+      binding: CommunityBinding(),
+      customTransition: AppPageTransition(),
+    ),
+    GetPage(
+      name: AppRoutes.communityNetwork,
+      page: () => const CommunityNetworkListScreen(),
       binding: CommunityBinding(),
       customTransition: AppPageTransition(),
     ),

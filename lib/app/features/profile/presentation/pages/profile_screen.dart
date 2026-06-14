@@ -17,6 +17,7 @@ import '../controllers/settings_controller.dart';
 import '../controllers/documents_controller.dart';
 import '../../data/models/candidate_document_model.dart';
 import '../../domain/entities/profile.dart';
+import '../widgets/presentation_video_card.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
@@ -54,6 +55,14 @@ class ProfileScreen extends GetView<ProfileController> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: _ContactCard(profile: profile),
               ),
+              if (profile.userType == 'candidate') ...[
+                const SizedBox(height: 18),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: const PresentationVideoCard(),
+                ),
+              ],
               const SizedBox(height: 18),
               const _DocumentsStrip(),
               const SizedBox(height: 6),

@@ -26,7 +26,16 @@ class StoryController extends GetxController {
   Future<void> loadStories() async {
     try {
       isLoading.value = true;
-      buckets.assignAll(await _repo.getStories());
+      final fetched = await _repo.getStories();
+
+      // Assurer que la story de l'utilisateur (isMine) apparait toujours en premier
+      fetched.sort((a, b) {
+        if (a.isMine && !b.isMine) return -1;
+        if (!a.isMine && b.isMine) return 1;
+        return 0;
+      });
+
+      buckets.assignAll(fetched);
     } catch (_) {
       // Silencieux : pas de barre = pas de bruit (le réseau peut être absent).
     } finally {
@@ -40,9 +49,9 @@ class StoryController extends GetxController {
     try {
       return await ImagePicker().pickImage(
         source: source,
-        maxWidth: 1440,
-        maxHeight: 2560,
-        imageQuality: 88,
+        maxWidth: 1080,
+        maxHeight: 1920,
+        imageQuality: 70,
       );
     } catch (_) {
       AppToast.error('Galerie', 'Impossible d\'ouvrir le sélecteur.');
@@ -69,23 +78,75 @@ class StoryController extends GetxController {
     String? caption,
     String? backgroundColor,
     String visibility = 'connections',
+    List<String> mentions = const [],
   }) async {
-    if (isPublishing.value) return false;
+    // 1. Mise à jour optimiste (immédiate)
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final isVideo = mediaPath != null &&
+        (mediaPath.endsWith('.mp4') || mediaPath.endsWith('.mov'));
+
+    final optimisticStory = StoryItem(
+      id: tempId,
+      mediaUrl:
+          mediaPath, // Temporaire (peut ne pas s'afficher parfaitement en preview selon la plateforme)
+      mediaType: isVideo ? 'video' : 'image',
+      caption: caption,
+      backgroundColor: backgroundColor,
+      createdAt: DateTime.now(),
+      isMine: true,
+      seen: true,
+    );
+
+    final myIndex = buckets.indexWhere((b) => b.isMine);
+    if (myIndex >= 0) {
+      buckets[myIndex].stories.add(optimisticStory);
+    } else {
+      buckets.insert(
+        0,
+        StoryBucket(
+          user: const StoryAuthor(id: 'me', name: 'Moi'),
+          isMine: true,
+          stories: [optimisticStory],
+        ),
+      );
+    }
+    buckets.refresh();
+
+    // 2. Envoi en arrière-plan sans bloquer l'UI
+    _publishInBackground(
+        mediaPath, caption, backgroundColor, visibility, mentions, tempId);
+
+    return true; // Retour immédiat !
+  }
+
+  Future<void> _publishInBackground(
+    String? mediaPath,
+    String? caption,
+    String? backgroundColor,
+    String visibility,
+    List<String> mentions,
+    String tempId,
+  ) async {
     try {
-      isPublishing.value = true;
       await _repo.createStory(
         mediaPath: mediaPath,
         caption: caption,
         backgroundColor: backgroundColor,
         visibility: visibility,
+        mentions: mentions,
       );
+      // Remplace la story fantôme par la vraie liste du serveur
       await loadStories();
-      return true;
+      AppToast.success('Story publiée !');
     } catch (e) {
+      // Rollback en cas d'erreur
       AppToast.error('Publication', userFacingError(e));
-      return false;
-    } finally {
-      isPublishing.value = false;
+      final myIndex = buckets.indexWhere((b) => b.isMine);
+      if (myIndex >= 0) {
+        buckets[myIndex].stories.removeWhere((s) => s.id == tempId);
+        if (buckets[myIndex].stories.isEmpty) buckets.removeAt(myIndex);
+        buckets.refresh();
+      }
     }
   }
 

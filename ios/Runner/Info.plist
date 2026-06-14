@@ -49,5 +49,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Deep link : schéma custom opportunebf:// (ex. opportunebf://profil/{id}). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.opportunebf.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>opportunebf</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -16,6 +16,7 @@ import 'package:opportune_bf/app/core/widgets/common/confirm_sheet.dart';
 import 'package:opportune_bf/app/core/widgets/common/glass_surface.dart';
 import 'package:opportune_bf/app/core/widgets/common/sheet_handle.dart';
 import '../controllers/story_controller.dart';
+import '../widgets/rich_post_text.dart';
 import '../../domain/entities/story.dart';
 
 /// segmentées, auto-avance, tap (préc./suiv.), maintien (pause), glissé bas
@@ -379,8 +380,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
 
   Widget _caption() => Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Text(
-          _story.caption!,
+        // @mentions cliquables (ouvre le profil communauté via la recherche).
+        child: RichPostText(
+          text: _story.caption!,
           style: AppTextStyles.bodyMd.copyWith(
             color: AppColors.onPrimary,
             height: 1.35,
@@ -814,8 +816,9 @@ class _StoryContentState extends State<_StoryContent>
         color: _parseBg(widget.story.backgroundColor),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Text(
-          widget.story.caption ?? '',
+        // Légende centrée + @mentions cliquables (style story texte conservé).
+        child: RichPostText(
+          text: widget.story.caption ?? '',
           textAlign: TextAlign.center,
           style: AppTextStyles.headlineMd.copyWith(
             color: AppColors.onPrimary,

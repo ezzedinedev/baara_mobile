@@ -185,15 +185,20 @@ class _ReactionButtonState extends State<ReactionButton>
   Widget _reactionIcon(String type, {double size = 26}) {
     switch (type) {
       case 'like':
-        return Icon(Icons.thumb_up_rounded, size: size, color: const Color(0xFF2563EB));
+        return Icon(Icons.thumb_up_rounded,
+            size: size, color: const Color(0xFF2563EB));
       case 'love':
-        return Icon(Icons.favorite_rounded, size: size, color: const Color(0xFFE11D48));
+        return Icon(Icons.favorite_rounded,
+            size: size, color: const Color(0xFFE11D48));
       case 'bravo':
-        return Icon(Icons.emoji_events_rounded, size: size, color: const Color(0xFFD97706));
+        return Icon(Icons.emoji_events_rounded,
+            size: size, color: const Color(0xFFD97706));
       case 'instructif':
-        return Icon(Icons.lightbulb_rounded, size: size, color: const Color(0xFF7C3AED));
+        return Icon(Icons.lightbulb_rounded,
+            size: size, color: const Color(0xFF7C3AED));
       default:
-        return Icon(Icons.thumb_up_rounded, size: size, color: const Color(0xFF2563EB));
+        return Icon(Icons.thumb_up_rounded,
+            size: size, color: const Color(0xFF2563EB));
     }
   }
 
@@ -220,7 +225,6 @@ class _ReactionButtonState extends State<ReactionButton>
   @override
   Widget build(BuildContext context) {
     final active = widget.myReaction != null;
-    final emoji = active ? (kReactionEmojis[widget.myReaction] ?? '') : '';
     final label =
         active ? (kReactionLabels[widget.myReaction] ?? "J'aime") : "J'aime";
     final color = active ? AppColors.primaryAccent : AppColors.hintColor;

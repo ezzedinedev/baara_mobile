@@ -312,6 +312,9 @@ class PostCard extends StatelessWidget {
     );
   }
 
+  /// Item « assistant IA » du menu (résumer / traduire). Icône d'action en
+  /// teinte accent + petite étincelle de fin pour signaler l'IA — identité
+  /// visuelle commune à toutes les surfaces IA de l'app.
   PopupMenuItem<String> _aiMenuItem({
     required String value,
     required IconData icon,
@@ -324,6 +327,9 @@ class PostCard extends StatelessWidget {
           Icon(icon, size: 18, color: AppColors.primaryAccent),
           const SizedBox(width: 10),
           Text(label),
+          const SizedBox(width: 8),
+          Icon(Icons.auto_awesome_rounded,
+              size: 13, color: AppColors.primaryAccent),
         ],
       ),
     );

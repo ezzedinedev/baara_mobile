@@ -65,7 +65,9 @@ class HomeBinding extends Bindings {
     Get.lazyPut<ICommunityRepository>(
         () => CommunityRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => CommunityController(Get.find<ICommunityRepository>()));
-    Get.lazyPut(() => StoryController(Get.find<ICommunityRepository>()));
+    // Eager (pas lazy) : précharge les stories dès l'accueil → la barre est
+    // déjà prête quand on ouvre l'onglet Communauté (plus de chargement tardif).
+    Get.put(StoryController(Get.find<ICommunityRepository>()));
 
     // Notifications : badge non-lus sur la cloche de l'accueil (controller
     // partagé avec l'écran /notifications).

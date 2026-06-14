@@ -20,6 +20,11 @@ class ProfileController extends GetxController {
   final isUploadingAvatar = false.obs;
   final errorMessage = RxnString();
 
+  /// URL de la vidéo de présentation, source de vérité pour la carte vidéo.
+  /// Mise à jour directement à l'upload/suppression pour éviter un re-fetch.
+  final presentationVideoUrl = RxnString();
+  final isUploadingVideo = false.obs;
+
   // Stubs for UI compatibility
   final cvs = <dynamic>[].obs;
   final portfolioProjects = <dynamic>[].obs;
@@ -37,6 +42,7 @@ class ProfileController extends GetxController {
       isLoadingProfile.value = true;
       errorMessage.value = null;
       profile.value = await _repository.getProfile();
+      presentationVideoUrl.value = profile.value?.presentationVideoUrl;
       _applyServerTheme();
     } catch (e) {
       errorMessage.value = "Erreur de chargement du profil";
@@ -86,6 +92,58 @@ class ProfileController extends GetxController {
       AppToast.error('Échec de l\'envoi', userFacingError(e));
     } finally {
       isUploadingAvatar.value = false;
+    }
+  }
+
+  /// Sélectionne une vidéo (galerie) ≤ 30 s / 15 Mo et l'envoie comme vidéo de
+  /// présentation (POST /profile/presentation-video, champ `video`). Le fichier
+  /// vit sur disque côté serveur ; la base ne stocke que le chemin.
+  Future<void> pickAndUploadPresentationVideo() async {
+    if (isUploadingVideo.value) return;
+
+    final XFile? picked;
+    try {
+      picked = await ImagePicker().pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(seconds: 30),
+      );
+    } catch (_) {
+      AppToast.error('Galerie inaccessible', 'Vérifiez les autorisations.');
+      return;
+    }
+    if (picked == null) return; // annulé
+
+    isUploadingVideo.value = true;
+    try {
+      final bytes = await picked.readAsBytes();
+      // Garde-fou taille : le serveur refuse > 15 Mo, on évite l'upload inutile.
+      if (bytes.length > 15 * 1024 * 1024) {
+        AppToast.error('Vidéo trop lourde', 'Choisissez une vidéo ≤ 15 Mo.');
+        return;
+      }
+      final filename = picked.name.isNotEmpty ? picked.name : 'presentation.mp4';
+      final url = await _repository.uploadPresentationVideo(bytes, filename);
+      presentationVideoUrl.value = url;
+      AppToast.success('Vidéo de présentation mise à jour');
+    } catch (e) {
+      AppToast.error('Échec de l\'envoi', userFacingError(e));
+    } finally {
+      isUploadingVideo.value = false;
+    }
+  }
+
+  /// Supprime la vidéo de présentation (DELETE /profile/presentation-video).
+  Future<void> deletePresentationVideo() async {
+    if (isUploadingVideo.value) return;
+    isUploadingVideo.value = true;
+    try {
+      await _repository.deletePresentationVideo();
+      presentationVideoUrl.value = null;
+      AppToast.success('Vidéo supprimée');
+    } catch (e) {
+      AppToast.error('Suppression impossible', userFacingError(e));
+    } finally {
+      isUploadingVideo.value = false;
     }
   }
 

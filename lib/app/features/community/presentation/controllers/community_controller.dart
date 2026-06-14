@@ -87,6 +87,28 @@ class CommunityController extends GetxController {
   Future<void> loadSuggestions() async {
     try {
       suggestions.assignAll(await _repository.getSuggestions());
+      // Les accroches IA arrivent ensuite, sans bloquer l'affichage de la liste.
+      loadSuggestionInsights();
+    } catch (_) {}
+  }
+
+  /// Charge les accroches IA (#3) et les fusionne dans [suggestions]. Non
+  /// bloquant (la liste est déjà affichée), échec silencieux.
+  Future<void> loadSuggestionInsights() async {
+    if (suggestions.isEmpty) return;
+    try {
+      final insights = await _repository.getSuggestionInsights();
+      if (insights.isEmpty) return;
+      final byId = {
+        for (final i in insights)
+          if (i.insight != null) i.userId: i.insight!,
+      };
+      for (var i = 0; i < suggestions.length; i++) {
+        final text = byId[suggestions[i].id];
+        if (text != null) {
+          suggestions[i] = suggestions[i].copyWith(insight: text);
+        }
+      }
     } catch (_) {}
   }
 
@@ -163,7 +185,7 @@ class CommunityController extends GetxController {
   /// [explorePosts] ET [savedPosts], puis réalignement sur la réponse serveur,
   /// rollback intégral en cas d'échec.
   Future<void> votePoll(String postId, String optionId) async {
-    final lists = [posts, explorePosts, savedPosts];
+    final lists = [posts, explorePosts, savedPosts, profilePosts];
     // Sauvegarde pour rollback (le post peut être présent dans plusieurs listes).
     final backups = <RxList<Post>, Post>{};
     PostPoll? optimistic;
@@ -282,7 +304,7 @@ class CommunityController extends GetxController {
   /// Enregistre/retire une publication. Optimiste sur toutes les listes ; retire
   /// le post de [savedPosts] s'il est désenregistré. Rollback sur échec.
   Future<void> toggleSave(String postId) async {
-    final lists = [posts, explorePosts, savedPosts];
+    final lists = [posts, explorePosts, savedPosts, profilePosts];
     bool? willSave;
     final backups = <RxList<Post>, Post>{};
     Post? removedFromSaved;
@@ -440,10 +462,15 @@ class CommunityController extends GetxController {
   Future<bool> editPost(String id, String body) async {
     final trimmed = body.trim();
     if (trimmed.isEmpty) return false;
-    final index = posts.indexWhere((p) => p.id == id);
-    final backup = index >= 0 ? posts[index] : null;
-    if (index >= 0) {
-      posts[index] = posts[index].copyWith(
+    // Le post peut figurer dans plusieurs listes (fil, explore, enregistrés,
+    // mur de profil) : édition optimiste partout, rollback intégral sur échec.
+    final lists = [posts, explorePosts, savedPosts, profilePosts];
+    final backups = <RxList<Post>, Post>{};
+    for (final list in lists) {
+      final idx = list.indexWhere((p) => p.id == id);
+      if (idx < 0) continue;
+      backups[list] = list[idx];
+      list[idx] = list[idx].copyWith(
         body: trimmed,
         isEdited: true,
         editedAt: DateTime.now(),
@@ -451,11 +478,16 @@ class CommunityController extends GetxController {
     }
     try {
       final updated = await _repository.updatePost(id, trimmed);
-      final idx = posts.indexWhere((p) => p.id == id);
-      if (idx >= 0) posts[idx] = updated;
+      for (final list in lists) {
+        final idx = list.indexWhere((p) => p.id == id);
+        if (idx >= 0) list[idx] = updated;
+      }
       return true;
     } catch (e) {
-      if (backup != null && index >= 0) posts[index] = backup; // rollback
+      backups.forEach((list, original) {
+        final idx = list.indexWhere((p) => p.id == id);
+        if (idx >= 0) list[idx] = original; // rollback
+      });
       errorMessage.value = _friendlyError(e);
       return false;
     }
@@ -552,12 +584,18 @@ class CommunityController extends GetxController {
   }
 
   Future<void> deletePost(String postId) async {
-    final backup = List<Post>.from(posts);
-    posts.removeWhere((p) => p.id == postId);
+    // Retire de toutes les listes où le post peut apparaître, rollback global.
+    final lists = [posts, explorePosts, savedPosts, profilePosts];
+    final backups = <RxList<Post>, List<Post>>{
+      for (final list in lists) list: List<Post>.from(list),
+    };
+    for (final list in lists) {
+      list.removeWhere((p) => p.id == postId);
+    }
     try {
       await _repository.deletePost(postId);
     } catch (_) {
-      posts.assignAll(backup); // rollback
+      backups.forEach((list, backup) => list.assignAll(backup)); // rollback
     }
   }
 
@@ -636,6 +674,72 @@ class CommunityController extends GetxController {
 
   Future<Map<String, dynamic>> fetchUserProfile(String userId) =>
       _repository.getProfile(userId);
+
+  // Listes Abonnés / Connexions d'un membre (stats cliquables du profil).
+  Future<NetworkUserPage> fetchFollowers(String userId, {int page = 1}) =>
+      _repository.getFollowers(userId, page: page);
+  Future<NetworkUserPage> fetchUserConnections(String userId, {int page = 1}) =>
+      _repository.getUserConnections(userId, page: page);
+
+  // ── Mur de profil — publications d'un membre (façon Facebook) ─────────────
+  /// Publications du membre actuellement affiché sur l'écran profil. Une seule
+  /// liste partagée : on la réinitialise à chaque ouverture de profil ([_profilePostsUserId]
+  /// garde l'identité courante pour ignorer les réponses obsolètes).
+  final profilePosts = <Post>[].obs;
+  final profilePostsLoading = false.obs;
+  final profilePostsLoadingMore = false.obs;
+  final profilePostsHasMore = false.obs;
+  final profilePostsError = RxnString();
+  String _profilePostsUserId = '';
+  int _profilePostsPage = 1;
+
+  /// Charge la 1re page des publications d'un membre (vide la liste précédente).
+  Future<void> loadUserPosts(String userId) async {
+    if (userId.isEmpty) return;
+    _profilePostsUserId = userId;
+    profilePosts.clear();
+    try {
+      profilePostsLoading.value = true;
+      profilePostsError.value = null;
+      _profilePostsPage = 1;
+      final result = await _repository.getUserPosts(userId, page: 1);
+      if (_profilePostsUserId != userId) return; // profil changé entre-temps
+      profilePosts.assignAll(result.items);
+      profilePostsHasMore.value = result.hasMore;
+    } catch (e) {
+      if (_profilePostsUserId != userId) return;
+      profilePostsError.value = _friendlyError(e);
+    } finally {
+      if (_profilePostsUserId == userId) profilePostsLoading.value = false;
+    }
+  }
+
+  /// Pagination du mur de profil (scroll en bas de l'écran profil).
+  Future<void> loadMoreUserPosts(String userId) async {
+    if (profilePostsLoadingMore.value ||
+        profilePostsLoading.value ||
+        !profilePostsHasMore.value ||
+        _profilePostsUserId != userId) {
+      return;
+    }
+    try {
+      profilePostsLoadingMore.value = true;
+      final result =
+          await _repository.getUserPosts(userId, page: _profilePostsPage + 1);
+      if (_profilePostsUserId != userId) return;
+      _profilePostsPage += 1;
+      profilePosts.addAll(result.items);
+      profilePostsHasMore.value = result.hasMore;
+    } catch (_) {
+      // Échec silencieux : l'utilisateur peut réessayer en scrollant.
+    } finally {
+      profilePostsLoadingMore.value = false;
+    }
+  }
+
+  /// Réaction optimiste sur une publication du mur de profil.
+  Future<void> toggleProfileReaction(String postId, String type) =>
+      _toggleReactionIn(profilePosts, postId, type);
 
   // ── Cluster D — Blocage / vues de profil / compétences ───────────────────
   /// Bloque/débloque un membre. Retourne l'état `is_blocked` côté serveur

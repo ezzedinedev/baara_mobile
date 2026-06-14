@@ -83,6 +83,10 @@ class Profile {
   final String? portfolioUrl;
   final String? desiredRole;
 
+  /// URL de la vidéo de présentation (~30 s), null si absente. Fichier servi
+  /// depuis le disque public — la base ne stocke que le chemin.
+  final String? presentationVideoUrl;
+
   // Préférences utilisateur (renvoyées par GET /profile → user.preferences).
   // Source de vérité serveur pour l'écran Paramètres.
   final bool notificationsEnabled;
@@ -121,6 +125,7 @@ class Profile {
     this.githubUrl,
     this.portfolioUrl,
     this.desiredRole,
+    this.presentationVideoUrl,
     this.notificationsEnabled = true,
     this.notificationChannels = const {},
     this.teamActivity = false,

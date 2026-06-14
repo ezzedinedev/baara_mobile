@@ -424,7 +424,6 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
     });
   }
 
-
   // ── Assistant IA ───────────────────────────────────────────────────────────
   void _openAiSheet() {
     AppHaptics.tap();
@@ -1108,18 +1107,53 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
     );
   }
 
-  /// Bouton « Assistant IA » : étincelle + dégradé doux pour le distinguer.
+  /// Bouton « Assistant IA » : pastille accent dédiée (étincelle + halo +
+  /// badge « IA ») pour qu'il soit immédiatement identifiable dans la barre
+  /// d'outils. Press spring via [PressScale]. Aucune logique modifiée.
   Widget _aiToolBtn() {
-    return TextButton.icon(
-      onPressed: _openAiSheet,
-      icon: Icon(IconlyLight.star, size: 20, color: AppColors.primaryAccent),
-      label: Text(
-        'Assistant IA',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.labelMd.copyWith(
-          color: AppColors.primaryAccent,
-          fontWeight: FontWeight.w700,
+    final accent = AppColors.primaryAccent;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: PressScale(
+        onTap: _openAiSheet,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                accent.withValues(alpha: 0.18),
+                accent.withValues(alpha: 0.08),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: AppShapes.pill,
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.auto_awesome_rounded, size: 18, color: accent),
+              const SizedBox(width: 6),
+              Text(
+                'Assistant IA',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelMd.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1275,8 +1309,8 @@ class _AiComposeSheetState extends State<_AiComposeSheet> {
             shape: BoxShape.circle,
             color: AppColors.primaryAccent.withValues(alpha: 0.14),
           ),
-          child:
-              Icon(IconlyLight.star, color: AppColors.primaryAccent, size: 22),
+          child: Icon(Icons.auto_awesome_rounded,
+              color: AppColors.primaryAccent, size: 22),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(

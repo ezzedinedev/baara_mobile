@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../../../core/services/realtime_service.dart';
 import '../../../messaging/presentation/controllers/messages_controller.dart';
 import '../../../community/presentation/controllers/community_controller.dart';
+import '../../../notifications/presentation/controllers/notifications_controller.dart';
 
 class HomeController extends GetxController {
   final currentTabIndex = 0.obs;
@@ -16,6 +19,10 @@ class HomeController extends GetxController {
   void loadConversations() {}
   void loadConversationThread(String id) {}
 
+  // Rafraîchissement périodique des compteurs (pastilles nav + cloche).
+  Timer? _badgeTimer;
+  static const _badgeInterval = Duration(seconds: 45);
+
   @override
   void onInit() {
     super.onInit();
@@ -23,6 +30,32 @@ class HomeController extends GetxController {
     // session ou déjà connecté).
     if (Get.isRegistered<RealtimeService>()) {
       Get.find<RealtimeService>().start();
+    }
+    // Alimente les badges DÈS le démarrage (sans attendre l'ouverture de chaque
+    // onglet) puis les garde à jour périodiquement.
+    refreshBadges();
+    _badgeTimer = Timer.periodic(_badgeInterval, (_) => refreshBadges());
+  }
+
+  @override
+  void onClose() {
+    _badgeTimer?.cancel();
+    super.onClose();
+  }
+
+  /// Recharge les compteurs alimentant les pastilles des onglets (messages,
+  /// réseau) et la cloche (notifications). Appelé au boot, en polling, et
+  /// peut l'être après un événement temps réel / push FCM.
+  void refreshBadges() {
+    // Notifications : compteur seul, sans perturber la liste affichée.
+    if (Get.isRegistered<NotificationsController>()) {
+      Get.find<NotificationsController>().refreshUnreadCount();
+    }
+    if (Get.isRegistered<MessagesController>()) {
+      Get.find<MessagesController>().loadConversations();
+    }
+    if (Get.isRegistered<CommunityController>()) {
+      Get.find<CommunityController>().loadPendingConnections();
     }
   }
 

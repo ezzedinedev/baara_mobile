@@ -1082,10 +1082,34 @@ class _SmartRepliesBar extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
               child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Icon(IconlyLight.star,
-                        size: 16, color: AppColors.primaryAccent),
+                  // Étiquette « IA » (étincelle + libellé) — identité visuelle
+                  // commune, signale que les réponses sont suggérées par l'IA.
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryAccent.withValues(alpha: 0.10),
+                      borderRadius: AppShapes.pill,
+                      border: Border.all(
+                        color: AppColors.primaryAccent.withValues(alpha: 0.30),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome_rounded,
+                            size: 13, color: AppColors.primaryAccent),
+                        const SizedBox(width: 4),
+                        Text(
+                          'IA',
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.primaryAccent,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Expanded(
                     child: SizedBox(

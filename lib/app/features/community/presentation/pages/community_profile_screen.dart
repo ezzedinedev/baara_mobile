@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
+import 'package:share_plus/share_plus.dart';
 
+import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
@@ -13,8 +14,13 @@ import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../../domain/entities/network_user.dart';
+import '../../domain/entities/post.dart';
 import '../../domain/entities/skill.dart';
 import '../controllers/community_controller.dart';
+import '../widgets/post_card.dart';
+import '../widgets/comment_sheet.dart';
+import '../widgets/report_sheet.dart';
+import 'compose_post_screen.dart';
 
 /// Profil public d'un membre du réseau. Charge `GET /community/users/{id}` :
 /// en-tête (avatar, nom, rôle, bio), statistiques, actions Suivre / Se
@@ -51,18 +57,32 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
   void initState() {
     super.initState();
     _userId = Get.parameters['id'] ?? '';
+    _scrollCtrl.addListener(_onScroll);
     _load();
   }
 
   @override
   void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
+  /// Pagination du mur de publications : déclenche le chargement de la page
+  /// suivante avant d'atteindre tout en bas de la liste.
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 400) {
+      _controller.loadMoreUserPosts(_userId);
+    }
+  }
+
+  /// Rechargement complet (skeleton + reset). [silent] = pull-to-refresh :
+  /// on garde le contenu visible (pas de skeleton), l'anneau de marque suffit.
+  Future<void> _load({bool silent = false}) async {
     setState(() {
-      _loading = true;
+      if (!silent) _loading = true;
       _error = false;
     });
     try {
@@ -84,6 +104,11 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
         );
         _loading = false;
       });
+      // Mur de publications (façon Facebook) : chargé seulement si le profil
+      // est consultable (ni bloqué, ni verrouillé pour un non-connecté).
+      if (!_hasBlocked && !(_isLocked && !_isSelf)) {
+        _controller.loadUserPosts(_userId);
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -236,11 +261,14 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     );
   }
 
-  void _share() {
+  Future<void> _share() async {
+    AppHaptics.tap();
     final name = _profile?['full_name']?.toString() ?? 'Ce membre';
-    Clipboard.setData(
-        ClipboardData(text: 'Découvrez le profil de $name sur OpporTune.'));
-    AppToast.success('Copié', 'Le profil a été copié dans le presse-papier.');
+    final url = ApiConstants.webProfileUrl(_userId);
+    await Share.share(
+      'Découvrez le profil de $name sur OpporTune.\n$url',
+      subject: 'Profil de $name — OpporTune',
+    );
   }
 
   Widget _content() {
@@ -248,10 +276,13 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     final name = profile['full_name']?.toString() ?? 'Membre';
     final role = profile['role']?.toString() ?? '';
     final bio = profile['bio']?.toString() ?? '';
-    return ListView(
-      controller: _scrollCtrl,
-      padding: EdgeInsets.zero,
-      children: [
+    return AppRefreshIndicator(
+      onRefresh: () => _load(silent: true),
+      child: ListView(
+        controller: _scrollCtrl,
+        padding: EdgeInsets.zero,
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
         // ── MESH HERO BLOCK (parallax au scroll) ─────────────────────────
         ParallaxHeader(
           controller: _scrollCtrl,
@@ -283,12 +314,306 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                   ],
                   const SizedBox(height: AppSpacing.lg),
                   _skillsSection(),
+                  _mediaSection(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _publicationsSection(),
                 ],
               ],
             ],
           ),
         ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  // ── Mur de publications (façon Facebook) ─────────────────────────────────
+  Widget _publicationsSection() {
+    return Obx(() {
+      final loading = _controller.profilePostsLoading.value;
+      final error = _controller.profilePostsError.value;
+      final items = _controller.profilePosts;
+      final loadingMore = _controller.profilePostsLoadingMore.value;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+                left: AppSpacing.xs, bottom: AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(IconlyBold.document,
+                    size: 18, color: AppColors.primaryAccent),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Publications',
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+          if (loading)
+            const _PostsSkeleton()
+          else if (error != null)
+            _postsError(error)
+          else if (items.isEmpty)
+            _postsEmpty()
+          else ...[
+            for (final post in items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: _profilePostCard(post),
+              ),
+            if (loadingMore)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation(AppColors.primaryAccent),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
+      );
+    });
+  }
+
+  // ── Section Médias (grille photos, façon Facebook « Photos ») ────────────
+  Widget _mediaSection() {
+    return Obx(() {
+      // Images extraites des publications déjà chargées (max 6 en aperçu).
+      // La grille charge la miniature ; le visionneur ouvre l'image pleine.
+      final items = <({String thumb, String full})>[
+        for (final p in _controller.profilePosts)
+          for (final m in p.images)
+            if (m.url != null && m.url!.isNotEmpty)
+              (thumb: m.previewUrl ?? m.url!, full: m.url!),
+      ];
+      if (items.isEmpty) return const SizedBox.shrink();
+      final preview = items.take(6).toList();
+      final extra = items.length - preview.length;
+      final fullUrls = items.map((e) => e.full).toList();
+
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.lg),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: AppShapes.cardRadius,
+            border: Border.all(color: AppColors.outlineVariant),
+            boxShadow: AppColors.ambientShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(IconlyBold.image,
+                      size: 18, color: AppColors.primaryAccent),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text('Médias',
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w800)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                children: [
+                  for (var i = 0; i < preview.length; i++)
+                    _mediaThumb(
+                      preview[i].thumb,
+                      // Sur la dernière vignette, overlay « +N ».
+                      overlayMore: (i == preview.length - 1 && extra > 0)
+                          ? extra
+                          : 0,
+                      onTap: () => _openMediaViewer(fullUrls, i),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _mediaThumb(String url, {int overlayMore = 0, VoidCallback? onTap}) {
+    return PressScale(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              ApiConstants.resolveMediaUrl(url) ?? '',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: AppColors.surfaceLow,
+                alignment: Alignment.center,
+                child: Icon(Icons.broken_image_outlined,
+                    color: AppColors.hintColor, size: 20),
+              ),
+            ),
+            if (overlayMore > 0)
+              Container(
+                color: Colors.black.withValues(alpha: 0.45),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$overlayMore',
+                  style: AppTextStyles.titleLg.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openMediaViewer(List<String> urls, int initialIndex) {
+    AppHaptics.tap();
+    Navigator.of(context).push<void>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) =>
+            _MediaViewer(urls: urls, initialIndex: initialIndex),
+      ),
+    );
+  }
+
+  Widget _profilePostCard(Post post) {
+    final isOwn = post.author?.isSelf == true || _isSelf;
+    return PostCard(
+      post: post,
+      onReact: (type) => _controller.toggleProfileReaction(post.id, type),
+      onVote: (optionId) => _controller.votePoll(post.id, optionId),
+      onSave: () => _controller.toggleSave(post.id),
+      onComment: () => showCommentSheet(context, _controller, post),
+      onRepost: () => _controller.repost(post.id),
+      // On est déjà sur le profil de l'auteur : pas de suivi ni de navigation.
+      onFollow: null,
+      onTapAuthor: null,
+      onReport: isOwn ? null : () => showReportSheet(context, _controller, post.id),
+      onEdit: isOwn ? () => _editPost(post) : null,
+      onDelete: isOwn ? () => _deletePost(post.id) : null,
+    );
+  }
+
+  void _editPost(Post post) {
+    AppHaptics.tap();
+    Get.to<void>(
+      () => ComposePostScreen(editing: post),
+      fullscreenDialog: true,
+      transition: Transition.downToUp,
+    );
+  }
+
+  void _deletePost(String postId) {
+    showAdaptiveDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog.adaptive(
+        title: const Text('Supprimer'),
+        content: const Text('Supprimer cette publication ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _controller.deletePost(postId);
+            },
+            child:
+                Text('Supprimer', style: TextStyle(color: AppColors.errorAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _postsEmpty() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: AppShapes.cardRadius,
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceIconSoft,
+              borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            ),
+            child: Icon(IconlyLight.document,
+                size: 28, color: AppColors.primaryAccent),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            _isSelf
+                ? 'Vous n’avez pas encore publié'
+                : 'Aucune publication',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _isSelf
+                ? 'Partagez une actualité avec votre réseau.'
+                : 'Ce membre n’a rien publié pour le moment.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _postsError(String message) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: AppShapes.cardRadius,
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextButton.icon(
+            onPressed: () => _controller.loadUserPosts(_userId),
+            icon: const Icon(IconlyLight.arrow_right_circle, size: 18),
+            label: const Text('Réessayer'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -572,6 +897,32 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
 
   // ── Rangée de boutons d'action (style fiche contact) ──────────────────
   Widget _actionRow() {
+    // Sur son propre profil : un seul CTA « Modifier le profil ».
+    if (_isSelf) {
+      return Row(
+        children: [
+          Expanded(
+            child: _ContactAction(
+              icon: IconlyLight.edit,
+              label: 'Modifier le profil',
+              active: true,
+              onTap: () {
+                AppHaptics.tap();
+                Get.toNamed(AppRoutes.profileEdit);
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: _ContactAction(
+              icon: Icons.ios_share_rounded,
+              label: 'Partager',
+              onTap: _share,
+            ),
+          ),
+        ],
+      );
+    }
     final canFollow = !_isSelf;
     return Row(
       children: [
@@ -628,31 +979,55 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     }
   }
 
+  /// Ouvre la liste paginée des abonnés / connexions du membre.
+  void _openNetworkList(String mode) {
+    AppHaptics.tap();
+    final name = _profile?['full_name']?.toString();
+    Get.toNamed(
+      AppRoutes.communityNetwork.replaceFirst(':id', _userId),
+      arguments: {'mode': mode, 'name': name},
+    );
+  }
+
+  /// Fait défiler jusqu'au mur de publications (tap sur le compteur).
+  void _scrollToPosts() {
+    AppHaptics.tap();
+    if (!_scrollCtrl.hasClients) return;
+    _scrollCtrl.animateTo(
+      _scrollCtrl.position.maxScrollExtent,
+      duration: AppMotion.medium,
+      curve: AppMotion.emphasizedDecelerate,
+    );
+  }
+
   Widget _statsCard(Map<String, dynamic> p) {
     int n(String k) => (p[k] as num?)?.toInt() ?? 0;
-    Widget stat(int value, String label) => Expanded(
-          child: Column(
-            children: [
-              AnimatedCount(
-                value: value,
-                builder: (_, v) => Text(
-                  '$v',
-                  style: AppTextStyles.heroNumber.copyWith(
-                    fontSize: 22,
-                    color: AppColors.primaryAccent,
+    Widget stat(int value, String label, {VoidCallback? onTap}) => Expanded(
+          child: PressScale(
+            onTap: onTap,
+            child: Column(
+              children: [
+                AnimatedCount(
+                  value: value,
+                  builder: (_, v) => Text(
+                    '$v',
+                    style: AppTextStyles.heroNumber.copyWith(
+                      fontSize: 22,
+                      color: AppColors.primaryAccent,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.labelMd.copyWith(
-                  color: AppColors.hintColor,
-                  fontWeight: FontWeight.w700,
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.hintColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
     Widget divider() => Container(
@@ -674,11 +1049,13 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
       ),
       child: Row(
         children: [
-          stat(n('posts_count'), 'Publications'),
+          stat(n('posts_count'), 'Publications', onTap: _scrollToPosts),
           divider(),
-          stat(n('followers_count'), 'Abonnés'),
+          stat(n('followers_count'), 'Abonnés',
+              onTap: () => _openNetworkList('followers')),
           divider(),
-          stat(n('connections_count'), 'Connexions'),
+          stat(n('connections_count'), 'Connexions',
+              onTap: () => _openNetworkList('connections')),
         ],
       ),
     );
@@ -945,6 +1322,142 @@ class _ProfileSkeleton extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Visionneuse plein écran des médias (swipe horizontal + pinch-to-zoom).
+class _MediaViewer extends StatefulWidget {
+  const _MediaViewer({required this.urls, required this.initialIndex});
+
+  final List<String> urls;
+  final int initialIndex;
+
+  @override
+  State<_MediaViewer> createState() => _MediaViewerState();
+}
+
+class _MediaViewerState extends State<_MediaViewer> {
+  late final PageController _pageCtrl;
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+    _pageCtrl = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageCtrl,
+            itemCount: widget.urls.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (_, i) => InteractiveViewer(
+              minScale: 1,
+              maxScale: 4,
+              child: Center(
+                child: Image.network(
+                  ApiConstants.resolveMediaUrl(widget.urls[i]) ?? '',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white.withValues(alpha: 0.6),
+                    size: 48,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Bouton fermer + compteur.
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  ),
+                  if (widget.urls.length > 1)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: AppShapes.pill,
+                      ),
+                      child: Text(
+                        '${_index + 1} / ${widget.urls.length}',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Squelette du mur de publications (2 cartes fantômes).
+class _PostsSkeleton extends StatelessWidget {
+  const _PostsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget card() => Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: AppShapes.cardRadius,
+            border: Border.all(color: AppColors.outlineVariant),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  SkeletonBox(height: 42, width: 42, radius: 21),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SkeletonBox(height: 12, width: 120),
+                        SizedBox(height: 6),
+                        SkeletonBox(height: 10, width: 80),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.md),
+              SkeletonBox(height: 12, width: double.infinity),
+              SizedBox(height: 6),
+              SkeletonBox(height: 12, width: 220),
+            ],
+          ),
+        );
+    return Column(children: [card(), card()]);
   }
 }
 

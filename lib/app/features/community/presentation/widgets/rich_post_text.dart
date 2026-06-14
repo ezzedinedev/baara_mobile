@@ -19,10 +19,12 @@ class RichPostText extends StatefulWidget {
     super.key,
     required this.text,
     this.style,
+    this.textAlign = TextAlign.start,
   });
 
   final String text;
   final TextStyle? style;
+  final TextAlign textAlign;
 
   @override
   State<RichPostText> createState() => _RichPostTextState();
@@ -93,6 +95,9 @@ class _RichPostTextState extends State<RichPostText> {
       spans.add(TextSpan(text: text.substring(last)));
     }
 
-    return Text.rich(TextSpan(style: base, children: spans));
+    return Text.rich(
+      TextSpan(style: base, children: spans),
+      textAlign: widget.textAlign,
+    );
   }
 }

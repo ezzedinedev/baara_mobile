@@ -21,6 +21,19 @@ class FeedPage {
   });
 }
 
+/// Résultat paginé d'une liste de membres (abonnés / connexions).
+class NetworkUserPage {
+  final List<NetworkUser> items;
+  final int currentPage;
+  final bool hasMore;
+
+  const NetworkUserPage({
+    required this.items,
+    required this.currentPage,
+    required this.hasMore,
+  });
+}
+
 /// Hashtag tendance (bandeau « Tendances »).
 class TrendingHashtag {
   final String tag;
@@ -60,6 +73,21 @@ class AiComposeResult {
   bool get hasSuggestions => suggestions != null && suggestions!.isNotEmpty;
 }
 
+/// Accroche IA d'une suggestion « personne à suivre »
+/// (`GET /community/suggestions/insight`). Le champ [insight] est la phrase
+/// générée par l'IA ; [ai] indique si elle provient réellement du modèle.
+class SuggestionInsight {
+  final String userId;
+  final String? insight;
+  final bool ai;
+
+  const SuggestionInsight({
+    required this.userId,
+    this.insight,
+    this.ai = false,
+  });
+}
+
 /// Membre suggéré pour une @mention (autocomplétion).
 class Mentionable {
   final String id;
@@ -87,6 +115,13 @@ abstract class ICommunityRepository {
 
   // Explore : posts publics tendance (même forme paginée que le feed).
   Future<FeedPage> getExplore({String? type, int page = 1});
+
+  // Publications d'un membre (mur de profil façon Facebook, même forme paginée).
+  Future<FeedPage> getUserPosts(String userId, {int page = 1});
+
+  // Abonnés / connexions d'un membre (listes paginées, stats cliquables).
+  Future<NetworkUserPage> getFollowers(String userId, {int page = 1});
+  Future<NetworkUserPage> getUserConnections(String userId, {int page = 1});
 
   // Publications
   Future<Post> createPost({
@@ -177,6 +212,7 @@ abstract class ICommunityRepository {
     String? caption,
     String? backgroundColor,
     String visibility = 'connections',
+    List<String> mentions = const [],
   });
   Future<void> viewStory(String storyId);
   Future<void> reactStory(String storyId, String type);
@@ -187,6 +223,9 @@ abstract class ICommunityRepository {
 
   // Découverte
   Future<List<NetworkUser>> getSuggestions();
+
+  /// Accroches IA pour le top des suggestions (chargement non bloquant).
+  Future<List<SuggestionInsight>> getSuggestionInsights();
   Future<Map<String, dynamic>> getProfile(String userId);
   Future<Map<String, dynamic>> search(String query, {String type = 'people'});
   Future<List<NetworkUser>> searchPeople(String query);

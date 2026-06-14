@@ -518,7 +518,8 @@ class _CommentSheetState extends State<_CommentSheet> {
       context: context,
       backgroundColor: AppColors.surfaceCard,
       shape: ContinuousRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
       ),
       builder: (_) =>
           SafeArea(child: EmojiPickerPanel(controller: _input, height: 320)),

@@ -11,6 +11,7 @@ import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/common/brand_avatar.dart';
 import 'package:opportune_bf/app/core/widgets/common/press_scale.dart';
 import 'package:opportune_bf/app/core/widgets/common/sheet_handle.dart';
+import 'package:opportune_bf/app/core/widgets/skeletons/skeleton_box.dart';
 
 import '../controllers/story_controller.dart';
 import '../../domain/entities/story.dart';
@@ -30,6 +31,10 @@ class StoryBar extends StatelessWidget {
     final c = Get.find<StoryController>();
     return Obx(() {
       final buckets = c.buckets;
+      final isPublishing = c.isPublishing.value;
+      // Skeleton tant que le 1er chargement n'a rien renvoyé → la barre
+      // « vit » immédiatement au lieu d'afficher juste la tuile de création.
+      final showSkeleton = c.isLoading.value && buckets.isEmpty;
       return SizedBox(
         height: 104,
         child: ListView(
@@ -37,14 +42,23 @@ class StoryBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.pageH, vertical: AppSpacing.sm),
           children: [
-            _CreateTile(onTap: () => _create(context, c)),
-            for (var i = 0; i < buckets.length; i++) ...[
-              const SizedBox(width: AppSpacing.md),
-              _StoryTile(
-                bucket: buckets[i],
-                onTap: () => _openViewer(context, c, i),
-              ),
-            ],
+            _CreateTile(
+              onTap: isPublishing ? () {} : () => _create(context, c),
+              isPublishing: isPublishing,
+            ),
+            if (showSkeleton)
+              for (var i = 0; i < 5; i++) ...[
+                const SizedBox(width: AppSpacing.md),
+                const _StorySkeletonTile(),
+              ]
+            else
+              for (var i = 0; i < buckets.length; i++) ...[
+                const SizedBox(width: AppSpacing.md),
+                _StoryTile(
+                  bucket: buckets[i],
+                  onTap: () => _openViewer(context, c, i),
+                ),
+              ],
           ],
         ),
       );
@@ -123,9 +137,31 @@ class StoryBar extends StatelessWidget {
   }
 }
 
+/// Tuile fantôme (shimmer) affichée pendant le 1er chargement des stories.
+class _StorySkeletonTile extends StatelessWidget {
+  const _StorySkeletonTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SkeletonBox(
+            width: StoryBar._ring,
+            height: StoryBar._ring,
+            radius: StoryBar._ring,
+            shape: BoxShape.circle),
+        SizedBox(height: 8),
+        SkeletonBox(width: 42, height: 8, radius: 4),
+      ],
+    );
+  }
+}
+
 class _CreateTile extends StatelessWidget {
-  const _CreateTile({required this.onTap});
+  const _CreateTile({required this.onTap, this.isPublishing = false});
   final VoidCallback onTap;
+  final bool isPublishing;
 
   @override
   Widget build(BuildContext context) {
@@ -165,19 +201,31 @@ class _CreateTile extends StatelessWidget {
                       border:
                           Border.all(color: AppColors.surfaceCard, width: 2),
                     ),
-                    child: const Icon(IconlyLight.plus,
-                        size: 16, color: AppColors.onPrimary),
+                    child: isPublishing
+                        ? const Padding(
+                            padding: EdgeInsets.all(2.0),
+                            child: SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: AppColors.onPrimary,
+                              ),
+                            ),
+                          )
+                        : const Icon(IconlyLight.plus,
+                            size: 16, color: AppColors.onPrimary),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Ma story',
+              isPublishing ? 'Envoi...' : 'Ma story',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.labelSm.copyWith(
-                color: AppColors.bodyColor,
+                color: isPublishing ? AppColors.primary : AppColors.bodyColor,
                 fontWeight: FontWeight.w700,
               ),
             ),

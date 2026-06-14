@@ -85,6 +85,60 @@ class NetworkUserTile extends StatelessWidget {
                         .copyWith(color: AppColors.hintColor),
                   ),
                 ],
+                // Raison de la suggestion (IA / signaux réseau) — discrète,
+                // optionnelle : présente uniquement sur les tuiles de
+                // suggestion, jamais en recherche/connexions.
+                if (user.hasReason) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        IconlyBold.user_3,
+                        size: 13,
+                        color: AppColors.primaryAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          user.reason!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.primaryAccent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                // Accroche IA (#3) — discrète, en italique, sous la reason.
+                // Apparaît seulement après l'arrivée des insights (non bloquant).
+                if (user.hasInsight) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 13,
+                        color: AppColors.primaryAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          user.insight!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodySm.copyWith(
+                            color: AppColors.primaryAccent,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

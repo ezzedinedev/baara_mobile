@@ -19,6 +19,7 @@ class AuthTextField extends StatefulWidget {
     this.suffix,
     this.helper,
     this.onChanged,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -31,6 +32,9 @@ class AuthTextField extends StatefulWidget {
   final Widget? suffix;
   final String? helper;
   final ValueChanged<String>? onChanged;
+
+  /// Nombre de lignes (1 = champ simple). > 1 → champ multiligne (ex. bio).
+  final int maxLines;
 
   @override
   State<AuthTextField> createState() => _AuthTextFieldState();
@@ -113,8 +117,13 @@ class _AuthTextFieldState extends State<AuthTextField> {
           child: TextFormField(
             controller: widget.controller,
             focusNode: _focusNode,
-            keyboardType: widget.keyboardType,
+            keyboardType: widget.maxLines > 1
+                ? TextInputType.multiline
+                : widget.keyboardType,
             obscureText: _obscured,
+            // Le toggle eye n'a de sens qu'en mono-ligne (password).
+            maxLines: _obscured ? 1 : widget.maxLines,
+            textAlignVertical: TextAlignVertical.top,
             validator: widget.validator,
             onChanged: widget.onChanged,
             style: AppTextStyles.bodyLg.copyWith(

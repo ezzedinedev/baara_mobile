@@ -4,9 +4,13 @@ import 'network_user.dart';
 class PostMedia {
   final String type; // image | pdf | video
   final String? url;
+  final String? thumbUrl; // miniature légère (grilles/aperçus)
   final String? name;
 
-  const PostMedia({required this.type, this.url, this.name});
+  const PostMedia({required this.type, this.url, this.thumbUrl, this.name});
+
+  /// URL à privilégier pour les grilles/aperçus (miniature si dispo).
+  String? get previewUrl => thumbUrl ?? url;
 
   bool get isImage => type == 'image';
   bool get isPdf => type == 'pdf';

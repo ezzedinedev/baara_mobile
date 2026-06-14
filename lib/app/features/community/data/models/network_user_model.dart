@@ -12,12 +12,18 @@ class NetworkUserModel extends NetworkUser {
     super.isFollowing,
     super.isSelf,
     super.connectionStatus,
+    super.reason,
+    super.mutualCount,
+    super.sameSector,
+    super.sameCity,
   });
 
   factory NetworkUserModel.fromJson(Map<String, dynamic> json) {
     final first = (json['first_name'] as String?)?.trim() ?? '';
     final last = (json['last_name'] as String?)?.trim() ?? '';
     final full = (json['full_name'] as String?)?.trim();
+    final rawReason = (json['reason'] as String?)?.trim();
+    final mutual = json['mutual_count'];
     return NetworkUserModel(
       id: json['id']?.toString() ?? '',
       firstName: first,
@@ -29,6 +35,11 @@ class NetworkUserModel extends NetworkUser {
       isFollowing: json['is_following'] == true,
       isSelf: json['is_self'] == true,
       connectionStatus: json['connection_status']?.toString() ?? 'none',
+      reason: (rawReason == null || rawReason.isEmpty) ? null : rawReason,
+      mutualCount:
+          mutual is int ? mutual : int.tryParse(mutual?.toString() ?? '') ?? 0,
+      sameSector: json['same_sector'] == true,
+      sameCity: json['same_city'] == true,
     );
   }
 }

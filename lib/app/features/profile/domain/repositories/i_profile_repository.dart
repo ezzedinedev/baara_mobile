@@ -5,6 +5,13 @@ abstract class IProfileRepository {
   Future<Profile> updateProfile(Map<String, dynamic> data);
   Future<Profile> updateAvatar(String filePath, List<int> bytes);
 
+  /// Envoie la vidéo de présentation (~30 s). POST /profile/presentation-video,
+  /// champ multipart `video`. Retourne la nouvelle URL exposée par le serveur.
+  Future<String?> uploadPresentationVideo(List<int> bytes, String filename);
+
+  /// Supprime la vidéo de présentation. DELETE /profile/presentation-video.
+  Future<void> deletePresentationVideo();
+
   /// Met à jour les préférences (notifications, thème, langue, densité…).
   /// PUT /profile/preferences — n'envoyer que les champs modifiés.
   Future<void> updatePreferences(Map<String, dynamic> prefs);

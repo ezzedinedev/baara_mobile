@@ -28,6 +28,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late final TextEditingController emailController;
   late final TextEditingController jobController;
   late final TextEditingController cityController;
+  late final TextEditingController bioController;
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     emailController = TextEditingController(text: p?.email ?? '');
     jobController = TextEditingController(text: p?.headline ?? '');
     cityController = TextEditingController(text: p?.city ?? '');
+    bioController = TextEditingController(text: p?.bio ?? '');
   }
 
   @override
@@ -49,6 +51,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     emailController.dispose();
     jobController.dispose();
     cityController.dispose();
+    bioController.dispose();
     super.dispose();
   }
 
@@ -61,6 +64,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       'email': emailController.text.trim(),
       'headline': jobController.text.trim(),
       'city': cityController.text.trim(),
+      'bio': bioController.text.trim(),
     });
     if (ok) {
       AppToast.success('Profil mis à jour');
@@ -128,6 +132,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         label: 'Ville',
                         controller: cityController,
                         icon: IconlyLight.location,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      AuthTextField(
+                        label: 'Bio / À propos',
+                        hint: 'Présentez-vous en quelques mots…',
+                        controller: bioController,
+                        icon: IconlyLight.document,
+                        maxLines: 4,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       _ParcoursTile(

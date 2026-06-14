@@ -79,6 +79,7 @@ class PostModel extends Post {
             .map((m) => PostMedia(
                   type: m['type']?.toString() ?? 'image',
                   url: m['url'] as String?,
+                  thumbUrl: m['thumb_url'] as String?,
                   name: m['name'] as String?,
                 ))
             .toList()

@@ -15,6 +15,8 @@ import '../widgets/post_card.dart';
 import '../widgets/comment_sheet.dart';
 import '../widgets/report_sheet.dart';
 import '../widgets/story_bar.dart';
+import '../widgets/suggestions_carousel.dart';
+import '../controllers/story_controller.dart';
 import 'compose_post_screen.dart';
 import 'explore_screen.dart';
 import 'saved_posts_screen.dart';
@@ -82,7 +84,8 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
               backgroundColor: AppColors.primary,
               icon: const Icon(IconlyLight.edit, color: AppColors.onPrimary),
               label: Text('Publier',
-                  style: AppTextStyles.buttonMd.copyWith(color: AppColors.onPrimary)),
+                  style: AppTextStyles.buttonMd
+                      .copyWith(color: AppColors.onPrimary)),
             ),
           ),
         ),
@@ -155,7 +158,12 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                 }
                 if (controller.posts.isEmpty) {
                   return AppRefreshIndicator(
-                    onRefresh: controller.refreshFeed,
+                    onRefresh: () async {
+                      await controller.refreshFeed();
+                      if (Get.isRegistered<StoryController>()) {
+                        await Get.find<StoryController>().loadStories();
+                      }
+                    },
                     color: AppColors.primaryAccent,
                     child: ListView(
                       children: [
@@ -173,7 +181,12 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                   );
                 }
                 return AppRefreshIndicator(
-                  onRefresh: controller.refreshFeed,
+                  onRefresh: () async {
+                    await controller.refreshFeed();
+                    if (Get.isRegistered<StoryController>()) {
+                      await Get.find<StoryController>().loadStories();
+                    }
+                  },
                   child: NotificationListener<ScrollNotification>(
                     onNotification: (n) {
                       if (n.metrics.pixels >= n.metrics.maxScrollExtent - 300) {
@@ -186,12 +199,33 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(
                             AppSpacing.md, AppSpacing.md, AppSpacing.md, 90),
+                        // +1 slot pour l'aperçu « Suggestions pour vous » inséré
+                        // après les premières publications (ou en tête si peu).
                         itemCount: controller.posts.length +
+                            1 +
                             (controller.isLoadingMore.value ? 1 : 0),
                         separatorBuilder: (_, __) =>
                             const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, i) {
-                          if (i >= controller.posts.length) {
+                          // Position de l'aperçu suggestions dans le fil.
+                          final suggIndex =
+                              controller.posts.length >= 3 ? 3 : 0;
+                          if (i == suggIndex) {
+                            // Déborde du padding latéral de la liste via une
+                            // translation (le carrousel gère son propre padding
+                            // interne) → rendu pleine largeur sans negative
+                            // EdgeInsets (interdites par Padding).
+                            return Transform.translate(
+                              offset: const Offset(-AppSpacing.md, 0),
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: const SuggestionsCarousel(),
+                              ),
+                            );
+                          }
+                          // Indice réel du post (décalé par le slot suggestions).
+                          final postIndex = i > suggIndex ? i - 1 : i;
+                          if (postIndex >= controller.posts.length) {
                             return Padding(
                               padding: const EdgeInsets.all(16),
                               child: Center(
@@ -199,7 +233,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
                               ),
                             );
                           }
-                          final post = controller.posts[i];
+                          final post = controller.posts[postIndex];
                           return AnimationConfiguration.staggeredList(
                             position: i,
                             duration: AppMotion.base,

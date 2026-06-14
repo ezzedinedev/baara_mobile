@@ -82,6 +82,25 @@ class ApiConstants {
 
   static String get baseUrl => '$resolvedHost/api/v1';
 
+  // ── Liens publics (partage & deep links) ────────────────────────────────
+  /// Schéma custom des deep links de l'app (opportunebf://…).
+  static const String deepLinkScheme = 'opportunebf';
+
+  /// Base du site web public. Le web est servi sur le domaine racine ; en prod
+  /// l'API est sur le sous-domaine `api.` → on le retire pour obtenir le site.
+  /// En dev l'API et le web partagent le même hôte (Laravel :8000).
+  static String get siteBaseUrl {
+    final uri = Uri.tryParse(resolvedHost);
+    if (uri == null) return resolvedHost;
+    if (uri.host.startsWith('api.')) {
+      return uri.replace(host: uri.host.substring(4)).toString();
+    }
+    return resolvedHost;
+  }
+
+  /// URL web publique du profil d'un membre (parité web : `/profil/{id}`).
+  static String webProfileUrl(String id) => '$siteBaseUrl/profil/$id';
+
   /// donc les hôtes locaux vers [resolvedHost] (le MÊME hôte que l'API), et on
 
   static String? resolveMediaUrl(String? url) {
@@ -145,6 +164,8 @@ class ApiConstants {
   static const String authRefresh = '/auth/refresh';
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';
+  // Vidéo de présentation candidat (~30 s) : fichier sur disque, chemin en base.
+  static const String profilePresentationVideo = '/profile/presentation-video';
   static const String profilePreferences = '/profile/preferences';
   static const String profileCv = '/profile/cv';
   static const String profilePortfolio = '/profile/portfolio';
@@ -262,6 +283,11 @@ class ApiConstants {
   // Explore : posts publics tendance, même forme paginée que le feed.
   static const String communityExplore = '/community/explore';
   static const String communitySuggestions = '/community/suggestions';
+
+  /// Accroches IA pour le top des suggestions « personnes à suivre »
+  /// (`data: { insights: [{ user_id, name, reason, insight, ai }] }`).
+  static const String communitySuggestionsInsight =
+      '/community/suggestions/insight';
   static const String communitySearch = '/community/search';
   static const String communityPosts = '/community/posts';
   static String communityPost(String id) => '/community/posts/$id';
@@ -312,6 +338,13 @@ class ApiConstants {
   static String communityConnectionRespond(String id) =>
       '/community/connections/$id/respond';
   static String communityUser(String id) => '/community/users/$id';
+  // Publications d'un membre (mur de profil façon Facebook), paginé.
+  static String communityUserPosts(String id) => '/community/users/$id/posts';
+  // Abonnés / connexions d'un membre (listes paginées, stats cliquables).
+  static String communityUserFollowers(String id) =>
+      '/community/users/$id/followers';
+  static String communityUserConnections(String id) =>
+      '/community/users/$id/connections';
   // Cluster D — Graphe social & sécurité.
   // Blocage d'un membre : POST pour bloquer, DELETE pour débloquer (même chemin).
   // Bloquer retire aussi connexion + follow côté serveur → {is_blocked: bool}.

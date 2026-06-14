@@ -34,6 +34,16 @@ class NotificationsController extends GetxController {
     }
   }
 
+  /// Rafraîchit UNIQUEMENT le compteur non-lu (pour le badge de la cloche),
+  /// sans toucher à la liste affichée — évite de casser le scroll/pagination
+  /// en cours lors du polling périodique des badges.
+  Future<void> refreshUnreadCount() async {
+    try {
+      final result = await _repository.getNotifications(page: 1);
+      unreadCount.value = result.unreadCount;
+    } catch (_) {}
+  }
+
   /// Charge la page suivante et l'ajoute à la liste (scroll infini).
   Future<void> loadMore() async {
     if (isLoadingMore.value || isLoading.value || !hasMore.value) return;

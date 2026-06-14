@@ -11,6 +11,7 @@ import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/common/press_scale.dart';
 
 import '../controllers/story_controller.dart';
+import '../widgets/story_mention_autocomplete.dart';
 
 /// Composer de story TEXTE (façon « Aa » Facebook) : fond coloré + texte
 /// centré, palette de couleurs, publication.
@@ -22,7 +23,8 @@ class StoryTextComposerScreen extends StatefulWidget {
       _StoryTextComposerScreenState();
 }
 
-class _StoryTextComposerScreenState extends State<StoryTextComposerScreen> {
+class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
+    with StoryMentionAutocomplete {
   static const _palette = <String>[
     '#0E8A4D',
     '#2BA55B',
@@ -41,7 +43,17 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen> {
   String _visibility = 'connections';
 
   @override
+  TextEditingController get captionController => _caption;
+
+  @override
+  void initState() {
+    super.initState();
+    initMentionAutocomplete();
+  }
+
+  @override
   void dispose() {
+    disposeMentionAutocomplete();
     _caption.dispose();
     super.dispose();
   }
@@ -51,12 +63,15 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen> {
   void _publish() {
     final caption = _caption.text.trim();
     if (caption.isEmpty) return;
+    final mentions = mentionIds;
+    closeMentions();
     // Optimiste : fermeture immédiate, envoi en arrière-plan (pas de popup).
     Get.back<void>();
     _controller.publish(
       caption: caption,
       backgroundColor: _color,
       visibility: _visibility,
+      mentions: mentions,
     );
   }
 
@@ -105,6 +120,7 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: TextField(
+                      key: mentionFieldKey,
                       controller: _caption,
                       autofocus: true,
                       textAlign: TextAlign.center,

@@ -14,6 +14,7 @@ import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/common/press_scale.dart';
 
 import '../controllers/story_controller.dart';
+import '../widgets/story_mention_autocomplete.dart';
 
 /// Aperçu plein écran avant publication : légende + visibilité + Publier.
 class StoryComposerScreen extends StatefulWidget {
@@ -29,15 +30,20 @@ class StoryComposerScreen extends StatefulWidget {
   State<StoryComposerScreen> createState() => _StoryComposerScreenState();
 }
 
-class _StoryComposerScreenState extends State<StoryComposerScreen> {
+class _StoryComposerScreenState extends State<StoryComposerScreen>
+    with StoryMentionAutocomplete {
   final _caption = TextEditingController();
   final _controller = Get.find<StoryController>();
   String _visibility = 'connections';
   VideoPlayerController? _video;
 
   @override
+  TextEditingController get captionController => _caption;
+
+  @override
   void initState() {
     super.initState();
+    initMentionAutocomplete();
     if (widget.isVideo) {
       _video = VideoPlayerController.file(File(widget.mediaPath))
         ..setLooping(true)
@@ -53,6 +59,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen> {
 
   @override
   void dispose() {
+    disposeMentionAutocomplete();
     _caption.dispose();
     _video?.dispose();
     super.dispose();
@@ -62,11 +69,14 @@ class _StoryComposerScreenState extends State<StoryComposerScreen> {
     // Optimiste : on ferme tout de suite, l'envoi se fait en arrière-plan et la
     // barre se rafraîchit quand c'est prêt (pas de popup « envoyée »).
     final caption = _caption.text.trim();
+    final mentions = mentionIds;
+    closeMentions();
     Get.back<void>();
     _controller.publish(
       mediaPath: widget.mediaPath,
       caption: caption,
       visibility: _visibility,
+      mentions: mentions,
     );
   }
 
@@ -134,6 +144,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen> {
                   children: [
                     // Champ légende squircle cohérent avec la charte.
                     TextField(
+                      key: mentionFieldKey,
                       controller: _caption,
                       style: AppTextStyles.bodyMd
                           .copyWith(color: AppColors.onPrimary),

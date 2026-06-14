@@ -46,6 +46,34 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
+  Future<String?> uploadPresentationVideo(
+      List<int> bytes, String filename) async {
+    final response = await _apiProvider.multipartPost(
+      ApiConstants.profilePresentationVideo,
+      fields: {},
+      files: [
+        http.MultipartFile.fromBytes('video', bytes, filename: filename),
+      ],
+    );
+
+    if (response['success'] == true && response['data'] != null) {
+      return (response['data'] as Map<String, dynamic>)['presentation_video_url']
+          as String?;
+    }
+    throw Exception('Failed to upload presentation video');
+  }
+
+  @override
+  Future<void> deletePresentationVideo() async {
+    final response =
+        await _apiProvider.deleteJson(ApiConstants.profilePresentationVideo);
+    if (response['success'] != true) {
+      throw Exception(
+          response['message'] ?? 'Échec de la suppression de la vidéo.');
+    }
+  }
+
+  @override
   Future<void> updatePreferences(Map<String, dynamic> prefs) async {
     final response =
         await _apiProvider.putJson(ApiConstants.profilePreferences, prefs);

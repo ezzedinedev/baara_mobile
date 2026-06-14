@@ -34,6 +34,8 @@ abstract class AppRoutes {
   static const conversation = '/messages/:id';
   static const community = '/communaute';
   static const communityProfile = '/communaute/membre/:id';
+  // Listes Abonnés / Connexions d'un membre (mode passé via Get.arguments).
+  static const communityNetwork = '/communaute/membre/:id/reseau';
   static const communitySearch = '/communaute/recherche';
   static const communityConnections = '/communaute/connexions';
   static const communityProfileViews = '/communaute/vues-profil';
