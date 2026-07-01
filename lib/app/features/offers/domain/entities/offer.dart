@@ -22,6 +22,13 @@ class Offer {
   final int boostTier;
   final String? boostLabel;
 
+  /// État utilisateur injecté par le backend quand l'utilisateur est connecté.
+  /// null = non authentifié ou endpoint public (liste sans auth).
+  final bool? isSaved;
+  final bool? isApplied;
+  final String? applicationId;
+  final String? applicationStatus;
+
   const Offer({
     required this.id,
     required this.title,
@@ -41,5 +48,9 @@ class Offer {
     this.isBoosted = false,
     this.boostTier = 0,
     this.boostLabel,
+    this.isSaved,
+    this.isApplied,
+    this.applicationId,
+    this.applicationStatus,
   });
 }

@@ -7,6 +7,16 @@ abstract class IIaRepository {
   Future<List<Map<String, dynamic>>> getChatSessions();
   Future<List<ChatMessage>> getChatMessages(String sessionId);
 
+  /// Feedback sur une réponse du chat IA (POST /ai/chat/feedback).
+  /// [rating] : -1 (négatif), 0 (neutre), 1 (positif).
+  Future<bool> sendChatFeedback({
+    required String sessionId,
+    required int rating,
+    int? assistantMessageIndex,
+    String? comment,
+    String? correction,
+  });
+
   // Profile Scoring
   Future<Map<String, dynamic>> getProfileScore();
 

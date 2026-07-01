@@ -13,6 +13,7 @@ import 'package:opportune_bf/app/features/offers/presentation/pages/offer_list_s
 import 'package:opportune_bf/app/features/offers/presentation/widgets/offer_swipe_deck.dart';
 import 'package:opportune_bf/app/features/trainings/presentation/controllers/trainings_controller.dart';
 import 'package:opportune_bf/app/features/trainings/presentation/pages/trainings_screen.dart';
+import '../controllers/home_controller.dart';
 
 /// Hub « Opportunités » : un seul en-tête + un segmented control qui bascule
 /// entre Offres et Formations (Concours à venir). Réunit deux contenus de même
@@ -27,8 +28,6 @@ class OpportunitesScreen extends StatefulWidget {
 }
 
 class _OpportunitesScreenState extends State<OpportunitesScreen> {
-  int _segment = 0;
-
   /// Mode d'affichage des offres : false = liste, true = découverte (swipe).
   /// Le swipe est conservé ici comme un MODE de l'onglet Offres (et non sur
   /// l'accueil, pour ne plus dupliquer le contenu).
@@ -38,56 +37,62 @@ class _OpportunitesScreenState extends State<OpportunitesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Le segment actif est porté par HomeController → l'accueil peut ouvrir
+    // directement « Formations » via « Tout voir ».
+    final home = Get.find<HomeController>();
     return ColoredBox(
       color: AppColors.background,
-      child: SankTabShell(
-        title: 'Opportunités',
-        subtitle: 'Offres et formations pour ton profil.',
-        headerActions: [
-          // Filtres (selon le segment actif).
-          AppIconButton(
-            icon: IconlyLight.filter,
-            tooltip: 'Filtrer',
-            onTap: () {
-              AppHaptics.tap();
-              if (_segment == 0) {
-                openOffersFilter(context, Get.find<OfferController>());
-              } else {
-                openTrainingsFilter(context, Get.find<TrainingsController>());
-              }
-            },
-          ),
-          // Bascule Liste / Découverte (swipe) — visible uniquement sur Offres.
-          if (_segment == 0)
+      child: Obx(() {
+        final segment = home.opportunitesTab.value;
+        return SankTabShell(
+          title: 'Opportunités',
+          subtitle: 'Offres et formations pour ton profil.',
+          headerActions: [
+            // Filtres (selon le segment actif).
             AppIconButton(
-              icon: _offersSwipe
-                  ? Icons.view_agenda_rounded
-                  : Icons.swipe_rounded,
-              tooltip: _offersSwipe ? 'Vue liste' : 'Mode découverte (swipe)',
+              icon: IconlyLight.filter,
+              tooltip: 'Filtrer',
               onTap: () {
                 AppHaptics.tap();
-                setState(() => _offersSwipe = !_offersSwipe);
+                if (segment == 0) {
+                  openOffersFilter(context, Get.find<OfferController>());
+                } else {
+                  openTrainingsFilter(context, Get.find<TrainingsController>());
+                }
               },
             ),
-        ],
-        headerChild: SegmentedControl(
-          segments: _segments,
-          selected: _segment,
-          onChanged: (i) {
-            AppHaptics.tap();
-            setState(() => _segment = i);
-          },
-        ),
-        body: IndexedStack(
-          index: _segment,
-          children: [
-            _offersSwipe
-                ? _OffersSwipeView()
-                : const OfferListScreen(embedded: true),
-            const TrainingsScreen(embedded: true),
+            // Bascule Liste / Découverte (swipe) — visible uniquement sur Offres.
+            if (segment == 0)
+              AppIconButton(
+                icon: _offersSwipe
+                    ? Icons.view_agenda_rounded
+                    : Icons.swipe_rounded,
+                tooltip: _offersSwipe ? 'Vue liste' : 'Mode découverte (swipe)',
+                onTap: () {
+                  AppHaptics.tap();
+                  setState(() => _offersSwipe = !_offersSwipe);
+                },
+              ),
           ],
-        ),
-      ),
+          headerChild: SegmentedControl(
+            segments: _segments,
+            selected: segment,
+            onChanged: (i) {
+              AppHaptics.tap();
+              home.opportunitesTab.value = i;
+            },
+          ),
+          body: IndexedStack(
+            index: segment,
+            children: [
+              _offersSwipe
+                  ? _OffersSwipeView()
+                  : const OfferListScreen(embedded: true),
+              const TrainingsScreen(embedded: true),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

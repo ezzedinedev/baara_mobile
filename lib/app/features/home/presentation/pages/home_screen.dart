@@ -7,24 +7,22 @@ import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
 import 'package:opportune_bf/app/features/offers/domain/entities/matched_offer.dart';
+import 'package:opportune_bf/app/features/offers/domain/entities/offer.dart';
+import 'package:opportune_bf/app/features/offers/presentation/widgets/offer_logo_hero.dart';
 import 'package:opportune_bf/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:opportune_bf/app/features/trainings/presentation/widgets/training_card.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/profile_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:opportune_bf/app/features/profile/presentation/controllers/settings_controller.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/pages/messages_screen.dart';
 import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:opportune_bf/app/features/suivi/presentation/pages/suivi_screen.dart';
 import 'package:opportune_bf/app/features/notifications/presentation/controllers/notifications_controller.dart';
 import 'package:opportune_bf/app/features/community/presentation/pages/community_feed_screen.dart';
 import 'package:opportune_bf/app/features/community/presentation/controllers/community_controller.dart';
-import 'package:opportune_bf/app/features/community/presentation/widgets/post_card.dart';
-import 'package:opportune_bf/app/features/community/presentation/widgets/comment_sheet.dart';
-import 'package:opportune_bf/app/features/community/presentation/widgets/report_sheet.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import 'opportunites_screen.dart';
 import '../controllers/home_controller.dart';
@@ -45,7 +43,7 @@ class HomeScreen extends GetView<HomeController> {
             _DashboardTab(),
             OpportunitesScreen(),
             CommunityFeedScreen(),
-            MessagesScreen(),
+            SuiviScreen(),
             ProfileScreen(),
           ],
         ),
@@ -59,14 +57,28 @@ class HomeScreen extends GetView<HomeController> {
 /// plus les listes complètes d'offres/formations (elles vivent dans le hub
 /// Opportunités) : top bar + accès rapides vers les actions profondes + teaser
 /// de l'activité réseau. Pull-to-refresh rafraîchit les données des onglets.
-class _DashboardTab extends StatelessWidget {
+class _DashboardTab extends StatefulWidget {
   const _DashboardTab();
+
+  @override
+  State<_DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<_DashboardTab> {
+  // Contrôleur dédié pour piloter le parallax du hero (le bandeau salutation
+  // monte plus lentement que le contenu et zoome élastiquement au pull-to-refresh).
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final offerController = Get.find<OfferController>();
     final trainingsController = Get.find<TrainingsController>();
-    final communityController = Get.find<CommunityController>();
 
     return AppRefreshIndicator(
       color: AppColors.primaryAccent,
@@ -75,38 +87,107 @@ class _DashboardTab extends StatelessWidget {
           offerController.loadOffers(refresh: true),
           offerController.loadMatchedOffers(),
           trainingsController.loadTrainings(refresh: true),
-          communityController.refreshFeed(),
         ]);
       },
       child: ListView(
+        controller: _scroll,
         physics: const AlwaysScrollableScrollPhysics(),
         // Espace pour que le dernier contenu dégage la barre glass flottante.
         padding: const EdgeInsets.only(bottom: 104),
         children: [
-          const _AccueilTopBar(),
+          // Hero en parallax : translation plus lente + zoom au pull + fondu.
+          ParallaxHeader(
+            controller: _scroll,
+            parallaxFactor: 0.5,
+            child: const _AccueilTopBar(),
+          ),
           const SizedBox(height: AppSpacing.lg),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
             child: _QuickAccessRow(),
           ),
+          // Offres recommandées par l'IA (« Pour toi ») — visible si matchs.
           const _MatchSection(),
+          // Dernières offres d'emploi (toujours visibles).
+          const _OffersSection(),
+          // Formations recommandées — la communauté vit désormais dans son
+          // propre onglet, l'accueil reste un digest offres + formations.
+          const _FormationsSection(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Section « Formations pour toi » : aperçu vertical (jusqu'à 2 cartes) avec la
+/// nouvelle carte formation. « Tout voir » bascule sur l'onglet Opportunités,
+/// segment Formations présélectionné.
+class _FormationsSection extends StatelessWidget {
+  const _FormationsSection();
+
+  static const _maxPreview = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TrainingsController>();
+    return Obx(() {
+      final isLoading = controller.isLoading.value;
+      final items = controller.trainings;
+
+      if (isLoading && items.isEmpty) {
+        return const Column(
+          children: [
+            SizedBox(height: AppSpacing.xxl),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+              child: TrainingCardSkeleton(),
+            ),
+          ],
+        );
+      }
+      if (items.isEmpty) return const SizedBox.shrink();
+
+      final preview = items.take(_maxPreview).toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           const SizedBox(height: AppSpacing.xxl),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
             child: SectionHeader(
-              title: 'Ton réseau bouge',
+              title: 'Formations pour toi',
               actionLabel: 'Tout voir',
               onAction: () {
                 AppHaptics.tap();
-                Get.find<HomeController>().changeTab(2);
+                Get.find<HomeController>().openOpportunites(segment: 1);
               },
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          _CommunityPreview(controller: communityController),
+          for (var i = 0; i < preview.length; i++)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.pageH,
+                0,
+                AppSpacing.pageH,
+                i == preview.length - 1 ? 0 : AppSpacing.md,
+              ),
+              child: TrainingCard(
+                training: preview[i],
+                // Tag Hero unique : évite un doublon avec l'onglet Formations
+                // (mêmes cartes montées en même temps).
+                heroTag: 'home-formation-${preview[i].id}',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(
+                    AppRoutes.trainingDetail.replaceFirst(':id', preview[i].id),
+                  );
+                },
+              ),
+            ),
         ],
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -267,6 +348,247 @@ class _BentoTile extends StatelessWidget {
           shadows: AppColors.lightShadow,
         ),
         child: content,
+      ),
+    );
+  }
+}
+
+/// Section « Offres d'emploi » : aperçu horizontal des dernières offres
+/// publiées. « Tout voir » bascule sur l'onglet Opportunités (segment Offres).
+class _OffersSection extends StatelessWidget {
+  const _OffersSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<OfferController>();
+    return Obx(() {
+      final loading = controller.isLoading.value;
+      final offers = controller.offers;
+
+      if (loading && offers.isEmpty) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpacing.xxl),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+              child: SectionHeader(title: 'Offres d\'emploi', onAction: () {}),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              height: 176,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+                itemCount: 3,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: AppSpacing.md),
+                itemBuilder: (_, __) => const _OfferRailSkeleton(),
+              ),
+            ),
+          ],
+        );
+      }
+      if (offers.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.xxl),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+            child: SectionHeader(
+              title: 'Offres d\'emploi',
+              actionLabel: 'Tout voir',
+              onAction: () {
+                AppHaptics.tap();
+                Get.find<HomeController>().openOpportunites(segment: 0);
+              },
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 176,
+            child: AnimationLimiter(
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+                itemCount: offers.length > 8 ? 8 : offers.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: AppSpacing.md),
+                itemBuilder: (_, i) => AnimationConfiguration.staggeredList(
+                  position: i,
+                  duration: AppMotion.medium,
+                  child: SlideAnimation(
+                    horizontalOffset: 32,
+                    curve: AppMotion.emphasizedDecelerate,
+                    child: FadeInAnimation(
+                      child: _OfferRailCard(offer: offers[i]),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+/// Carte d'offre compacte (rail horizontal de l'accueil), largeur fixe.
+class _OfferRailCard extends StatelessWidget {
+  const _OfferRailCard({required this.offer});
+  final Offer offer;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 260,
+      child: PressScale(
+        onTap: () {
+          AppHaptics.tap();
+          Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', offer.id));
+        },
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: ShapeDecoration(
+            color: AppColors.surfaceCard,
+            shape: AppShapes.cardBordered(AppColors.outlineVariant),
+            shadows: [...AppColors.lightShadow, ...AppColors.ambientShadow],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Morphing logo offre → détail (actif uniquement sur l'Accueil).
+                  OfferLogoHero(
+                    offerId: offer.id,
+                    activeWhenTab: 0,
+                    child: BrandAvatar(
+                      seed: offer.company.isEmpty ? offer.title : offer.company,
+                      label:
+                          offer.company.isEmpty ? offer.title : offer.company,
+                      imageUrl: offer.companyLogo,
+                      size: 38,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      offer.company.isEmpty ? 'Entreprise' : offer.company,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.primaryAccent),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                offer.title.isEmpty ? 'Offre' : offer.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.titleMd.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  if (offer.location.isNotEmpty) ...[
+                    Icon(IconlyLight.location,
+                        size: 13, color: AppColors.hintColor),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        offer.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelSm
+                            .copyWith(color: AppColors.hintColor),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (offer.salary.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  offer.salary.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.titleColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Squelette shimmer d'une carte d'offre du rail (mime la vraie structure).
+class _OfferRailSkeleton extends StatelessWidget {
+  const _OfferRailSkeleton();
+
+  Widget _bar(double w, double h, [double r = 7]) => Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(r),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 260,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        ),
+        child: SkeletonCluster(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _bar(110, 11),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _bar(double.infinity, 13),
+              const SizedBox(height: 8),
+              _bar(150, 13),
+              const Spacer(),
+              _bar(120, 11),
+              const SizedBox(height: 8),
+              _bar(80, 12),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -512,108 +834,6 @@ class _MatchCard extends StatelessWidget {
   }
 }
 
-/// Aperçu Communauté sur l'accueil : jusqu'à 3 publications récentes, mêmes
-/// cartes [PostCard] que l'écran dédié et que le web. Like / commenter /
-/// republier / suivre fonctionnent directement depuis l'accueil.
-class _CommunityPreview extends StatelessWidget {
-  const _CommunityPreview({required this.controller});
-
-  final CommunityController controller;
-
-  static const _maxPreview = 3;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final isLoading = controller.isLoading.value;
-      final posts = controller.posts;
-
-      if (isLoading && posts.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
-          child: Column(
-            children: [
-              PostSkeleton(),
-              SizedBox(height: AppSpacing.md),
-              PostSkeleton(),
-            ],
-          ),
-        );
-      }
-
-      if (posts.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.outlineVariant),
-            ),
-            child: Row(
-              children: [
-                Icon(IconlyLight.message, color: AppColors.hintColor),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    'Le fil communauté est encore vide. Soyez le premier à publier.',
-                    style: AppTextStyles.bodyMd
-                        .copyWith(color: AppColors.bodyColor),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      final preview = posts.take(_maxPreview).toList();
-      return AnimationLimiter(
-        child: Column(
-          children: [
-            for (var i = 0; i < preview.length; i++)
-              AnimationConfiguration.staggeredList(
-                position: i,
-                duration: AppMotion.base,
-                child: SlideAnimation(
-                  verticalOffset: AppMotion.listSlideOffset,
-                  child: FadeInAnimation(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.pageH,
-                        0,
-                        AppSpacing.pageH,
-                        i == preview.length - 1 ? 0 : AppSpacing.md,
-                      ),
-                      child: PostCard(
-                        post: preview[i],
-                        onLike: () =>
-                            controller.toggleReaction(preview[i].id, 'like'),
-                        onComment: () =>
-                            showCommentSheet(context, controller, preview[i]),
-                        onRepost: () => controller.repost(preview[i].id),
-                        onFollow: preview[i].author == null
-                            ? null
-                            : () => controller.toggleFollow(preview[i].author!),
-                        onTapAuthor: preview[i].author == null
-                            ? null
-                            : () => Get.toNamed(AppRoutes.communityProfile
-                                .replaceFirst(':id', preview[i].author!.id)),
-                        onReport: () =>
-                            showReportSheet(context, controller, preview[i].id),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-    });
-  }
-}
-
 /// Top bar plat (SafeArea) : avatar + "Bonjour" + vrai prénom, cloche à
 /// droite. Tap avatar/greeting → onglet Profil ; tap cloche → notifications.
 class _AccueilTopBar extends StatelessWidget {
@@ -703,23 +923,29 @@ class _AccueilTopBar extends StatelessWidget {
                 }),
               ),
               const SizedBox(width: AppSpacing.sm),
-              // Bascule rapide clair/sombre — persiste localement + au backend.
+              // Accès rapide messagerie (déplacé de la bottom nav vers le haut).
+              // Pastille = total des conversations non lues.
               Obx(() {
-                final theme = Get.find<AppThemeController>();
-                final isDark = theme.isDarkMode.value;
-                return AppIconButton(
-                  icon: isDark
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  tooltip: isDark ? 'Mode clair' : 'Mode sombre',
+                final messages = Get.isRegistered<MessagesController>()
+                    ? Get.find<MessagesController>()
+                    : null;
+                final unread = messages == null
+                    ? 0
+                    : messages.conversations
+                        .fold<int>(0, (sum, c) => sum + c.unreadCount);
+                final button = AppIconButton(
+                  icon: IconlyLight.chat,
+                  tooltip: 'Messages',
                   onTap: () {
                     AppHaptics.tap();
-                    if (Get.isRegistered<SettingsController>()) {
-                      Get.find<SettingsController>().setDarkMode(!isDark);
-                    } else {
-                      theme.setDarkMode(!isDark);
-                    }
+                    Get.toNamed(AppRoutes.messages);
                   },
+                );
+                if (unread <= 0) return button;
+                return Badge(
+                  label: Text(unread > 99 ? '99+' : '$unread'),
+                  backgroundColor: AppColors.error,
+                  child: button,
                 );
               }),
               const SizedBox(width: AppSpacing.sm),
@@ -864,10 +1090,10 @@ class _HomeBottomNav extends GetView<HomeController> {
       badge: 'network'
     ),
     (
-      icon: IconlyLight.chat,
-      active: IconlyBold.chat,
-      labelKey: 'nav.messages',
-      badge: 'messages'
+      icon: IconlyLight.category,
+      active: IconlyBold.category,
+      labelKey: 'nav.tracking',
+      badge: null
     ),
     (
       icon: IconlyLight.profile,

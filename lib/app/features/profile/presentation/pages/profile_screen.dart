@@ -6,12 +6,14 @@ import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../controllers/documents_controller.dart';
@@ -51,26 +53,628 @@ class ProfileScreen extends GetView<ProfileController> {
             children: [
               _ProfileHero(profile: profile),
               const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: _ContactCard(profile: profile),
-              ),
-              if (profile.userType == 'candidate') ...[
-                const SizedBox(height: 18),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: const PresentationVideoCard(),
-                ),
-              ],
-              const SizedBox(height: 18),
-              const _DocumentsStrip(),
-              const SizedBox(height: 6),
-              const SettingsBody(),
+              _ProfileBody(profile: profile),
             ],
           ),
         );
       }),
+    );
+  }
+}
+
+// ── Corps : bascule « Ma Vue » / « Vue Recruteur » ──────────────────────────
+
+/// Corps du profil sous le hero. Pour les candidats, une bascule segmentée
+/// « Ma Vue » (profil éditable + réglages) / « Vue Recruteur » (aperçu lecture
+/// seule de ce que voient les entreprises). Pour les autres types de compte, on
+/// affiche directement la vue éditable.
+class _ProfileBody extends StatefulWidget {
+  const _ProfileBody({required this.profile});
+  final Profile profile;
+
+  @override
+  State<_ProfileBody> createState() => _ProfileBodyState();
+}
+
+class _ProfileBodyState extends State<_ProfileBody> {
+  int _segment = 0; // 0 = Ma Vue, 1 = Vue Recruteur
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = widget.profile;
+    final isCandidate = profile.userType == 'candidate';
+
+    if (!isCandidate) return _MyView(profile: profile);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: _ViewToggle(
+            selected: _segment,
+            onChanged: (i) {
+              AppHaptics.tap();
+              setState(() => _segment = i);
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        // Transition douce (fade + léger glissement vertical) entre les deux vues.
+        AnimatedSwitcher(
+          duration: AppMotion.medium,
+          switchInCurve: AppMotion.emphasizedDecelerate,
+          switchOutCurve: AppMotion.emphasizedAccelerate,
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.02),
+                end: Offset.zero,
+              ).animate(anim),
+              child: child,
+            ),
+          ),
+          child: _segment == 0
+              ? KeyedSubtree(
+                  key: const ValueKey('profile-ma-vue'),
+                  child: _MyView(profile: profile),
+                )
+              : KeyedSubtree(
+                  key: const ValueKey('profile-vue-recruteur'),
+                  child: _RecruiterView(profile: profile),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Bascule segmentée « Ma Vue » / « Vue Recruteur » (pilule glissante en spring).
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.selected, required this.onChanged});
+  final int selected;
+  final ValueChanged<int> onChanged;
+
+  static const _labels = ['Ma Vue', 'Vue Recruteur'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLow,
+        borderRadius: AppShapes.pill,
+      ),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final segWidth = (c.maxWidth - 8) / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                alignment: selected == 0
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
+                child: Container(
+                  width: segWidth,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    borderRadius: AppShapes.pill,
+                    boxShadow: AppColors.lightShadow,
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(2, (i) {
+                  final active = i == selected;
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onChanged(i),
+                      child: Center(
+                        child: Text(
+                          _labels[i],
+                          style: AppTextStyles.labelLg.copyWith(
+                            color: active
+                                ? AppColors.primaryAccent
+                                : AppColors.hintColor,
+                            fontWeight:
+                                active ? FontWeight.w800 : FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// « Ma Vue » : sections à compléter + coordonnées + vidéo + documents + réglages.
+class _MyView extends StatelessWidget {
+  const _MyView({required this.profile});
+  final Profile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCandidate = profile.userType == 'candidate';
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+          child: _StreakCard(),
+        ),
+        if (isCandidate) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: _SectionsToComplete(profile: profile),
+          ),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: _ContactCard(profile: profile),
+        ),
+        if (isCandidate) ...[
+          const SizedBox(height: 18),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: PresentationVideoCard(),
+          ),
+        ],
+        const SizedBox(height: 18),
+        const _DocumentsStrip(),
+        const SizedBox(height: 6),
+        const SettingsBody(),
+      ],
+    );
+  }
+}
+
+/// Carte d'accès à la série quotidienne (gamification de rétention). Affiche la
+/// flamme + le nombre de jours consécutifs ; tap → écran « Ma série ».
+class _StreakCard extends StatelessWidget {
+  const _StreakCard();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<StreakController>()) return const SizedBox.shrink();
+    final streak = Get.find<StreakController>();
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        Get.toNamed(AppRoutes.streak);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: AppColors.lightShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.warningSoft,
+                borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+              ),
+              child: Text('🔥', style: const TextStyle(fontSize: 22)),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final n = streak.currentStreak.value;
+                    return Text(
+                      n <= 0
+                          ? 'Démarrez votre série'
+                          : '$n jour${n > 1 ? "s" : ""} de suite',
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w800),
+                    );
+                  }),
+                  const SizedBox(height: 2),
+                  Text('Votre série de connexions quotidiennes',
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.hintColor)),
+                ],
+              ),
+            ),
+            Icon(IconlyLight.arrow_right_2, color: AppColors.outlineVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Modèle d'une section de profil (libellé, icône, état rempli, route d'édition).
+typedef _ProfileSection = ({
+  String label,
+  IconData icon,
+  bool done,
+  String route,
+});
+
+List<_ProfileSection> _sectionsFor(Profile p) => [
+      (
+        label: 'Titre',
+        icon: IconlyLight.user,
+        done: (p.headline ?? '').trim().isNotEmpty,
+        route: AppRoutes.profileEdit,
+      ),
+      (
+        label: 'Bio',
+        icon: IconlyLight.document,
+        done: (p.bio ?? '').trim().isNotEmpty,
+        route: AppRoutes.profileEdit,
+      ),
+      (
+        label: 'Compétences',
+        icon: IconlyLight.star,
+        done: p.skills.isNotEmpty,
+        route: AppRoutes.profileParcours,
+      ),
+      (
+        label: 'Expériences',
+        icon: IconlyLight.work,
+        done: p.experiences.isNotEmpty,
+        route: AppRoutes.profileParcours,
+      ),
+      (
+        label: 'Education',
+        icon: Icons.school_outlined,
+        done: p.educations.isNotEmpty,
+        route: AppRoutes.profileParcours,
+      ),
+      (
+        label: 'Langues',
+        icon: Icons.translate_rounded,
+        done: p.languages.isNotEmpty,
+        route: AppRoutes.profileParcours,
+      ),
+    ];
+
+/// Carte « Sections à compléter » : chips des sections encore vides, chacune
+/// menant à l'écran d'édition adéquat. Masquée si le profil est complet.
+class _SectionsToComplete extends StatelessWidget {
+  const _SectionsToComplete({required this.profile});
+  final Profile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final missing = _sectionsFor(profile).where((s) => !s.done).toList();
+    if (missing.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.warningSoft,
+          shape: AppShapes.squircle(AppRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome_rounded,
+                    size: 18, color: AppColors.warningAccent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Sections à compléter',
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Complétez votre profil pour augmenter vos chances auprès des recruteurs.',
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final s in missing)
+                  PressScale(
+                    onTap: () {
+                      AppHaptics.tap();
+                      Get.toNamed(s.route);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceCard,
+                        borderRadius: AppShapes.pill,
+                        border: Border.all(
+                            color: AppColors.warningAccent
+                                .withValues(alpha: 0.35)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(s.icon,
+                              size: 14, color: AppColors.warningAccent),
+                          const SizedBox(width: 6),
+                          Text(s.label,
+                              style: AppTextStyles.labelSm.copyWith(
+                                  color: AppColors.titleColor,
+                                  fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 4),
+                          Icon(IconlyLight.plus,
+                              size: 14, color: AppColors.warningAccent),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// « Vue Recruteur » : aperçu lecture seule. N'affiche que les sections
+/// complétées — exactement ce que voient les entreprises.
+class _RecruiterView extends StatelessWidget {
+  const _RecruiterView({required this.profile});
+  final Profile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasContent = (profile.bio ?? '').trim().isNotEmpty ||
+        profile.skills.isNotEmpty ||
+        profile.experiences.isNotEmpty ||
+        profile.educations.isNotEmpty ||
+        profile.languages.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Bandeau explicatif.
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: ShapeDecoration(
+              color: AppColors.categoryBlue.withValues(alpha: 0.10),
+              shape: AppShapes.squircle(AppRadius.lg),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(IconlyLight.show, size: 20, color: AppColors.categoryBlue),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Voici comment votre profil apparaît aux recruteurs',
+                        style: AppTextStyles.titleMd
+                            .copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Seules les sections complétées sont visibles pour les entreprises.',
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.bodyColor, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (!hasContent)
+            _RecruiterEmpty()
+          else ...[
+            if ((profile.bio ?? '').trim().isNotEmpty)
+              _RecruiterCard(
+                title: 'À propos',
+                child: Text(profile.bio!,
+                    style: AppTextStyles.bodyMd
+                        .copyWith(color: AppColors.bodyColor, height: 1.5)),
+              ),
+            if (profile.skills.isNotEmpty)
+              _RecruiterCard(
+                title: 'Compétences',
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in profile.skills)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color:
+                              AppColors.primaryAccent.withValues(alpha: 0.10),
+                          borderRadius: AppShapes.pill,
+                        ),
+                        child: Text(s,
+                            style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.primaryAccent,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                  ],
+                ),
+              ),
+            if (profile.experiences.isNotEmpty)
+              _RecruiterCard(
+                title: 'Expériences',
+                child: Column(
+                  children: [
+                    for (final e in profile.experiences)
+                      _RecruiterLine(
+                        icon: IconlyLight.work,
+                        title: e.title,
+                        subtitle: e.company,
+                      ),
+                  ],
+                ),
+              ),
+            if (profile.educations.isNotEmpty)
+              _RecruiterCard(
+                title: 'Education',
+                child: Column(
+                  children: [
+                    for (final e in profile.educations)
+                      _RecruiterLine(
+                        icon: Icons.school_outlined,
+                        title: e.degree,
+                        subtitle: e.institution,
+                      ),
+                  ],
+                ),
+              ),
+            if (profile.languages.isNotEmpty)
+              _RecruiterCard(
+                title: 'Langues',
+                child: Column(
+                  children: [
+                    for (final l in profile.languages)
+                      _RecruiterLine(
+                        icon: Icons.translate_rounded,
+                        title: l.name,
+                        subtitle: l.level,
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecruiterEmpty extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceCard,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Icon(IconlyLight.profile, size: 36, color: AppColors.hintColor),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Votre profil public est encore vide',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Complétez vos sections dans « Ma Vue » pour apparaître auprès des recruteurs.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecruiterCard extends StatelessWidget {
+  const _RecruiterCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceCard,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+        shadows: AppColors.lightShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+                  AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: AppSpacing.md),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _RecruiterLine extends StatelessWidget {
+  const _RecruiterLine(
+      {required this.icon, required this.title, required this.subtitle});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primaryAccent.withValues(alpha: 0.10),
+              borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+            ),
+            child: Icon(icon, size: 17, color: AppColors.primaryAccent),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w700, fontSize: 14)),
+                if (subtitle.trim().isNotEmpty)
+                  Text(subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.hintColor)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

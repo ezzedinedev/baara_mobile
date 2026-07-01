@@ -38,6 +38,22 @@ class SmartReplies {
 
 abstract class IMessagingRepository {
   Future<List<Conversation>> getConversations({int page = 1, int perPage = 20});
+
+  /// Démarre (ou rouvre) une conversation directe avec [userId].
+  /// POST /messages/start. Statut 'accepted' si connectés, sinon 'pending'.
+  Future<Conversation> startConversation(String userId);
+
+  /// Accepte une demande de message reçue (destinataire uniquement).
+  /// POST /messages/{id}/accept → conversation mise à jour.
+  Future<Conversation> acceptConversation(String conversationId);
+
+  /// Refuse une demande de message : supprime la conversation côté serveur.
+  /// POST /messages/{id}/decline.
+  Future<void> declineConversation(String conversationId);
+
+  /// Autorise/refuse les notes vocales dans la conversation.
+  /// POST /messages/{id}/voice-notes (body {allowed}).
+  Future<bool> setVoiceNotesAllowed(String conversationId, bool allowed);
   Future<MessagesPage> getMessages(String conversationId,
       {int page = 1, int perPage = 50});
   Future<Message> sendMessage(String conversationId, String text);

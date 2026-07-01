@@ -11,6 +11,7 @@ import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../controllers/notifications_controller.dart';
+import '../widgets/notification_preferences_sheet.dart';
 import '../../domain/entities/notification.dart';
 
 class NotificationsScreen extends GetView<NotificationsController> {
@@ -33,6 +34,12 @@ class NotificationsScreen extends GetView<NotificationsController> {
               AppHaptics.tap();
               controller.markAllRead();
             },
+          ),
+          AppIconButton(
+            onBrandHeader: true,
+            icon: IconlyLight.setting,
+            tooltip: 'Préférences de notifications',
+            onTap: () => showNotificationPreferencesSheet(context),
           ),
         ],
         body: Obx(() {
@@ -83,12 +90,24 @@ class NotificationsScreen extends GetView<NotificationsController> {
                       curve: AppMotion.emphasizedDecelerate,
                       verticalOffset: AppMotion.listSlideOffset,
                       child: FadeInAnimation(
-                        child: _NotificationCard(
-                          notification: notification,
-                          onTap: () {
+                        // Glisser vers la gauche pour supprimer (DELETE
+                        // /notifications/{id}). Le controller retire en
+                        // optimiste et rollback si l'API échoue.
+                        child: Dismissible(
+                          key: ValueKey('notif-${notification.id}'),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) {
                             AppHaptics.tap();
-                            controller.openNotification(notification);
+                            controller.delete(notification.id);
                           },
+                          background: const _DeleteBackground(),
+                          child: _NotificationCard(
+                            notification: notification,
+                            onTap: () {
+                              AppHaptics.tap();
+                              controller.openNotification(notification);
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -196,6 +215,24 @@ class _NotificationCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Fond rouge révélé en glissant une notification vers la gauche (suppression).
+class _DeleteBackground extends StatelessWidget {
+  const _DeleteBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: AppSpacing.xl),
+      decoration: ShapeDecoration(
+        color: AppColors.error.withValues(alpha: 0.14),
+        shape: AppShapes.squircle(AppRadius.md),
+      ),
+      child: const Icon(IconlyLight.delete, color: AppColors.error, size: 22),
     );
   }
 }

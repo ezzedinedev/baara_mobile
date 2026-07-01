@@ -15,8 +15,12 @@ class CandidateLoginController extends GetxController {
       : _googleAuth = googleAuthService ?? GoogleAuthService();
 
   final emailCtrl = TextEditingController();
+  final phoneCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
   final formKey = GlobalKey<FormState>();
+
+  /// Méthode de connexion choisie : 'email' (défaut) ou 'phone'.
+  final loginMode = 'email'.obs;
 
   final isLoading = false.obs;
   final errorMsg = ''.obs;
@@ -28,11 +32,21 @@ class CandidateLoginController extends GetxController {
   @override
   void onClose() {
     emailCtrl.dispose();
+    phoneCtrl.dispose();
     passwordCtrl.dispose();
     super.onClose();
   }
 
-  Future<void> loginWithEmail() async {
+  /// Bascule entre connexion par email et par téléphone (réinitialise l'erreur).
+  void setMode(String mode) {
+    if (loginMode.value == mode) return;
+    loginMode.value = mode;
+    errorMsg.value = '';
+  }
+
+  /// Soumet la connexion selon le mode actif (email ou téléphone). Mutualise la
+  /// gestion d'erreurs + le cooldown anti-bruteforce des deux méthodes.
+  Future<void> submit() async {
     if (_loginCooldown.value) {
       errorMsg.value = 'Trop de tentatives. Réessayez dans 30s.';
       return;
@@ -43,8 +57,13 @@ class CandidateLoginController extends GetxController {
     try {
       isLoading.value = true;
       errorMsg.value = '';
-      await _authRepository.loginWithEmail(
-          emailCtrl.text.trim(), passwordCtrl.text);
+      if (loginMode.value == 'phone') {
+        await _authRepository.loginWithPhone(
+            phoneCtrl.text.trim(), passwordCtrl.text);
+      } else {
+        await _authRepository.loginWithEmail(
+            emailCtrl.text.trim(), passwordCtrl.text);
+      }
       _loginAttempts.value = 0;
       Get.offAllNamed(AppRoutes.home);
     } catch (e) {
@@ -85,4 +104,14 @@ class CandidateLoginController extends GetxController {
   String? validateEmail(String? value) => Validators.email(value);
   String? validatePassword(String? value) =>
       Validators.password(value, minLength: 8);
+
+  /// Validation simple du téléphone : non vide + 8 chiffres minimum (indicatif
+  /// pays inclus, ex. +226 70 00 00 00). Format aligné sur l'inscription.
+  String? validatePhone(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Entrez votre numéro de téléphone';
+    final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length < 8) return 'Numéro de téléphone invalide';
+    return null;
+  }
 }

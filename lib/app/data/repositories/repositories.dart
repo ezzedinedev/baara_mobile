@@ -11,6 +11,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String userType,
+    String? fcmToken,
   }) {
     return _apiProvider.postJson(
       ApiConstants.loginEmail,
@@ -19,6 +20,9 @@ class AuthRepository {
         'password': password,
         'device_name': ApiConstants.authDeviceName,
         'user_type': userType,
+        // Enregistre le token push dès le login (parité backend) : le device
+        // reçoit les notifs sans attendre l'appel séparé à /notifications/fcm-token.
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       },
     );
   }
@@ -27,6 +31,7 @@ class AuthRepository {
     required String phone,
     required String pin,
     required String userType,
+    String? fcmToken,
   }) {
     return _apiProvider.postJson(
       ApiConstants.loginPhone,
@@ -35,6 +40,7 @@ class AuthRepository {
         'pin': pin,
         'user_type': userType,
         'device_name': ApiConstants.authDeviceName,
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       },
     );
   }
@@ -47,6 +53,11 @@ class AuthRepository {
     required String password,
     required String passwordConfirmation,
     required String userType,
+    // Optionnels (parité backend AuthApiController@register).
+    String? candidateKind, // 'student' | 'professional'
+    String? educationLevel,
+    String? pin, // alternative au mot de passe (4 chiffres)
+    String? fcmToken,
   }) {
     return _apiProvider.postJson(
       ApiConstants.register,
@@ -59,6 +70,12 @@ class AuthRepository {
         'password_confirmation': passwordConfirmation,
         'user_type': userType,
         'device_name': ApiConstants.authDeviceName,
+        if (candidateKind != null && candidateKind.isNotEmpty)
+          'candidate_kind': candidateKind,
+        if (educationLevel != null && educationLevel.isNotEmpty)
+          'education_level': educationLevel,
+        if (pin != null && pin.isNotEmpty) 'pin': pin,
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       },
     );
   }
@@ -88,18 +105,28 @@ class OfferRepository {
   Future<Map<String, dynamic>> getOffers({
     int page = 1,
     int perPage = 20,
+    String? search,
     String? sector,
+    String? sectorId,
     String? contractType,
     String? city,
     String? region,
+    bool? isRemote,
+    int? salaryMin,
+    String? sort,
   }) {
     final queryParams = <String, dynamic>{
       'page': page,
       'per_page': perPage,
+      if (search != null && search.isNotEmpty) 'search': search,
       if (sector != null) 'sector': sector,
+      if (sectorId != null) 'sector_id': sectorId,
       if (contractType != null) 'contract_type': contractType,
       if (city != null) 'city': city,
       if (region != null) 'region': region,
+      if (isRemote == true) 'is_remote': 1,
+      if (salaryMin != null && salaryMin > 0) 'salary_min': salaryMin,
+      if (sort != null && sort.isNotEmpty) 'sort': sort,
     };
     return _apiProvider.getJson(
       '${ApiConstants.offers}?${_encodeParams(queryParams)}',

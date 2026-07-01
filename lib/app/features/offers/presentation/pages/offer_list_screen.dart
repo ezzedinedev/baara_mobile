@@ -8,11 +8,15 @@ import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
+import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
+import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
+import '../../../alerts/data/repositories/alerts_repository_impl.dart';
 import '../controllers/offer_controller.dart';
 import '../widgets/offer_boost_badge.dart';
+import '../widgets/offer_logo_hero.dart';
 import '../../domain/entities/offer.dart';
 
 class OfferListScreen extends GetView<OfferController> {
@@ -50,6 +54,10 @@ class OfferListScreen extends GetView<OfferController> {
                   onChanged: (v) => controller.searchQuery.value = v,
                 ),
               ),
+              _CreateAlertBar(
+                controller: controller,
+                onCreate: () => _createAlert(context, controller),
+              ),
               Expanded(child: body),
             ],
           );
@@ -61,6 +69,13 @@ class OfferListScreen extends GetView<OfferController> {
             title: 'Offres',
             subtitle: 'Opportunités sélectionnées pour votre profil.',
             headerActions: [
+              AppIconButton(
+                icon: IconlyLight.notification,
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.alerts);
+                },
+              ),
               AppIconButton(
                 icon: IconlyLight.filter,
                 onTap: () {
@@ -74,11 +89,128 @@ class OfferListScreen extends GetView<OfferController> {
               hint: 'Métier, entreprise, ville...',
               onChanged: (v) => controller.searchQuery.value = v,
             ),
-            body: body,
+            body: Column(
+              children: [
+                _CreateAlertBar(
+                  controller: controller,
+                  onCreate: () => _createAlert(context, controller),
+                ),
+                Expanded(child: body),
+              ],
+            ),
           ),
         );
       },
     );
+  }
+
+  /// Crée une alerte emploi à partir des filtres actifs (instantané via
+  /// [OfferController.currentFilters]). Découplé du binding Alertes : instancie
+  /// le repository à la volée (ApiProvider est permanent).
+  Future<void> _createAlert(
+      BuildContext context, OfferController controller) async {
+    final label = await _promptAlertName(context, controller);
+    final trimmed = label?.trim() ?? '';
+    if (trimmed.isEmpty) return;
+    final repo = AlertsRepositoryImpl(apiProvider: Get.find<ApiProvider>());
+    try {
+      final created = await repo.createSavedSearch(
+        label: trimmed,
+        filters: controller.currentFilters(),
+      );
+      if (created != null) {
+        AppToast.success('Alerte créée',
+            'Tu seras notifié des nouvelles offres correspondantes.');
+      } else {
+        AppToast.error('Alerte non créée', 'Réessaie dans un instant.');
+      }
+    } catch (e) {
+      AppToast.error('Alerte non créée', userFacingError(e));
+    }
+  }
+
+  String _suggestedLabel(OfferController c) {
+    final s = c.searchQuery.value.trim();
+    if (s.isNotEmpty) return s;
+    if (c.activeContract.value != null) return c.activeContract.value!;
+    if (c.remoteOnly.value) return 'Offres en télétravail';
+    return 'Ma recherche';
+  }
+
+  /// Feuille de saisie du nom de l'alerte. Retourne le libellé, ou null si
+  /// annulé.
+  Future<String?> _promptAlertName(
+      BuildContext context, OfferController controller) {
+    final textCtrl = TextEditingController(text: _suggestedLabel(controller));
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(child: SheetHandle()),
+                const SizedBox(height: 14),
+                Text('Nouvelle alerte',
+                    style: AppTextStyles.titleLg
+                        .copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                  'Donne un nom à cette recherche. Tu seras notifié dès qu\'une nouvelle offre y correspond.',
+                  style:
+                      AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: textCtrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLength: 60,
+                  decoration: InputDecoration(
+                    hintText: 'Ex. Développeur à Ouaga',
+                    counterText: '',
+                    filled: true,
+                    fillColor: AppColors.surfaceLow,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onSubmitted: (v) => Navigator.of(ctx).pop(v),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(textCtrl.text),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text('Créer l\'alerte', style: AppTextStyles.buttonMd),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(textCtrl.dispose);
   }
 
   Widget _buildSkeletons(bool isTablet) {
@@ -165,6 +297,7 @@ class OfferListScreen extends GetView<OfferController> {
                   child: FadeInAnimation(
                     child: _OfferCard(
                       offer: offer,
+                      embedded: embedded,
                       onTap: () {
                         AppHaptics.tap();
                         Get.toNamed(
@@ -183,9 +316,10 @@ class OfferListScreen extends GetView<OfferController> {
   }
 }
 
-/// Ouvre le sheet de filtres des offres (type de contrat + télétravail),
-/// construit à partir des contrats réellement présents, et applique les choix
-/// au controller. Partagé par l'écran Offres et le hub Opportunités.
+/// Ouvre le sheet de filtres des offres (contrat + télétravail + secteur + tri),
+/// et applique les choix au controller. Les filtres secteur/contrat/tri sont
+/// appliqués côté serveur (le controller recharge sur changement). Partagé par
+/// l'écran Offres et le hub Opportunités.
 Future<void> openOffersFilter(
     BuildContext context, OfferController controller) async {
   final contracts = controller.offers
@@ -194,31 +328,120 @@ Future<void> openOffersFilter(
       .toSet()
       .toList()
     ..sort();
+  // Secteurs chargés depuis GET /offers/sectors/list.
+  final sectorNames =
+      controller.sectors.map((s) => s.name).where((n) => n.isNotEmpty).toList();
+  // Libellé du secteur actuellement sélectionné (depuis son id).
+  String? selectedSectorName;
+  for (final s in controller.sectors) {
+    if (s.id == controller.selectedSectorId.value) {
+      selectedSectorName = s.name;
+      break;
+    }
+  }
+  const sortRecent = 'Plus récentes';
+  const sortBoosted = 'À la une';
+
   final groups = <FilterGroup>[
     if (contracts.isNotEmpty)
       FilterGroup(
           key: 'contract', label: 'Type de contrat', options: contracts),
+    if (sectorNames.isNotEmpty)
+      FilterGroup(key: 'sector', label: 'Secteur', options: sectorNames),
     const FilterGroup(key: 'remote', label: 'Lieu', options: ['Télétravail']),
+    const FilterGroup(
+        key: 'sort', label: 'Trier par', options: [sortBoosted, sortRecent]),
   ];
   final result = await showFilterSheet(
     context: context,
     groups: groups,
     selected: {
       'contract': controller.activeContract.value,
+      'sector': selectedSectorName,
       'remote': controller.remoteOnly.value ? 'Télétravail' : null,
+      'sort': controller.sortMode.value == 'recent' ? sortRecent : sortBoosted,
     },
   );
   if (result != null) {
     controller.activeContract.value = result['contract'];
     controller.remoteOnly.value = result['remote'] == 'Télétravail';
+    // Mappe le nom de secteur choisi vers son id (null = tous).
+    String? sectorId;
+    final chosenSector = result['sector'];
+    if (chosenSector != null) {
+      for (final s in controller.sectors) {
+        if (s.name == chosenSector) {
+          sectorId = s.id;
+          break;
+        }
+      }
+    }
+    controller.selectedSectorId.value = sectorId;
+    controller.sortMode.value =
+        result['sort'] == sortRecent ? 'recent' : 'boosted';
+  }
+}
+
+/// Barre d'appel à l'action « Créer une alerte », visible uniquement quand une
+/// recherche/un filtre est actif (sinon rien à sauvegarder).
+class _CreateAlertBar extends StatelessWidget {
+  const _CreateAlertBar({required this.controller, required this.onCreate});
+  final OfferController controller;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (!controller.hasActiveFilter) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Material(
+          color: AppColors.primary.withValues(alpha: 0.10),
+          borderRadius: AppShapes.squircleRadius(AppRadius.md),
+          child: InkWell(
+            borderRadius: AppShapes.squircleRadius(AppRadius.md),
+            onTap: () {
+              AppHaptics.tap();
+              onCreate();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(IconlyBold.notification,
+                      size: 18, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Créer une alerte pour cette recherche',
+                      style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Icon(Icons.add_circle_outline_rounded,
+                      size: 18, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 
 class _OfferCard extends StatelessWidget {
   final Offer offer;
   final VoidCallback onTap;
+  final bool embedded;
 
-  const _OfferCard({required this.offer, required this.onTap});
+  const _OfferCard({
+    required this.offer,
+    required this.onTap,
+    this.embedded = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -247,8 +470,11 @@ class _OfferCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Hero(
-                  tag: 'offer-logo-${offer.id}',
+                OfferLogoHero(
+                  offerId: offer.id,
+                  // Embarqué dans l'onglet Offre (index 1) → Hero actif seulement
+                  // quand cet onglet est courant. En plein écran → toujours actif.
+                  activeWhenTab: embedded ? 1 : null,
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: AppShapes.squircleRadius(AppRadius.sm),
@@ -345,11 +571,7 @@ class _OfferCard extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            Divider(
-              height: AppSpacing.lg,
-              thickness: 1,
-              color: AppColors.outlineVariant.withValues(alpha: 0.5),
-            ),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 if (offer.contractType.isNotEmpty) ...[

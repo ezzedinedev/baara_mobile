@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
+import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:opportune_bf/app/core/theme/app_shapes.dart';
 import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
@@ -68,14 +70,38 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
-                            AuthTextField(
-                              label: 'Email',
-                              hint: 'nom@exemple.com',
-                              icon: IconlyLight.message,
-                              controller: controller.emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: controller.validateEmail,
+                            const SizedBox(height: AppSpacing.xl),
+                            // Bascule Email / Téléphone (le recrutement, lui,
+                            // reste sur le web).
+                            Obx(
+                              () => _LoginModeToggle(
+                                mode: controller.loginMode.value,
+                                onChanged: controller.setMode,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            // Champ d'identifiant selon le mode (un seul monté à
+                            // la fois → seul son validateur s'exécute).
+                            Obx(
+                              () => controller.loginMode.value == 'phone'
+                                  ? AuthTextField(
+                                      key: const ValueKey('login-phone'),
+                                      label: 'Téléphone',
+                                      hint: '+226 70 00 00 00',
+                                      icon: IconlyLight.call,
+                                      controller: controller.phoneCtrl,
+                                      keyboardType: TextInputType.phone,
+                                      validator: controller.validatePhone,
+                                    )
+                                  : AuthTextField(
+                                      key: const ValueKey('login-email'),
+                                      label: 'Email',
+                                      hint: 'nom@exemple.com',
+                                      icon: IconlyLight.message,
+                                      controller: controller.emailCtrl,
+                                      keyboardType: TextInputType.emailAddress,
+                                      validator: controller.validateEmail,
+                                    ),
                             ),
                             const SizedBox(height: AppSpacing.lg),
                             AuthTextField(
@@ -153,31 +179,6 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Center(
-                              child: TextButton(
-                                onPressed: () {
-                                  AppHaptics.tap();
-                                  Get.toNamed(AppRoutes.recruiterLogin);
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 6,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Espace recruteur',
-                                  style: AppTextStyles.bodySm.copyWith(
-                                    color: AppColors.bodyColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -197,11 +198,95 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                 () => AuthCtaButton(
                   label: 'Se connecter',
                   isLoading: controller.isLoading.value,
-                  onPressed: controller.loginWithEmail,
+                  onPressed: controller.submit,
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bascule segmentée Email / Téléphone (pilule glissante en spring).
+class _LoginModeToggle extends StatelessWidget {
+  const _LoginModeToggle({required this.mode, required this.onChanged});
+
+  final String mode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPhone = mode == 'phone';
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLow,
+        borderRadius: AppShapes.pill,
+      ),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final segWidth = (c.maxWidth - 8) / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: AppMotion.base,
+                curve: AppMotion.standard,
+                alignment:
+                    isPhone ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: segWidth,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    borderRadius: AppShapes.pill,
+                    boxShadow: AppColors.lightShadow,
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  _seg('Email', IconlyLight.message, !isPhone,
+                      () => onChanged('email')),
+                  _seg('Téléphone', IconlyLight.call, isPhone,
+                      () => onChanged('phone')),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _seg(String label, IconData icon, bool active, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          AppHaptics.tap();
+          onTap();
+        },
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 16,
+                  color:
+                      active ? AppColors.primaryAccent : AppColors.hintColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppTextStyles.labelLg.copyWith(
+                  color: active ? AppColors.titleColor : AppColors.hintColor,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

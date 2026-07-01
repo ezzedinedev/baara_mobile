@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -10,6 +13,16 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+val releaseSigningKeys = listOf("storePassword", "keyPassword", "keyAlias", "storeFile")
+val hasReleaseSigning = releaseSigningKeys.all {
+    keystoreProperties.getProperty(it)?.isNotBlank() == true
+}
 android {
     namespace = "com.opportune.bf"
     compileSdk = flutter.compileSdkVersion
@@ -35,11 +48,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigning) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }
@@ -60,4 +84,15 @@ dependencies {
     // Polyfill des APIs Java 8+ pour les minSdk < 26.
     // Requis par flutter_local_notifications (cf. compileOptions plus haut).
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+gradle.taskGraph.whenReady {
+    val runsReleaseBuild = allTasks.any { task ->
+        task.name.contains("Release", ignoreCase = true)
+    }
+    if (runsReleaseBuild && !hasReleaseSigning) {
+        throw GradleException(
+            "Release signing is not configured. Copy android/key.properties.example " +
+                "to android/key.properties and fill it with your keystore values."
+        )
+    }
 }

@@ -5,12 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_colors.dart';
 
-class AppThemeController extends GetxController {
-  static const _themeKey = 'app_theme_mode';
+class AppThemeController extends GetxController with WidgetsBindingObserver {
+  static const _themeKey = 'app_theme_mode'; // legacy : 'dark' | 'light'
+  static const _themeSourceKey =
+      'app_theme_source'; // 'system' | 'light' | 'dark'
   static const _amoledKey = 'app_theme_amoled';
   static const _accentKey = 'app_theme_accent';
 
+  /// Brightness résolue effectivement appliquée (lue par les getters AppColors).
   final isDarkMode = false.obs;
+
+  /// Source du thème choisie par l'utilisateur :
+  /// - `system` → suit la luminosité de l'OS (réactif aux changements) ;
+  /// - `light` / `dark` → forcé par l'utilisateur.
+  final themeSource = 'light'.obs;
 
   /// Noir intense (AMOLED) : ne s'applique qu'en mode sombre. Assombrit les
   /// surfaces de fond jusqu'au vrai noir pour les écrans OLED.
@@ -23,9 +31,44 @@ class AppThemeController extends GetxController {
   ThemeMode get themeMode =>
       isDarkMode.value ? ThemeMode.dark : ThemeMode.light;
 
+  /// Luminosité courante de l'OS (pour le mode « Système »).
+  bool get _platformIsDark =>
+      WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+      Brightness.dark;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Écoute les changements de thème système (n'agit qu'en mode « Système »).
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  /// Déclenché par l'OS quand l'utilisateur bascule clair/sombre au niveau
+  /// système. En mode « Système », on réaligne l'app en direct.
+  @override
+  void didChangePlatformBrightness() {
+    if (themeSource.value != 'system') return;
+    final dark = _platformIsDark;
+    if (dark == isDarkMode.value) return;
+    isDarkMode.value = dark;
+    Get.changeThemeMode(themeMode);
+    Get.forceAppUpdate();
+    _applySystemOverlay();
+  }
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    isDarkMode.value = prefs.getString(_themeKey) == 'dark';
+    // Source : nouvelle clé, avec repli sur l'ancienne ('dark'/'light').
+    final source = prefs.getString(_themeSourceKey) ??
+        (prefs.getString(_themeKey) == 'dark' ? 'dark' : 'light');
+    themeSource.value = source;
+    isDarkMode.value = source == 'system' ? _platformIsDark : source == 'dark';
     amoled.value = prefs.getBool(_amoledKey) ?? false;
     final storedAccent = prefs.getInt(_accentKey);
     if (storedAccent != null) accentSeed.value = Color(storedAccent);
@@ -35,29 +78,39 @@ class AppThemeController extends GetxController {
   Future<void> toggle() => setDarkMode(!isDarkMode.value);
 
   /// Aligne le thème sur la préférence renvoyée par le serveur (`GET /profile`)
-  /// pour une synchro multi-appareils. No-op si déjà aligné — évite tout
-  /// clignotement quand la pref locale et le serveur coïncident (cas courant).
+  /// pour une synchro multi-appareils. No-op si déjà aligné, ou si l'utilisateur
+  /// a explicitement choisi « Système » (on respecte alors l'OS).
   Future<void> syncFromServer(String? themePref) async {
-    if (themePref == null) return;
+    if (themePref == null || themeSource.value == 'system') return;
     final serverDark = themePref.toLowerCase() == 'dark';
     if (serverDark == isDarkMode.value) return;
     await setDarkMode(serverDark);
   }
 
-  Future<void> setDarkMode(bool value) async {
-    isDarkMode.value = value;
+  /// Bascule binaire clair/sombre (toggles rapides). Force la source explicite.
+  Future<void> setDarkMode(bool value) =>
+      setThemeSource(value ? 'dark' : 'light');
+
+  /// Définit la source du thème : 'system' | 'light' | 'dark'. En 'system', la
+  /// luminosité suit l'OS (et reste réactive via [didChangePlatformBrightness]).
+  Future<void> setThemeSource(String source) async {
+    if (source != 'system' && source != 'light' && source != 'dark') {
+      source = 'light';
+    }
+    themeSource.value = source;
+    isDarkMode.value = source == 'system' ? _platformIsDark : source == 'dark';
     Get.changeThemeMode(themeMode);
     // CRITIQUE : les couleurs viennent de getters `AppColors` relus AU BUILD
     // (pas de `Theme.of(context)`). `changeThemeMode` n'anime que le ThemeData ;
     // les écrans gardés en cache (onglets IndexedStack, routes empilées) ne se
-    // reconstruisent pas → thème incohérent (« pas tout en même temps »).
-    // `forceAppUpdate` marque TOUS les éléments dirty (même les sous-arbres
-    // const) → bascule clair/sombre instantanée et cohérente partout.
+    // reconstruisent pas → thème incohérent. `forceAppUpdate` marque TOUS les
+    // éléments dirty → bascule instantanée et cohérente partout.
     Get.forceAppUpdate();
     _applySystemOverlay();
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_themeKey, value ? 'dark' : 'light');
+    await prefs.setString(_themeSourceKey, source);
+    await prefs.setString(_themeKey, isDarkMode.value ? 'dark' : 'light');
   }
 
   /// Active/désactive le noir intense (AMOLED). N'a d'effet visuel qu'en dark,

@@ -251,7 +251,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
   }
 }
 
-// ── Bouton fermer squircle chrome ─────────────────────────────────────────
+//Bouton fermer squircle chrome
 class _RoundBtn extends StatelessWidget {
   const _RoundBtn({required this.icon, required this.onTap});
   final IconData icon;
@@ -279,7 +279,7 @@ class _RoundBtn extends StatelessWidget {
   }
 }
 
-// ── Chip de visibilité squircle pill ─────────────────────────────────────
+//  Chip de visibilité squircle pill
 class _VisibilityChip extends StatelessWidget {
   const _VisibilityChip({
     required this.label,

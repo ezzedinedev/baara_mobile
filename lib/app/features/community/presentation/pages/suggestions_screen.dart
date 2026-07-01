@@ -15,10 +15,7 @@ import '../../domain/entities/network_user.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/network_user_tile.dart';
 
-/// « Personnes à suivre » : suggestions enrichies (`reason`, relations en
-/// commun, secteur/ville, accroche IA) chargées par [CommunityController].
-/// Suivre / se connecter en optimiste, pull-to-refresh, états vide/skeleton,
-/// cascade d'apparition.
+
 class SuggestionsScreen extends StatefulWidget {
   const SuggestionsScreen({super.key});
 
@@ -117,8 +114,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   }
 }
 
-/// Boutons d'action d'une suggestion : « Suivre » (toggle optimiste) et, si
-/// pas encore connecté, « Se connecter ». Réagit à l'état du membre.
 class SuggestionActions extends StatelessWidget {
   const SuggestionActions({super.key, required this.user});
 

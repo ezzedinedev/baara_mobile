@@ -36,4 +36,9 @@ class NotificationRepositoryImpl implements INotificationRepository {
   Future<void> markAllAsRead() async {
     await _apiProvider.postJson(ApiConstants.notificationsReadAll, {});
   }
+
+  @override
+  Future<void> delete(String id) async {
+    await _apiProvider.deleteJson(ApiConstants.notification(id));
+  }
 }

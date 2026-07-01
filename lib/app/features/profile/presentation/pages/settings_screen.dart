@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
@@ -10,6 +11,7 @@ import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
 import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:opportune_bf/app/features/notifications/presentation/widgets/notification_preferences_sheet.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 
 import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
@@ -109,6 +111,21 @@ class SettingsBody extends StatelessWidget {
               }),
             ],
           ),
+          const SectionLabel('Abonnement'),
+          _Group(
+            rows: [
+              _HeaderRow(
+                icon: IconlyLight.wallet,
+                color: AppColors.categoryPurple,
+                title: 'Mon abonnement',
+                subtitle: 'Forfait, avantages et facturation',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.subscription);
+                },
+              ),
+            ],
+          ),
           const SectionLabel('Préférences'),
           _Group(
             rows: [
@@ -121,7 +138,7 @@ class SettingsBody extends StatelessWidget {
                   valueLabel: settings.notificationsEnabled.value
                       ? 'Activées'
                       : 'Désactivées',
-                  onTap: () => _openNotifications(context, settings),
+                  onTap: () => showNotificationPreferencesSheet(context),
                 ),
               ),
               Obx(
@@ -129,8 +146,12 @@ class SettingsBody extends StatelessWidget {
                   icon: IconlyLight.show,
                   color: AppColors.primary,
                   title: 'Apparence',
-                  subtitle: 'Thème clair ou sombre',
-                  valueLabel: theme.isDarkMode.value ? 'Sombre' : 'Clair',
+                  subtitle: 'Système, clair ou sombre',
+                  valueLabel: theme.themeSource.value == 'system'
+                      ? 'Système'
+                      : theme.themeSource.value == 'dark'
+                          ? 'Sombre'
+                          : 'Clair',
                   onTap: () => _pickAppearance(context, settings, theme),
                 ),
               ),
@@ -201,7 +222,7 @@ class SettingsBody extends StatelessWidget {
               ),
             ],
           ),
-          const SectionLabel('Sécurité & confidentialité'),
+          const SectionLabel('Sécurité & aides'),
           _Group(
             rows: [
               _HeaderRow(
@@ -221,23 +242,36 @@ class SettingsBody extends StatelessWidget {
                   Get.toNamed(AppRoutes.forgotPassword);
                 },
               ),
-            ],
-          ),
-          const SectionLabel('À propos'),
-          _Group(
-            rows: [
+              _HeaderRow(
+                icon: Icons.support_agent_rounded,
+                color: AppColors.categoryCyan,
+                title: 'Aide et support',
+                subtitle: 'Posez vos questions à l\'assistant',
+                onTap: () {
+                  AppHaptics.tap();
+                  Get.toNamed(AppRoutes.iaChatbot);
+                },
+              ),
               _HeaderRow(
                 icon: IconlyLight.info_circle,
                 color: AppColors.categoryBlue,
-                title: 'Version',
+                title: 'À propos',
                 subtitle: 'OpporTune BF',
                 valueLabel: 'v1.0.0',
                 onTap: () => _showAbout(context),
               ),
             ],
           ),
+          const SectionLabel('Autres'),
           _Group(
             rows: [
+              _HeaderRow(
+                icon: Icons.share_rounded,
+                color: AppColors.primary,
+                title: 'Partager l\'application',
+                subtitle: 'Invitez vos proches sur OpporTune',
+                onTap: _shareApp,
+              ),
               _HeaderRow(
                 icon: IconlyLight.logout,
                 color: AppColors.error,
@@ -249,108 +283,6 @@ class SettingsBody extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  /// Feuille de notifications granulaire — un interrupteur maître + les canaux.
-  /// Chaque bascule persiste via [SettingsController] (local + backend).
-  Future<void> _openNotifications(
-    BuildContext context,
-    SettingsController settings,
-  ) async {
-    AppHaptics.tap();
-    const channels = <String, ({IconData icon, Color color, String label})>{
-      'offer_updates': (
-        icon: IconlyLight.work,
-        color: AppColors.categoryBlue,
-        label: 'Nouvelles offres'
-      ),
-      'application_updates': (
-        icon: IconlyLight.paper,
-        color: AppColors.successDark,
-        label: 'Suivi des candidatures'
-      ),
-      'match_alerts': (
-        icon: Icons.auto_awesome_rounded,
-        color: AppColors.secondary,
-        label: 'Suggestions IA'
-      ),
-      'message_alerts': (
-        icon: IconlyLight.message,
-        color: AppColors.primary,
-        label: 'Messages'
-      ),
-      'training_updates': (
-        icon: Icons.school_outlined,
-        color: AppColors.categoryOrange,
-        label: 'Formations'
-      ),
-    };
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surfaceCard,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xxl),
-        ),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.md, AppSpacing.xl, AppSpacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SheetHandle(),
-              const SizedBox(height: AppSpacing.lg),
-              Text('Notifications',
-                  style: AppTextStyles.titleLg
-                      .copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: AppSpacing.md),
-              Obx(
-                () => SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('Activer les notifications',
-                      style: AppTextStyles.titleMd
-                          .copyWith(fontWeight: FontWeight.w700)),
-                  value: settings.notificationsEnabled.value,
-                  activeThumbColor: AppColors.onPrimary,
-                  activeTrackColor: AppColors.successSwitch,
-                  onChanged: (v) {
-                    AppHaptics.tap();
-                    settings.setNotificationsEnabled(v);
-                  },
-                ),
-              ),
-              Divider(height: 1, color: AppColors.outlineVariant),
-              for (final entry in channels.entries)
-                Obx(
-                  () => SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    secondary: _SquareIcon(
-                        icon: entry.value.icon, color: entry.value.color),
-                    title: Text(entry.value.label,
-                        style: AppTextStyles.titleMd
-                            .copyWith(fontWeight: FontWeight.w600)),
-                    value: settings.notificationsEnabled.value &&
-                        (settings.notifPrefs[entry.key] ?? true),
-                    activeThumbColor: AppColors.onPrimary,
-                    activeTrackColor: AppColors.successSwitch,
-                    onChanged: !settings.notificationsEnabled.value
-                        ? null
-                        : (v) {
-                            AppHaptics.tap();
-                            settings.setChannel(entry.key, v);
-                          },
-                  ),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -383,20 +315,29 @@ class SettingsBody extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Obx(() => _choiceTile(
                     ctx,
+                    icon: Icons.brightness_auto_rounded,
+                    label: 'Système',
+                    selected: theme.themeSource.value == 'system',
+                    onTap: () {
+                      settings.setThemeSource('system');
+                    },
+                  )),
+              Obx(() => _choiceTile(
+                    ctx,
                     icon: Icons.light_mode_rounded,
                     label: 'Clair',
-                    selected: !theme.isDarkMode.value,
+                    selected: theme.themeSource.value == 'light',
                     onTap: () {
-                      settings.setDarkMode(false);
+                      settings.setThemeSource('light');
                     },
                   )),
               Obx(() => _choiceTile(
                     ctx,
                     icon: Icons.dark_mode_rounded,
                     label: 'Sombre',
-                    selected: theme.isDarkMode.value,
+                    selected: theme.themeSource.value == 'dark',
                     onTap: () {
-                      settings.setDarkMode(true);
+                      settings.setThemeSource('dark');
                     },
                   )),
               const SizedBox(height: AppSpacing.sm),
@@ -671,6 +612,17 @@ class SettingsBody extends StatelessWidget {
           'les recruteurs des offres auxquelles vous postulez. Vous gardez le '
           'contrôle et pouvez demander la suppression de votre compte à tout moment.',
       confirmLabel: 'Compris',
+    );
+  }
+
+  /// Partage natif de l'application (feuille système iOS/Android).
+  Future<void> _shareApp() async {
+    AppHaptics.tap();
+    await Share.share(
+      'Découvre OpporTune BF — la plateforme emploi, formations et '
+      'opportunités d\'Afrique de l\'Ouest. Télécharge l\'app et trouve ta '
+      'prochaine opportunité !',
+      subject: 'OpporTune BF',
     );
   }
 

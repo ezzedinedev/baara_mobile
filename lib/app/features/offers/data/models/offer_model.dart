@@ -22,6 +22,10 @@ class OfferModel extends Offer {
     super.isBoosted,
     super.boostTier,
     super.boostLabel,
+    super.isSaved,
+    super.isApplied,
+    super.applicationId,
+    super.applicationStatus,
   });
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +61,10 @@ class OfferModel extends Offer {
       isBoosted: json['is_boosted'] == true || json['is_boosted'] == 1,
       boostTier: _parseBoostTier(json, badge),
       boostLabel: badge?['label']?.toString(),
+      isSaved: json['is_saved'] == null ? null : (json['is_saved'] == true || json['is_saved'] == 1),
+      isApplied: json['is_applied'] == null ? null : (json['is_applied'] == true || json['is_applied'] == 1),
+      applicationId: json['application_id']?.toString(),
+      applicationStatus: json['application_status']?.toString(),
     );
   }
 

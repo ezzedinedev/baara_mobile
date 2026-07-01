@@ -17,6 +17,35 @@ class _FakeMessagingRepository implements IMessagingRepository {
   }
 
   @override
+  Future<Conversation> startConversation(String userId) async {
+    final conv = Conversation(
+      id: 'conv-$userId',
+      title: 'New',
+      lastMessage: '',
+      lastMessageTime: DateTime.now(),
+      unreadCount: 0,
+      isOnline: false,
+    );
+    conversations.insert(0, conv);
+    return conv;
+  }
+
+  @override
+  Future<Conversation> acceptConversation(String conversationId) async {
+    return conversations.firstWhere((c) => c.id == conversationId);
+  }
+
+  @override
+  Future<void> declineConversation(String conversationId) async {
+    conversations.removeWhere((c) => c.id == conversationId);
+  }
+
+  @override
+  Future<bool> setVoiceNotesAllowed(
+          String conversationId, bool allowed) async =>
+      true;
+
+  @override
   Future<MessagesPage> getMessages(
     String conversationId, {
     int page = 1,

@@ -12,6 +12,9 @@ class ConversationModel extends Conversation {
     required super.isOnline,
     super.avatar,
     super.lastSeenAt,
+    super.peerUserId,
+    super.isRequest,
+    super.isRequester,
   });
 
   /// Mappe une conversation telle que renvoyee par
@@ -86,6 +89,11 @@ class ConversationModel extends Conversation {
       avatar: avatar,
       lastSeenAt: _parseDate(directUser?['last_seen_at']) ??
           _parseDate(json['last_seen_at']),
+      peerUserId: directUser?['id']?.toString(),
+      // Demande de message (statut 'pending') + qui en est l'émetteur.
+      // cf. MessageApiController@decorateDirect.
+      isRequest: json['is_request'] == true,
+      isRequester: json['is_requester'] == true,
     );
   }
 

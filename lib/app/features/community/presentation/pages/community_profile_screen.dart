@@ -4,6 +4,7 @@ import 'package:iconly/iconly.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:opportune_bf/app/core/constants/api_constants.dart';
+import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
@@ -13,6 +14,8 @@ import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:opportune_bf/app/features/messaging/data/repositories/messaging_repository_impl.dart';
+import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/skill.dart';
@@ -936,6 +939,16 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(child: _connectAction()),
+        if (!_isSelf) ...[
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: _ContactAction(
+              icon: IconlyLight.chat,
+              label: 'Message',
+              onTap: _openConversation,
+            ),
+          ),
+        ],
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _ContactAction(
@@ -946,6 +959,34 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
         ),
       ],
     );
+  }
+
+  /// Démarre (ou rouvre) une conversation directe avec ce membre puis ouvre le
+  /// fil. Réutilise le MessagesController s'il est en mémoire (il met à jour sa
+  /// liste de conversations), sinon passe par le repository directement.
+  Future<void> _openConversation() async {
+    AppHaptics.tap();
+    String? convId;
+    if (Get.isRegistered<MessagesController>()) {
+      final conv =
+          await Get.find<MessagesController>().startConversationWith(_userId);
+      convId = conv?.id;
+    } else {
+      try {
+        final repo =
+            MessagingRepositoryImpl(apiProvider: Get.find<ApiProvider>());
+        final conv = await repo.startConversation(_userId);
+        convId = conv.id;
+      } catch (_) {
+        convId = null;
+      }
+    }
+    if (convId != null && convId.isNotEmpty) {
+      Get.toNamed(AppRoutes.conversation.replaceFirst(':id', convId));
+    } else {
+      AppToast.error(
+          'Messagerie', 'Impossible de démarrer la conversation.');
+    }
   }
 
   Widget _connectAction() {

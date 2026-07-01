@@ -212,6 +212,21 @@ class ApiConstants {
   // QR de convocation. cf. ApplicationApiController@upcomingInterviews.
   static const String applicationsInterviewsUpcoming =
       '/applications/interviews/upcoming';
+
+  // ── Pipeline entretien candidat (invitation -> reponse) ───────────────────
+  // Liste / detail / reponse (accept|decline|reschedule). cf. InterviewApiController.
+  static const String applicationsInterviews = '/applications/interviews';
+  static String applicationInterview(String id) =>
+      '/applications/interviews/$id';
+  static String applicationInterviewRespond(String id) =>
+      '/applications/interviews/$id/respond';
+
+  // ── Offres d'emploi formelles (apres entretien) ───────────────────────────
+  // Liste / detail / reponse (accept|negotiate|refuse). cf. JobProposalApiController.
+  static const String jobProposals = '/applications/job-proposals';
+  static String jobProposal(String id) => '/applications/job-proposals/$id';
+  static String jobProposalRespond(String id) =>
+      '/applications/job-proposals/$id/respond';
   // URL web absolue (hors /api/v1) pour telecharger le .ics d'un entretien.
   // Authentification Sanctum ne s'applique pas — la route web utilise le
   // middleware auth standard. On ouvre dans un browser tab.
@@ -229,6 +244,11 @@ class ApiConstants {
 
   // Dashboard candidat — miroir JSON de /espace-candidat (web).
   static const String candidateDashboard = '/candidate/dashboard';
+
+  // Recherches sauvegardées / alertes emploi. CRUD (index/store/update/destroy).
+  // Le cron backend `alerts:dispatch` notifie les nouvelles offres correspondantes.
+  static const String savedSearches = '/saved-searches';
+  static String savedSearch(String id) => '/saved-searches/$id';
 
   // Concours Fonction Publique (FP)
   static const String contests = '/contests';
@@ -251,11 +271,16 @@ class ApiConstants {
   static const String aiCoverLetter = '/ai/cover-letter/generate';
   static const String aiMatchFeed = '/ai/match/feed';
   static const String aiChatSend = '/ai/chat/send';
+  // Feedback 👍/👎 sur une reponse du chat IA (POST /ai/chat/feedback).
+  static const String aiChatFeedback = '/ai/chat/feedback';
   static const String aiChatSessions = '/ai/chat/sessions';
   static String aiChatSession(String id) => '/ai/chat/sessions/$id';
 
   // Backend Laravel monte la messagerie sous /messages (cf. MessageApiController).
   static const String conversations = '/messages';
+  // Démarre (ou rouvre) une conversation directe : body {user_id}. Statut
+  // 'accepted' si les deux sont connectés, sinon 'pending' (demande de message).
+  static const String messagesStart = '/messages/start';
   static String conversation(String id) => '/messages/$id';
   static String conversationSend(String id) => '/messages/$id/send';
   static String conversationUpload(String id) => '/messages/$id/upload';
@@ -268,6 +293,15 @@ class ApiConstants {
   // Peut renvoyer 502 (« assistant indisponible ») → fallback UX silencieux.
   static String messageSuggestions(String conversationId) =>
       '/messages/$conversationId/suggestions';
+  // Accepter / refuser une demande de message (seul le destinataire le peut).
+  // Refuser supprime la conversation et son message côté serveur.
+  static String conversationAccept(String conversationId) =>
+      '/messages/$conversationId/accept';
+  static String conversationDecline(String conversationId) =>
+      '/messages/$conversationId/decline';
+  // Autoriser/refuser les notes vocales dans une conversation : body {allowed}.
+  static String conversationVoiceNotes(String conversationId) =>
+      '/messages/$conversationId/voice-notes';
 
   static const String notifications = '/notifications';
   static String notification(String id) => '/notifications/$id';

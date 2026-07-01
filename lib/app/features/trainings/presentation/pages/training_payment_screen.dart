@@ -334,20 +334,24 @@ class _OperatorTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: AppShapes.squircleRadius(AppRadius.xs),
+              // Logo sur une vignette blanche (les logos sont conçus pour fond
+              // clair) + `contain` pour afficher le logo ENTIER, jamais rogné.
+              Container(
+                width: 50,
+                height: 50,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppShapes.squircleRadius(AppRadius.xs),
+                  border: Border.all(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.4)),
+                ),
                 child: Image.asset(
                   operator.asset,
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 44,
-                    height: 44,
-                    color: AppColors.surfaceLow,
-                    child: Icon(IconlyBold.wallet,
-                        color: AppColors.primaryAccent, size: 22),
-                  ),
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => Icon(IconlyBold.wallet,
+                      color: AppColors.primaryAccent, size: 22),
                 ),
               ),
               const SizedBox(width: 14),

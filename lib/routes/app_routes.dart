@@ -7,7 +7,6 @@ abstract class AppRoutes {
   static const registerProfile = '/inscription/profil';
   static const register = '/inscription/step1';
   static const candidateLogin = '/connexion/candidat';
-  static const recruiterLogin = '/connexion/recruteur';
   static const otpVerification = '/verification';
   static const forgotPassword = '/mot-de-passe-oublie';
   static const forgotPasswordReset = '/mot-de-passe-oublie/reinitialiser';
@@ -27,6 +26,7 @@ abstract class AppRoutes {
   static const offers = '/offres';
   static const offerDetail = '/offres/:id';
   static const myApplications = '/offres/mes-candidatures';
+  static const alerts = '/offres/alertes';
   static const trainings = '/formations';
   static const trainingDetail = '/formations/:id';
   static const trainingPlayer = '/formations/:id/parcours';
@@ -40,7 +40,10 @@ abstract class AppRoutes {
   static const communityConnections = '/communaute/connexions';
   static const communityProfileViews = '/communaute/vues-profil';
   static const notifications = '/notifications';
+  static const notificationSettings = '/notifications/preferences';
   static const settings = '/settings';
+  static const subscription = '/abonnement';
+  static const streak = '/serie';
   // IA
   static const iaScoreProfil = '/ia/score-profil';
   static const iaChatbot = '/ia/chatbot';

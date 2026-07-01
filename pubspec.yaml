@@ -50,6 +50,8 @@ dependencies:
   custom_refresh_indicator: ^4.0.1
   share_plus: ^10.1.4
   app_links: ^6.3.2
+  sensors_plus: ^6.1.1
+  connectivity_plus: ^6.1.0
 
 dev_dependencies:
   flutter_test:

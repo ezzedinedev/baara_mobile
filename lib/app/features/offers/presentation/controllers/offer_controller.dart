@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
+import 'package:opportune_bf/app/core/utils/offline_error.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
 import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
+import '../../domain/entities/sector_option.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
 class OfferController extends GetxController {
@@ -32,15 +35,34 @@ class OfferController extends GetxController {
   final appliedOfferIds = <String>{}.obs;
   final isApplyingToOfferId = RxnString();
 
-  // ── Recherche + filtres (client-side, sur les offres déjà chargées) ────
+  // ── Recherche + filtres (appliqués CÔTÉ SERVEUR — parité web) ──────────
+  // Chaque changement déclenche un rechargement depuis l'API (cf. workers
+  // dans onInit). La recherche est débouncée (450 ms) pour ne pas marteler
+  // le backend à chaque frappe.
   final searchQuery = ''.obs;
   final activeContract = RxnString();
   final remoteOnly = false.obs;
+  // Secteur sélectionné (id) — peuplé par [sectors] (GET /offers/sectors/list).
+  final selectedSectorId = RxnString();
+  // Tri : 'boosted' (défaut, offres mises en avant d'abord) ou 'recent'.
+  final sortMode = 'boosted'.obs;
   // Persistant ici (plus dans build()) : la saisie de recherche survit aux
   // rebuilds (liste + bascule liste/découverte).
   final searchCtrl = TextEditingController();
 
-  bool get hasActiveFilter => activeContract.value != null || remoteOnly.value;
+  // Secteurs d'activité pour le filtre.
+  final sectors = <SectorOption>[].obs;
+  final isLoadingSectors = false.obs;
+
+  // Mute les workers de rechargement le temps d'un reset groupé de filtres
+  // (évite N rechargements concurrents quand on remet tout à zéro).
+  bool _muteFilterReload = false;
+
+  bool get hasActiveFilter =>
+      activeContract.value != null ||
+      remoteOnly.value ||
+      selectedSectorId.value != null ||
+      searchQuery.value.trim().isNotEmpty;
 
   @override
   void onClose() {
@@ -48,29 +70,74 @@ class OfferController extends GetxController {
     super.onClose();
   }
 
-  /// Offres visibles après recherche + filtres. La liste s'appuie dessus ;
-  /// le deck swipe (Découverte) garde l'ensemble complet.
+  void _onFilterChanged() {
+    if (_muteFilterReload) return;
+    loadOffers(refresh: true);
+  }
+
+  /// Offres visibles. Le serveur a déjà appliqué recherche/secteur/etc. ; on
+  /// garde un filtre client léger sur contrat/télétravail (mêmes prédicats que
+  /// le serveur → aucun masquage) pour un retour instantané sur les puces.
   List<Offer> get filteredOffers {
-    final q = searchQuery.value.trim().toLowerCase();
     return offers.where((o) {
       if (activeContract.value != null &&
           o.contractType != activeContract.value) {
         return false;
       }
       if (remoteOnly.value && !o.isRemote) return false;
-      if (q.isNotEmpty) {
-        final match = o.title.toLowerCase().contains(q) ||
-            o.company.toLowerCase().contains(q) ||
-            o.location.toLowerCase().contains(q);
-        if (!match) return false;
-      }
       return true;
     }).toList();
   }
 
+  /// Charge les secteurs pour le filtre (silencieux en cas d'échec).
+  Future<void> loadSectors() async {
+    try {
+      isLoadingSectors.value = true;
+      sectors.assignAll(await _repository.getSectors());
+    } catch (_) {
+      // Filtre secteur simplement indisponible — non bloquant.
+    } finally {
+      isLoadingSectors.value = false;
+    }
+  }
+
   void clearFilters() {
+    _muteFilterReload = true;
     activeContract.value = null;
     remoteOnly.value = false;
+    selectedSectorId.value = null;
+    searchQuery.value = '';
+    searchCtrl.clear();
+    _muteFilterReload = false;
+    loadOffers(refresh: true);
+  }
+
+  /// Instantané des filtres actifs (mêmes clés que l'API /offers), pour créer
+  /// une alerte emploi à partir de la recherche courante.
+  Map<String, dynamic> currentFilters() {
+    return <String, dynamic>{
+      if (searchQuery.value.trim().isNotEmpty) 'search': searchQuery.value.trim(),
+      if (selectedSectorId.value != null) 'sector_id': selectedSectorId.value,
+      if (activeContract.value != null) 'contract_type': activeContract.value,
+      if (remoteOnly.value) 'is_remote': true,
+      'sort': sortMode.value,
+    };
+  }
+
+  /// Applique un jeu de filtres sauvegardé (alerte emploi) à la liste : un seul
+  /// rechargement, même logique que [clearFilters].
+  void applySavedFilters(Map<String, dynamic> filters) {
+    _muteFilterReload = true;
+    final search = filters['search']?.toString() ?? '';
+    searchQuery.value = search;
+    searchCtrl.text = search;
+    selectedSectorId.value = filters['sector_id']?.toString();
+    activeContract.value = filters['contract_type']?.toString();
+    remoteOnly.value = filters['is_remote'] == true || filters['is_remote'] == 1;
+    final sort = filters['sort']?.toString();
+    if (sort != null && sort.isNotEmpty) sortMode.value = sort;
+    _muteFilterReload = false;
+    loadOffers(refresh: true);
   }
 
   // ── Recommandations IA (match feed) ────────────────────────────────────
@@ -93,6 +160,10 @@ class OfferController extends GetxController {
     }
   }
 
+  Map<String, MatchedOffer> get _matchesByOfferId => {
+        for (final match in matchedOffers) match.id: match,
+      };
+
   // ── Deck swipe (Accueil) ──────────────────────────────────────────────
   // Pile de cartes type Tinder : drag horizontal, badges PASSER/INTÉRESSÉ,
   // rewind, et candidature réelle au swipe droite. Le deck est cyclique
@@ -113,15 +184,16 @@ class OfferController extends GetxController {
     return o == null ? 0 : scoreForOffer(o);
   }
 
-  /// Score de compatibilité affiché sur la carte. Heuristique déterministe
-  /// et stable par offre (placeholder du vrai score IA `/offers/{id}/match`,
-  /// branchable plus tard sans changer l'UI).
+  /// Score de compatibilite IA affiche sur la carte.
+  /// Source unique : `/ai/match/feed`. Si le backend ne renvoie pas de score
+  /// pour cette offre, on affiche 0 plutot qu'un score local invente.
   int scoreForOffer(Offer offer) {
-    final seed = offer.id.isNotEmpty ? offer.id : offer.title;
-    final h = seed.codeUnits.fold<int>(7, (a, c) => (a * 31 + c) & 0x7fffffff);
-    return 62 + (h % 33); // 62..94
+    return _matchesByOfferId[offer.id]?.score ?? 0;
   }
 
+  String matchExplanationForOffer(Offer offer) {
+    return _matchesByOfferId[offer.id]?.explanation ?? '';
+  }
   void updateOfferDrag(double deltaX) {
     if (isOfferAnimating.value || offers.isEmpty) return;
     offerDragDx.value += deltaX;
@@ -187,15 +259,63 @@ class OfferController extends GetxController {
       AppToast.success(
           'Candidature envoyée', '${offer.company} · ${offer.title}');
     } catch (e) {
-      AppToast.error('Candidature non envoyée', userFacingError(e));
+      if (isOfflineError(e)) {
+        await _queueOfflineApply(offer);
+      } else {
+        AppToast.error('Candidature non envoyée', userFacingError(e));
+      }
     }
+  }
+
+  /// Met une candidature en file d'attente hors-ligne et marque l'offre comme
+  /// postulee de facon optimiste (renvoi auto au retour du reseau).
+  Future<void> _queueOfflineApply(Offer offer) async {
+    await Get.find<OfflineApplyQueue>().enqueue(PendingApply(
+      offerId: offer.id,
+      offerTitle: offer.title,
+      company: offer.company,
+      logoUrl: offer.companyLogo,
+      queuedAt: DateTime.now(),
+    ));
+    appliedOfferIds.add(offer.id);
+    AppToast.info(
+      'Candidature enregistrée',
+      'Hors ligne — envoi dès le retour du réseau.',
+    );
   }
 
   @override
   void onInit() {
     super.onInit();
+    // Filtres passés en arguments (ex. depuis une alerte emploi sauvegardée) :
+    // appliqués AVANT le premier chargement, donc pris en compte d'emblée sans
+    // déclencher de rechargement (les workers ne sont pas encore enregistrés).
+    final args = Get.arguments;
+    if (args is Map && args['filters'] is Map) {
+      final f = Map<String, dynamic>.from(args['filters'] as Map);
+      final search = f['search']?.toString() ?? '';
+      searchQuery.value = search;
+      searchCtrl.text = search;
+      selectedSectorId.value = f['sector_id']?.toString();
+      activeContract.value = f['contract_type']?.toString();
+      remoteOnly.value = f['is_remote'] == true || f['is_remote'] == 1;
+      final sort = f['sort']?.toString();
+      if (sort != null && sort.isNotEmpty) sortMode.value = sort;
+    }
     loadOffers();
     loadSavedOffers();
+    loadSectors();
+    loadMatchedOffers();
+
+    // Rechargement serveur sur changement de filtre. La recherche est débouncée
+    // (450 ms) ; les autres filtres rechargent immédiatement. Les workers ne se
+    // déclenchent que sur CHANGEMENT → pas de double-chargement à l'init.
+    debounce<String>(searchQuery, (_) => _onFilterChanged(),
+        time: const Duration(milliseconds: 450));
+    ever<String?>(activeContract, (_) => _onFilterChanged());
+    ever<bool>(remoteOnly, (_) => _onFilterChanged());
+    ever<String?>(selectedSectorId, (_) => _onFilterChanged());
+    ever<String>(sortMode, (_) => _onFilterChanged());
   }
 
   Future<void> loadOffers({bool refresh = false}) async {
@@ -212,7 +332,14 @@ class OfferController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final result = await _repository.getOffers(page: currentPage.value);
+      final result = await _repository.getOffers(
+        page: currentPage.value,
+        search: searchQuery.value,
+        sectorId: selectedSectorId.value,
+        contractType: activeContract.value,
+        isRemote: remoteOnly.value ? true : null,
+        sort: sortMode.value,
+      );
 
       if (refresh) {
         offers.assignAll(result);
@@ -230,9 +357,15 @@ class OfferController extends GetxController {
     }
   }
 
+  /// Charge les offres enregistrées depuis le backend (GET /offers/saved/list).
+  /// Alimente l'onglet Favoris du hub Suivi et l'état des cœurs de la liste.
   Future<void> loadSavedOffers() async {
-    // Note: Cette partie nécessiterait une extension de l'interface si on veut être strict
-    // Pour l'instant on se concentre sur la structure
+    isLoadingSaved.value = true;
+    try {
+      savedOffers.assignAll(await _repository.getSavedOffers());
+    } finally {
+      isLoadingSaved.value = false;
+    }
   }
 
   bool isOfferSaved(String offerId) {
@@ -261,7 +394,23 @@ class OfferController extends GetxController {
       await _repository.applyToOffer(offerId);
       appliedOfferIds.add(offerId);
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (isOfflineError(e)) {
+        final offer = offers.firstWhereOrNull((o) => o.id == offerId);
+        if (offer != null) {
+          await _queueOfflineApply(offer);
+        } else {
+          await Get.find<OfflineApplyQueue>().enqueue(PendingApply(
+            offerId: offerId,
+            offerTitle: 'Offre',
+            company: '',
+            queuedAt: DateTime.now(),
+          ));
+          appliedOfferIds.add(offerId);
+        }
+        // Optimiste : l'UI considere l'offre postulee (renvoi differe).
+        return true;
+      }
       return false;
     } finally {
       isApplyingToOfferId.value = null;

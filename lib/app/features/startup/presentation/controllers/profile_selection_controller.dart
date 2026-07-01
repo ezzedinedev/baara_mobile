@@ -1,7 +1,10 @@
 import 'package:get/get.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 
-enum ProfileType { jobseeker, student, recruiter }
+/// Types de profil disponibles à l'inscription MOBILE. Le recrutement
+/// (entreprise) se fait exclusivement sur la plateforme web → plus d'option
+/// recruteur ici.
+enum ProfileType { jobseeker, student }
 
 class ProfileSelectionController extends GetxController {
   final Rx<ProfileType?> selected = Rx<ProfileType?>(null);
@@ -14,13 +17,7 @@ class ProfileSelectionController extends GetxController {
 
   void onContinue() {
     if (!canContinue) return;
-
-    switch (selected.value!) {
-      case ProfileType.jobseeker:
-      case ProfileType.student:
-        Get.toNamed(AppRoutes.register);
-      case ProfileType.recruiter:
-        Get.toNamed(AppRoutes.recruiterLogin);
-    }
+    // Les deux profils candidats mènent au formulaire d'inscription.
+    Get.toNamed(AppRoutes.register);
   }
 }

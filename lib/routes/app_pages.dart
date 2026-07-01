@@ -16,8 +16,6 @@ import 'package:opportune_bf/app/features/startup/presentation/pages/profile_sel
 // ── Auth ──
 import 'package:opportune_bf/app/features/auth/presentation/bindings/candidate_login_binding.dart';
 import 'package:opportune_bf/app/features/auth/presentation/pages/candidate_login_screen.dart';
-import 'package:opportune_bf/app/features/auth/presentation/bindings/recruiter_login_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/recruiter_login_screen.dart';
 import 'package:opportune_bf/app/features/auth/presentation/bindings/register_binding.dart';
 import 'package:opportune_bf/app/features/auth/presentation/pages/register_screen.dart';
 
@@ -37,6 +35,10 @@ import 'package:opportune_bf/app/features/offers/presentation/bindings/offer_det
 import 'package:opportune_bf/app/features/offers/presentation/pages/match_celebration_screen.dart';
 import 'package:opportune_bf/app/features/offers/presentation/pages/offer_detail_screen.dart';
 import 'package:opportune_bf/app/features/offers/presentation/pages/my_applications_screen.dart';
+
+// ── Alertes emploi (recherches sauvegardées) ──
+import 'package:opportune_bf/app/features/alerts/presentation/bindings/alerts_binding.dart';
+import 'package:opportune_bf/app/features/alerts/presentation/pages/alerts_screen.dart';
 
 // ── Formations ──
 import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_binding.dart';
@@ -80,6 +82,13 @@ import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_manua
 import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_preview_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_screen.dart';
 import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_edit_screen.dart';
+
+// ── Abonnement ──
+import 'package:opportune_bf/app/features/subscription/presentation/pages/subscription_screen.dart';
+
+// ── Série quotidienne (streak) ──
+import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
+import 'package:opportune_bf/app/features/streak/presentation/pages/streak_screen.dart';
 
 // ── IA ──
 import 'package:opportune_bf/app/features/ia/presentation/bindings/ia_binding.dart';
@@ -132,14 +141,6 @@ class AppPages {
       curve: Curves.easeInOut,
     ),
     GetPage(
-      name: AppRoutes.recruiterLogin,
-      page: () => const RecruiterLoginScreen(),
-      binding: RecruiterLoginBinding(),
-      transition: Transition.downToUp,
-      transitionDuration: const Duration(milliseconds: 260),
-      curve: Curves.easeInOut,
-    ),
-    GetPage(
       name: AppRoutes.otpVerification,
       page: () => const OtpVerificationScreen(),
       binding: OtpVerificationBinding(),
@@ -183,6 +184,12 @@ class AppPages {
       name: AppRoutes.myApplications,
       page: () => const MyApplicationsScreen(),
       binding: OfferBinding(),
+      customTransition: AppPageTransition(),
+    ),
+    GetPage(
+      name: AppRoutes.alerts,
+      page: () => const AlertsScreen(),
+      binding: AlertsBinding(),
       customTransition: AppPageTransition(),
     ),
     GetPage(
@@ -349,6 +356,26 @@ class AppPages {
       name: AppRoutes.settings,
       page: () => const SettingsScreen(),
       binding: ProfileBinding(),
+      customTransition: AppPageTransition(),
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.subscription,
+      page: () => const SubscriptionScreen(),
+      customTransition: AppPageTransition(),
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.streak,
+      page: () => const StreakScreen(),
+      // Sécurité deep-link : garantit le controller même hors flux Accueil.
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<StreakController>()) {
+          Get.put(StreakController());
+        }
+      }),
       customTransition: AppPageTransition(),
       transitionDuration: const Duration(milliseconds: 260),
       curve: Curves.easeInOut,

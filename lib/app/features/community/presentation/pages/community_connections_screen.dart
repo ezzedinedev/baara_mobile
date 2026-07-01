@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
-
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_dimens.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
@@ -14,8 +13,7 @@ import '../controllers/community_controller.dart';
 import '../widgets/network_user_tile.dart';
 import 'suggestions_screen.dart';
 
-/// Demandes de connexion entrantes (`GET /community/connections`) à accepter
-/// ou refuser.
+
 class CommunityConnectionsScreen extends StatefulWidget {
   const CommunityConnectionsScreen({super.key});
 
@@ -130,8 +128,7 @@ class _CommunityConnectionsScreenState
   }
 }
 
-/// Bouton circulaire d'action pour répondre à une demande (accepter / refuser).
-/// [filled] = action principale (fond tonal plein), sinon contour discret.
+
 class _RespondButton extends StatelessWidget {
   const _RespondButton({
     required this.icon,

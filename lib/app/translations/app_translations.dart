@@ -2,13 +2,7 @@ import 'dart:ui' show Locale;
 
 import 'package:get/get.dart';
 
-/// Toutes les chaines visibles de l'application en `fr_FR` et `en_US`.
-/// Acces via `'cle'.tr` partout dans le code (apres avoir wire `translations:`
-/// sur GetMaterialApp). La langue active est pilotee par `Get.locale` qui
-/// est synchronisee avec `HomeProfilePreferences.language` ('fr' / 'en').
-///
-/// Convention de cles : `<scope>.<element>` (ex: `nav.home`, `auth.signIn`).
-/// Quand une cle manque dans une langue, GetX retombe sur la `fallbackLocale`.
+
 class AppTranslations extends Translations {
   @override
   Map<String, Map<String, String>> get keys => {
@@ -40,6 +34,7 @@ const Map<String, String> _fr = {
   'nav.opportunities': 'Opportunités',
   'nav.network': 'Communauté',
   'nav.trainings': 'Formations',
+  'nav.tracking': 'Suivi',
   'nav.profile': 'Profil',
 
   // ── Common buttons / actions ──────────────────────────────
@@ -246,6 +241,7 @@ const Map<String, String> _en = {
   'nav.opportunities': 'Opportunities',
   'nav.network': 'Community',
   'nav.trainings': 'Courses',
+  'nav.tracking': 'Tracking',
   'nav.profile': 'Profile',
 
   // ── Common buttons / actions ──────────────────────────────

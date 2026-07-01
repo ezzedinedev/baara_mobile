@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../core/utils/user_facing_error.dart';
+import '../../../../core/widgets/widgets.dart';
 import '../../data/models/application_model.dart';
 import '../../data/models/upcoming_interview_model.dart';
 import '../../domain/repositories/i_offer_repository.dart';
@@ -38,6 +39,29 @@ class ApplicationsController extends GetxController {
       errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Détail complet d'une candidature (offre + entretien). Null si introuvable.
+  Future<ApplicationModel?> loadDetail(String applicationId) {
+    return _repository.getApplicationDetail(applicationId);
+  }
+
+  /// Désiste une candidature (retrait optimiste + rollback si l'API échoue).
+  Future<bool> withdraw(String applicationId) async {
+    final index = applications.indexWhere((a) => a.id == applicationId);
+    if (index == -1) return false;
+    final removed = applications[index];
+    applications.removeAt(index);
+    try {
+      final ok = await _repository.withdrawApplication(applicationId);
+      if (!ok) throw Exception('withdraw failed');
+      AppToast.success('Candidature retirée', removed.offer?.title ?? '');
+      return true;
+    } catch (e) {
+      applications.insert(index, removed);
+      AppToast.error('Retrait impossible', userFacingError(e));
+      return false;
     }
   }
 }

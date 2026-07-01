@@ -12,4 +12,7 @@ abstract class INotificationRepository {
   Future<NotificationsPage> getNotifications({int page = 1});
   Future<void> markAsRead(String id);
   Future<void> markAllAsRead();
+
+  /// Supprime une notification (DELETE /notifications/{id}).
+  Future<void> delete(String id);
 }

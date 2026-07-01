@@ -100,6 +100,9 @@ class CacheKeys {
   static const featuredOffers = 'offers_featured_v1';
   static const savedOffers = 'offers_saved_v1';
   static const myApplications = 'applications_mine_v1';
+  // File d'attente des candidatures postees hors-ligne (renvoyees au retour
+  // du reseau). Purgee automatiquement au logout via [clearAll].
+  static const pendingApplies = 'applies_pending_v1';
 
   // Home / messaging / notifs.
   static const conversations = 'conversations_v1';

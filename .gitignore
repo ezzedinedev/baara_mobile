@@ -62,3 +62,7 @@ app.*.map.json
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
+# Android release signing secrets
+/android/key.properties
+/android/app/*.jks
+/android/app/*.keystore

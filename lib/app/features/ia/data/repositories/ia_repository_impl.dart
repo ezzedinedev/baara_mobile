@@ -31,6 +31,34 @@ class IaRepositoryImpl implements IIaRepository {
   }
 
   @override
+  Future<bool> sendChatFeedback({
+    required String sessionId,
+    required int rating,
+    int? assistantMessageIndex,
+    String? comment,
+    String? correction,
+  }) async {
+    try {
+      final response = await _apiProvider.postJson(
+        ApiConstants.aiChatFeedback,
+        {
+          'session_id': sessionId,
+          'rating': rating,
+          if (assistantMessageIndex != null)
+            'assistant_message_index': assistantMessageIndex,
+          if (comment != null && comment.trim().isNotEmpty)
+            'comment': comment.trim(),
+          if (correction != null && correction.trim().isNotEmpty)
+            'correction': correction.trim(),
+        },
+      );
+      return response['success'] == true || response['ok'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
   Future<List<ChatMessage>> getChatMessages(String sessionId) async {
     final response =
         await _apiProvider.getJson(ApiConstants.aiChatSession(sessionId));

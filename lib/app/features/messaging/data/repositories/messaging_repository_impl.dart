@@ -42,6 +42,57 @@ class MessagingRepositoryImpl implements IMessagingRepository {
   }
 
   @override
+  Future<Conversation> startConversation(String userId) async {
+    final viewerType = await _tokenStore.readUserType();
+    final response = await _apiProvider.postJson(
+      ApiConstants.messagesStart,
+      {'user_id': userId},
+    );
+    if (response['success'] == true && response['data'] != null) {
+      return ConversationModel.fromJson(
+        response['data'] as Map<String, dynamic>,
+        viewerType: viewerType,
+      );
+    }
+    throw Exception(response['message']?.toString() ??
+        'Impossible de démarrer la conversation.');
+  }
+
+  @override
+  Future<Conversation> acceptConversation(String conversationId) async {
+    final viewerType = await _tokenStore.readUserType();
+    final response = await _apiProvider.postJson(
+      ApiConstants.conversationAccept(conversationId),
+      const {},
+    );
+    if (response['success'] == true && response['data'] != null) {
+      return ConversationModel.fromJson(
+        response['data'] as Map<String, dynamic>,
+        viewerType: viewerType,
+      );
+    }
+    throw Exception(response['message']?.toString() ?? 'Action impossible.');
+  }
+
+  @override
+  Future<void> declineConversation(String conversationId) async {
+    await _apiProvider.postJson(
+      ApiConstants.conversationDecline(conversationId),
+      const {},
+    );
+  }
+
+  @override
+  Future<bool> setVoiceNotesAllowed(
+      String conversationId, bool allowed) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.conversationVoiceNotes(conversationId),
+      {'allowed': allowed},
+    );
+    return response['success'] == true;
+  }
+
+  @override
   Future<MessagesPage> getMessages(String conversationId,
       {int page = 1, int perPage = 50}) async {
     final response = await _apiProvider.getJson(

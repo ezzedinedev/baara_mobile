@@ -242,7 +242,7 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
   }
 }
 
-// ── Chip de visibilité squircle pill ─────────────────────────────────────
+// Chip de visibilité squircle pill
 class _VisChip extends StatelessWidget {
   const _VisChip({
     required this.label,

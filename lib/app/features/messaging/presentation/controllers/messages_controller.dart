@@ -125,6 +125,55 @@ class MessagesController extends GetxController {
     super.onClose();
   }
 
+  /// Démarre (ou rouvre) une conversation directe avec [userId] et la place en
+  /// tête de liste. Retourne la conversation (à utiliser pour naviguer vers le
+  /// fil), ou null en cas d'échec (bloqué, soi-même, réseau…).
+  Future<Conversation?> startConversationWith(String userId) async {
+    try {
+      final conv = await _repository.startConversation(userId);
+      conversations.removeWhere((c) => c.id == conv.id);
+      conversations.insert(0, conv);
+      return conv;
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] startConversation error: $e');
+      AppToast.error('Messagerie', userFacingError(e));
+      return null;
+    }
+  }
+
+  /// Accepte une demande de message (met à jour la conversation en liste).
+  Future<void> acceptRequest(String conversationId) async {
+    try {
+      final conv = await _repository.acceptConversation(conversationId);
+      final i = conversations.indexWhere((c) => c.id == conv.id);
+      if (i >= 0) {
+        conversations[i] = conv;
+      } else {
+        conversations.insert(0, conv);
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] acceptRequest error: $e');
+      AppToast.error('Messagerie', userFacingError(e));
+    }
+  }
+
+  /// Refuse une demande de message : retrait optimiste + rollback si échec.
+  Future<void> declineRequest(String conversationId) async {
+    final snapshot = List<Conversation>.from(conversations);
+    conversations.removeWhere((c) => c.id == conversationId);
+    if (activeConversationId.value == conversationId) {
+      activeConversationId.value = null;
+      activeMessages.clear();
+    }
+    try {
+      await _repository.declineConversation(conversationId);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Messages] declineRequest error: $e');
+      conversations.assignAll(snapshot);
+      AppToast.error('Messagerie', userFacingError(e));
+    }
+  }
+
   Future<void> loadConversations() async {
     try {
       isLoadingConversations.value = true;

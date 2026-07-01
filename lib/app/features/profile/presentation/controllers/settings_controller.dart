@@ -158,6 +158,15 @@ class SettingsController extends GetxController {
     await _profile.updatePreferences({'theme': value ? 'dark' : 'light'});
   }
 
+  /// Source du thème : 'system' (suit l'OS) | 'light' | 'dark'. Le backend ne
+  /// connaissant que light/dark, on lui pousse la valeur effectivement résolue.
+  Future<void> setThemeSource(String source) async {
+    final theme = Get.find<AppThemeController>();
+    await theme.setThemeSource(source);
+    await _profile.updatePreferences(
+        {'theme': theme.isDarkMode.value ? 'dark' : 'light'});
+  }
+
   /// Noir intense (AMOLED) — délègue au [AppThemeController] (persistance
   /// locale + rebuild live). Préférence purement locale (pas de champ backend).
   Future<void> setAmoled(bool value) async {

@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
+import 'package:opportune_bf/app/core/utils/offline_error.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
@@ -43,6 +45,10 @@ class OfferDetailController extends GetxController {
       final result = await _repository.getOfferById(id);
       if (result != null) {
         offer.value = result;
+        // Initialise l'état bouton depuis ce que le backend renvoie pour l'user
+        // connecté (is_saved / is_applied). null = non auth → on laisse false.
+        if (result.isSaved != null) isSaved.value = result.isSaved!;
+        if (result.isApplied != null) hasApplied.value = result.isApplied!;
       } else {
         errorMessage.value = "Offre introuvable";
       }
@@ -85,10 +91,32 @@ class OfferDetailController extends GetxController {
         _showApplySuccess(o);
       }
     } catch (e) {
-      AppToast.error('Candidature non envoyée', userFacingError(e));
+      if (isOfflineError(e)) {
+        await _queueOffline(o);
+      } else {
+        AppToast.error('Candidature non envoyée', userFacingError(e));
+      }
     } finally {
       isApplying.value = false;
     }
+  }
+
+  /// Hors-ligne : on met la candidature en file d'attente (renvoyee au retour
+  /// du reseau) et on bascule l'etat en « postule » de facon optimiste.
+  Future<void> _queueOffline(Offer o) async {
+    await Get.find<OfflineApplyQueue>().enqueue(PendingApply(
+      offerId: o.id,
+      offerTitle: o.title,
+      company: o.company,
+      logoUrl: o.companyLogo,
+      queuedAt: DateTime.now(),
+    ));
+    hasApplied.value = true;
+    AppHaptics.success();
+    AppToast.info(
+      'Candidature enregistrée',
+      'Hors ligne — elle sera envoyée dès le retour du réseau.',
+    );
   }
 
   /// Affiche la confirmation de candidature envoyée : feuille de succès

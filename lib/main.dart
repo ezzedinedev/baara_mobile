@@ -59,9 +59,6 @@ Future<void> _bootstrap() async {
 
   await InitialBinding().dependencies();
 
-  // Les logs API sont volontairement commentés en release
-  // (ils fuient la topologie réseau). En debug, seul le path est logué
-  // via LoggingInterceptor dans api_provider.dart.
 
   if (Firebase.apps.isNotEmpty) {
     final fcm = Get.put<FcmService>(FcmService(), permanent: true);

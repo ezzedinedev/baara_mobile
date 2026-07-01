@@ -119,6 +119,22 @@ class NotificationsController extends GetxController {
     }
   }
 
+  /// Supprime une notification (retrait optimiste + rollback si l'appel échoue).
+  Future<void> delete(String id) async {
+    final index = notifications.indexWhere((n) => n.id == id);
+    if (index == -1) return;
+    final removed = notifications[index];
+    final wasUnread = !removed.isRead;
+    notifications.removeAt(index);
+    if (wasUnread && unreadCount.value > 0) unreadCount.value--;
+    try {
+      await _repository.delete(id);
+    } catch (_) {
+      notifications.insert(index, removed);
+      if (wasUnread) unreadCount.value++;
+    }
+  }
+
   Future<void> markAllRead() async {
     if (notifications.every((n) => n.isRead)) return;
 

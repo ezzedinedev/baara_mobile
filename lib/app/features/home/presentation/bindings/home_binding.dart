@@ -4,6 +4,7 @@ import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/features/offers/data/repositories/offer_repository_impl.dart';
 import 'package:opportune_bf/app/features/offers/domain/repositories/i_offer_repository.dart';
 import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:opportune_bf/app/features/offers/presentation/controllers/applications_controller.dart';
 
 import 'package:opportune_bf/app/features/trainings/data/repositories/training_repository_impl.dart';
 import 'package:opportune_bf/app/features/trainings/domain/repositories/i_training_repository.dart';
@@ -30,6 +31,9 @@ import 'package:opportune_bf/app/features/notifications/data/repositories/notifi
 import 'package:opportune_bf/app/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:opportune_bf/app/features/notifications/presentation/controllers/notifications_controller.dart';
 
+import 'package:opportune_bf/app/features/suivi/presentation/controllers/suivi_controller.dart';
+import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
+
 import 'package:opportune_bf/app/features/home/presentation/controllers/home_controller.dart';
 
 class HomeBinding extends Bindings {
@@ -41,6 +45,9 @@ class HomeBinding extends Bindings {
     Get.lazyPut<IOfferRepository>(
         () => OfferRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => OfferController(Get.find<IOfferRepository>()));
+    // Candidatures + entretiens à venir (onglet Candidatures/Entretiens du hub
+    // Suivi, et écran « Mes candidatures »).
+    Get.lazyPut(() => ApplicationsController(Get.find<IOfferRepository>()));
 
     // TAB: Trainings
     Get.lazyPut<ITrainingRepository>(
@@ -68,6 +75,17 @@ class HomeBinding extends Bindings {
     // Eager (pas lazy) : précharge les stories dès l'accueil → la barre est
     // déjà prête quand on ouvre l'onglet Communauté (plus de chargement tardif).
     Get.put(StoryController(Get.find<ICommunityRepository>()));
+
+    // Série quotidienne : eager → le check-in du jour est enregistré dès
+    // l'arrivée sur l'accueil (gamification de rétention).
+    Get.put(StreakController());
+
+    // TAB: Suivi (façade agrégeant offres + candidatures + communauté).
+    Get.lazyPut(() => SuiviController(
+          offers: Get.find<OfferController>(),
+          applications: Get.find<ApplicationsController>(),
+          community: Get.find<CommunityController>(),
+        ));
 
     // Notifications : badge non-lus sur la cloche de l'accueil (controller
     // partagé avec l'écran /notifications).

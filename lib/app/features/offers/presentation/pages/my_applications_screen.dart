@@ -13,6 +13,7 @@ import 'package:opportune_bf/routes/app_routes.dart';
 
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/utils/map_navigation.dart';
+import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
 
 import '../../data/models/application_model.dart';
 import '../../data/models/upcoming_interview_model.dart';
@@ -155,6 +156,7 @@ class _ApplicationsListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final queue = Get.find<OfflineApplyQueue>();
     return Obx(() {
       if (controller.isLoading.value) {
         return const _ApplicationsSkeleton();
@@ -166,7 +168,9 @@ class _ApplicationsListView extends StatelessWidget {
           onRetry: controller.load,
         );
       }
-      if (controller.applications.isEmpty) {
+      // Candidatures postees hors-ligne, en attente de renvoi (persistent).
+      final pending = queue.pending.toList();
+      if (controller.applications.isEmpty && pending.isEmpty) {
         return EmptyState(
           illustration: const EmptyApplicationsIllustration(),
           title: 'Aucune candidature',
@@ -184,6 +188,8 @@ class _ApplicationsListView extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
             children: [
+              if (pending.isNotEmpty)
+                _PendingAppliesSection(items: pending, queue: queue),
               if (controller.upcomingInterviews.isNotEmpty)
                 _UpcomingInterviewsSection(
                     items: controller.upcomingInterviews.toList()),
@@ -195,7 +201,10 @@ class _ApplicationsListView extends StatelessWidget {
                     verticalOffset: AppMotion.listSlideOffset,
                     curve: AppMotion.emphasizedDecelerate,
                     child: FadeInAnimation(
-                      child: _ApplicationCard(app: apps[i]),
+                      child: _DismissibleApplication(
+                        app: apps[i],
+                        controller: controller,
+                      ),
                     ),
                   ),
                 ),
@@ -232,6 +241,114 @@ class _UpcomingInterviewsSection extends StatelessWidget {
         ...items.map((i) => _InterviewCard(item: i)),
         const SizedBox(height: 18),
       ],
+    );
+  }
+}
+
+/// Section « En attente d'envoi » : candidatures postees hors-ligne, conservees
+/// localement et renvoyees automatiquement au retour du reseau. Un bouton
+/// « Renvoyer » permet de forcer une tentative immediate.
+class _PendingAppliesSection extends StatelessWidget {
+  const _PendingAppliesSection({required this.items, required this.queue});
+  final List<PendingApply> items;
+  final OfflineApplyQueue queue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warningAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('En attente d\'envoi',
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontWeight: FontWeight.w800)),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                AppHaptics.tap();
+                queue.flush();
+              },
+              icon: Icon(Icons.refresh_rounded,
+                  size: 16, color: AppColors.primaryAccent),
+              label: Text('Renvoyer',
+                  style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.primaryAccent,
+                      fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Ces candidatures partiront automatiquement dès le retour du réseau.',
+          style: AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+        ),
+        const SizedBox(height: 10),
+        ...items.map((p) => _PendingApplyCard(apply: p)),
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+}
+
+class _PendingApplyCard extends StatelessWidget {
+  const _PendingApplyCard({required this.apply});
+  final PendingApply apply;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.warningSoft,
+        shape: AppShapes.squircle(AppRadius.lg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+            child: BrandAvatar(
+              seed: apply.company.isEmpty ? apply.offerTitle : apply.company,
+              label: apply.company.isEmpty ? apply.offerTitle : apply.company,
+              imageUrl: apply.logoUrl,
+              size: 44,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(apply.offerTitle,
+                    style: AppTextStyles.titleMd
+                        .copyWith(fontWeight: FontWeight.w800),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+                if (apply.company.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(apply.company,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.bodyColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          StatusPill(
+            label: 'En attente',
+            color: AppColors.warningAccent,
+            icon: Icons.schedule_rounded,
+            dense: true,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -402,6 +519,77 @@ _StatusStyle _statusStyle(ApplicationStatus status) {
 String _formatDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
+/// Enveloppe une carte de candidature dans un glisser-pour-retirer (DELETE
+/// /applications/{id}) avec confirmation. Le retrait est optimiste côté
+/// controller (rollback si l'API échoue).
+class _DismissibleApplication extends StatelessWidget {
+  const _DismissibleApplication({required this.app, required this.controller});
+  final ApplicationModel app;
+  final ApplicationsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: ValueKey('app-${app.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        AppHaptics.tap();
+        final ok = await Get.dialog<bool>(
+          AlertDialog(
+            backgroundColor: AppColors.surfaceCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            ),
+            title: Text(
+              'Retirer la candidature',
+              style:
+                  AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+            ),
+            content: Text(
+              'Confirmez-vous le retrait de votre candidature à « ${app.offer?.title ?? 'cette offre'} » ? Cette action est irréversible.',
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: Text(
+                  'Annuler',
+                  style: AppTextStyles.labelMd
+                      .copyWith(color: AppColors.hintColor),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Get.back(result: true),
+                child: Text(
+                  'Retirer',
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.errorAccent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        return ok ?? false;
+      },
+      onDismissed: (_) => controller.withdraw(app.id),
+      background: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg - 2),
+        padding: const EdgeInsets.only(right: AppSpacing.xl),
+        decoration: ShapeDecoration(
+          color: AppColors.errorSoft,
+          shape: AppShapes.squircle(AppRadius.lg),
+        ),
+        child: Icon(IconlyLight.delete,
+            color: AppColors.errorAccent, size: 22),
+      ),
+      child: _ApplicationCard(app: app),
+    );
+  }
+}
+
 class _ApplicationCard extends StatelessWidget {
   const _ApplicationCard({required this.app});
   final ApplicationModel app;
@@ -427,11 +615,8 @@ class _ApplicationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
           borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-          // Profondeur en couches (langage 2026) + liseré d'accent par statut.
+          // Profondeur par ombres en couches (langage 2026), sans liseré.
           boxShadow: [...AppColors.lightShadow, ...AppColors.ambientShadow],
-          border: Border(
-            left: BorderSide(color: style.color, width: 3),
-          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

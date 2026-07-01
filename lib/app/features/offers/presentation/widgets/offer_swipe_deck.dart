@@ -282,7 +282,7 @@ class OfferSwipeDeck extends StatelessWidget {
                       .copyWith(color: AppColors.bodyColor, height: 1.45)),
             ],
             const SizedBox(height: 8),
-            Text('Compatibilité estimée : $score%',
+            Text('Compatibilité IA : $score%',
                 style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.primaryAccent,
                     fontWeight: FontWeight.w700)),

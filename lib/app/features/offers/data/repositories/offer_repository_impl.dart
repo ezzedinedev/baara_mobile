@@ -3,10 +3,13 @@ import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import '../../domain/entities/apply_result.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
+import '../../domain/entities/sector_option.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 import '../models/offer_model.dart';
 import '../models/application_model.dart';
 import '../models/upcoming_interview_model.dart';
+import '../models/interview_detail_model.dart';
+import '../models/job_proposal_model.dart';
 
 /// Implémentation concrète du dépôt d'offres utilisant une API REST.
 class OfferRepositoryImpl implements IOfferRepository {
@@ -43,15 +46,58 @@ class OfferRepositoryImpl implements IOfferRepository {
   }
 
   @override
-  Future<List<Offer>> getOffers({int page = 1, int perPage = 20}) async {
+  Future<List<Offer>> getOffers({
+    int page = 1,
+    int perPage = 20,
+    String? search,
+    String? sectorId,
+    String? contractType,
+    String? city,
+    String? region,
+    bool? isRemote,
+    int? salaryMin,
+    String? sort,
+  }) async {
+    final params = <String, String>{
+      'page': '$page',
+      'per_page': '$perPage',
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+      if (sectorId != null && sectorId.isNotEmpty) 'sector_id': sectorId,
+      if (contractType != null && contractType.isNotEmpty)
+        'contract_type': contractType,
+      if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+      if (region != null && region.isNotEmpty) 'region': region,
+      if (isRemote == true) 'is_remote': '1',
+      if (salaryMin != null && salaryMin > 0) 'salary_min': '$salaryMin',
+      if (sort != null && sort.isNotEmpty) 'sort': sort,
+    };
+    final query = params.entries
+        .map((e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     try {
-      final response = await _apiProvider.getJson(
-        '${ApiConstants.offers}?page=$page&per_page=$perPage',
-      );
+      final response =
+          await _apiProvider.getJson('${ApiConstants.offers}?$query');
 
       if (response['success'] == true) {
         return _extractOfferList(response['data'])
             .map((json) => OfferModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<SectorOption>> getSectors() async {
+    try {
+      final response = await _apiProvider.getJson(ApiConstants.sectors);
+      if (response['success'] == true) {
+        return _extractList(response['data'])
+            .whereType<Map<String, dynamic>>()
+            .map(SectorOption.fromJson)
             .toList();
       }
       return [];
@@ -145,6 +191,22 @@ class OfferRepositoryImpl implements IOfferRepository {
   }
 
   @override
+  Future<List<Offer>> getSavedOffers() async {
+    try {
+      final response = await _apiProvider.getJson(ApiConstants.offersSaved);
+      if (response['success'] == true) {
+        return _extractList(response['data'])
+            .whereType<Map<String, dynamic>>()
+            .map(OfferModel.fromJson)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  @override
   Future<ApplyResult> applyToOffer(String offerId,
       {Map<String, dynamic>? screeningAnswers}) async {
     final response = await _apiProvider.postJson(
@@ -182,6 +244,27 @@ class OfferRepositoryImpl implements IOfferRepository {
   }
 
   @override
+  Future<ApplicationModel?> getApplicationDetail(String id) async {
+    final response = await _apiProvider.getJson(ApiConstants.application(id));
+    if (response['success'] == true && response['data'] != null) {
+      final json = _extractItem(response['data']);
+      if (json != null) return ApplicationModel.fromJson(json);
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> withdrawApplication(String id) async {
+    try {
+      final response =
+          await _apiProvider.deleteJson(ApiConstants.application(id));
+      return response['success'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
   Future<List<UpcomingInterview>> getUpcomingInterviews() async {
     final response =
         await _apiProvider.getJson(ApiConstants.applicationsInterviewsUpcoming);
@@ -192,5 +275,100 @@ class OfferRepositoryImpl implements IOfferRepository {
           .toList();
     }
     return [];
+  }
+
+  // ── Pipeline entretien (invitation → réponse) ──────────────────────────────
+
+  @override
+  Future<List<InterviewDetailModel>> getInterviews() async {
+    final response =
+        await _apiProvider.getJson(ApiConstants.applicationsInterviews);
+    if (response['success'] == true) {
+      return _extractList(response['data'])
+          .whereType<Map<String, dynamic>>()
+          .map(InterviewDetailModel.fromJson)
+          .toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<InterviewDetailModel?> getInterviewDetail(String id) async {
+    final response =
+        await _apiProvider.getJson(ApiConstants.applicationInterview(id));
+    if (response['success'] == true && response['data'] != null) {
+      final json = _extractItem(response['data']);
+      if (json != null) return InterviewDetailModel.fromJson(json);
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> respondToInterview(
+    String id, {
+    required InterviewAction action,
+    String? message,
+    DateTime? proposedDate,
+  }) async {
+    try {
+      final response = await _apiProvider.postJson(
+        ApiConstants.applicationInterviewRespond(id),
+        {
+          'action': action.wire,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+          if (proposedDate != null)
+            'proposed_date': proposedDate.toIso8601String(),
+        },
+      );
+      return response['success'] == true || response['ok'] == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ── Offres d'emploi formelles ──────────────────────────────────────────────
+
+  @override
+  Future<List<JobProposalModel>> getJobProposals() async {
+    final response = await _apiProvider.getJson(ApiConstants.jobProposals);
+    if (response['success'] == true) {
+      return _extractList(response['data'])
+          .whereType<Map<String, dynamic>>()
+          .map(JobProposalModel.fromJson)
+          .toList();
+    }
+    return [];
+  }
+
+  @override
+  Future<JobProposalModel?> getJobProposalDetail(String id) async {
+    final response = await _apiProvider.getJson(ApiConstants.jobProposal(id));
+    if (response['success'] == true && response['data'] != null) {
+      final json = _extractItem(response['data']);
+      if (json != null) return JobProposalModel.fromJson(json);
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> respondToProposal(
+    String id, {
+    required JobProposalAction action,
+    String? message,
+  }) async {
+    try {
+      final response = await _apiProvider.postJson(
+        ApiConstants.jobProposalRespond(id),
+        {
+          'action': action.wire,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+        },
+      );
+      return response['success'] == true || response['ok'] == true;
+    } catch (e) {
+      return false;
+    }
   }
 }
