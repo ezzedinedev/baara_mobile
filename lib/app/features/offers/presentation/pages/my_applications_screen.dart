@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
@@ -14,8 +16,11 @@ import 'package:opportune_bf/routes/app_routes.dart';
 import 'package:opportune_bf/app/core/utils/haptics.dart';
 import 'package:opportune_bf/app/core/utils/map_navigation.dart';
 import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
+import 'package:opportune_bf/app/core/constants/api_constants.dart';
 
 import '../../data/models/application_model.dart';
+import '../../data/models/interview_detail_model.dart';
+import '../../data/models/job_proposal_model.dart';
 import '../../data/models/upcoming_interview_model.dart';
 import '../controllers/applications_controller.dart';
 import 'applications_pipeline_view.dart';
@@ -170,7 +175,11 @@ class _ApplicationsListView extends StatelessWidget {
       }
       // Candidatures postees hors-ligne, en attente de renvoi (persistent).
       final pending = queue.pending.toList();
-      if (controller.applications.isEmpty && pending.isEmpty) {
+      if (controller.applications.isEmpty &&
+          pending.isEmpty &&
+          controller.interviews.isEmpty &&
+          controller.jobProposals.isEmpty &&
+          controller.upcomingInterviews.isEmpty) {
         return EmptyState(
           illustration: const EmptyApplicationsIllustration(),
           title: 'Aucune candidature',
@@ -190,6 +199,16 @@ class _ApplicationsListView extends StatelessWidget {
             children: [
               if (pending.isNotEmpty)
                 _PendingAppliesSection(items: pending, queue: queue),
+              if (controller.interviews.isNotEmpty)
+                _InterviewInvitationsSection(
+                  items: controller.interviews.toList(),
+                  controller: controller,
+                ),
+              if (controller.jobProposals.isNotEmpty)
+                _JobProposalsSection(
+                  items: controller.jobProposals.toList(),
+                  controller: controller,
+                ),
               if (controller.upcomingInterviews.isNotEmpty)
                 _UpcomingInterviewsSection(
                     items: controller.upcomingInterviews.toList()),
@@ -214,6 +233,546 @@ class _ApplicationsListView extends StatelessWidget {
       );
     });
   }
+}
+
+class _InterviewInvitationsSection extends StatelessWidget {
+  const _InterviewInvitationsSection({
+    required this.items,
+    required this.controller,
+  });
+
+  final List<InterviewDetailModel> items;
+  final ApplicationsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionable = items.where((i) => i.canRespond).toList();
+    if (actionable.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: IconlyLight.calendar,
+          title: 'Invitations entretien',
+        ),
+        const SizedBox(height: 10),
+        ...actionable.map(
+          (interview) => _ResponseCard(
+            title: interview.offer?.title ?? 'Entretien',
+            subtitle: interview.offer?.companyName ?? interview.statusLabel,
+            meta: interview.scheduledAt == null
+                ? interview.statusLabel
+                : _formatDate(interview.scheduledAt!),
+            color: AppColors.warningAccent,
+            children: [
+              if ((interview.location ?? '').isNotEmpty)
+                _MetaLine(
+                  icon: IconlyLight.location,
+                  label: interview.location!,
+                ),
+              if ((interview.instructions ?? '').isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  interview.instructions!,
+                  style:
+                      AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+                ),
+              ],
+              if (interview.hasQr) ...[
+                const SizedBox(height: 10),
+                _SmallActionButton(
+                  label: 'Convocation QR',
+                  icon: Icons.qr_code_rounded,
+                  color: AppColors.primaryAccent,
+                  onTap: () => _showInterviewQr(interview),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (interview.actions.contains(InterviewAction.accept))
+                    _SmallActionButton(
+                      label: 'Accepter',
+                      icon: IconlyLight.tick_square,
+                      color: AppColors.successAccent,
+                      onTap: () => controller.respondToInterview(
+                        interview,
+                        InterviewAction.accept,
+                      ),
+                    ),
+                  if (interview.actions.contains(InterviewAction.reschedule))
+                    _SmallActionButton(
+                      label: 'Reproposer',
+                      icon: IconlyLight.time_circle,
+                      color: AppColors.primaryAccent,
+                      onTap: () => _rescheduleInterview(interview),
+                    ),
+                  if (interview.actions.contains(InterviewAction.decline))
+                    _SmallActionButton(
+                      label: 'Refuser',
+                      icon: Icons.close_rounded,
+                      color: AppColors.errorAccent,
+                      onTap: () => _declineInterview(interview),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  void _showInterviewQr(InterviewDetailModel interview) {
+    final rawUrl = interview.qrCodeUrl ?? '';
+    final url = ApiConstants.resolveMediaUrl(rawUrl) ?? rawUrl;
+    Widget content;
+    if (url.isNotEmpty) {
+      content = Image.network(
+        url,
+        width: 220,
+        height: 220,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _QrFallback(value: url),
+      );
+    } else {
+      final code = interview.qrCode ?? '';
+      final base64Payload = code.startsWith('data:image')
+          ? code.substring(code.indexOf(',') + 1)
+          : code;
+      try {
+        content = Image.memory(
+          base64Decode(base64Payload),
+          width: 220,
+          height: 220,
+          fit: BoxFit.contain,
+        );
+      } catch (_) {
+        content = _QrFallback(value: code);
+      }
+    }
+
+    Get.dialog<void>(
+      AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+        ),
+        title: Text(
+          'Convocation entretien',
+          style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(child: content),
+            const SizedBox(height: 12),
+            Text(
+              interview.offer?.title ?? 'Entretien',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back<void>(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _declineInterview(InterviewDetailModel interview) async {
+    final message = await _askMessage(
+      title: 'Refuser l\'entretien',
+      hint: 'Message optionnel au recruteur',
+      required: false,
+    );
+    if (message == null) return;
+    await controller.respondToInterview(
+      interview,
+      InterviewAction.decline,
+      message: message,
+    );
+  }
+
+  Future<void> _rescheduleInterview(InterviewDetailModel interview) async {
+    final datePickerContext = Get.context;
+    if (datePickerContext == null) return;
+    final date = await showDatePicker(
+      context: datePickerContext,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (date == null) return;
+    final timePickerContext = Get.context;
+    if (timePickerContext == null) return;
+    final time = await showTimePicker(
+      // ignore: use_build_context_synchronously
+      context: timePickerContext,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (time == null) return;
+    final message = await _askMessage(
+      title: 'Message au recruteur',
+      hint: 'Ajoutez une précision si nécessaire',
+      required: false,
+    );
+    if (message == null) return;
+    await controller.respondToInterview(
+      interview,
+      InterviewAction.reschedule,
+      message: message,
+      proposedDate:
+          DateTime(date.year, date.month, date.day, time.hour, time.minute),
+    );
+  }
+}
+
+class _QrFallback extends StatelessWidget {
+  const _QrFallback({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceLow,
+        shape: AppShapes.squircle(AppRadius.md),
+      ),
+      child: SelectableText(
+        value.isEmpty ? 'QR indisponible' : value,
+        textAlign: TextAlign.center,
+        style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+      ),
+    );
+  }
+}
+
+class _JobProposalsSection extends StatelessWidget {
+  const _JobProposalsSection({
+    required this.items,
+    required this.controller,
+  });
+
+  final List<JobProposalModel> items;
+  final ApplicationsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionable = items.where((p) => p.canRespond).toList();
+    if (actionable.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: IconlyLight.work,
+          title: 'Propositions d\'emploi',
+        ),
+        const SizedBox(height: 10),
+        ...actionable.map(
+          (proposal) => _ResponseCard(
+            title: proposal.offer?.title ?? 'Proposition d\'emploi',
+            subtitle: proposal.offer?.companyName ?? proposal.statusLabel,
+            meta: proposal.salaryFormatted ??
+                proposal.contractType ??
+                proposal.statusLabel,
+            color: AppColors.successAccent,
+            children: [
+              if (proposal.startDate != null)
+                _MetaLine(
+                  icon: IconlyLight.calendar,
+                  label: 'Début le ${_formatDate(proposal.startDate!)}',
+                ),
+              if ((proposal.benefits ?? '').isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  proposal.benefits!,
+                  style:
+                      AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (proposal.actions.contains(JobProposalAction.accept))
+                    _SmallActionButton(
+                      label: 'Accepter',
+                      icon: IconlyLight.tick_square,
+                      color: AppColors.successAccent,
+                      onTap: () => controller.respondToProposal(
+                        proposal,
+                        JobProposalAction.accept,
+                      ),
+                    ),
+                  if (proposal.actions.contains(JobProposalAction.negotiate))
+                    _SmallActionButton(
+                      label: 'Négocier',
+                      icon: IconlyLight.edit,
+                      color: AppColors.primaryAccent,
+                      onTap: () => _negotiateProposal(proposal),
+                    ),
+                  if (proposal.actions.contains(JobProposalAction.refuse))
+                    _SmallActionButton(
+                      label: 'Refuser',
+                      icon: Icons.close_rounded,
+                      color: AppColors.errorAccent,
+                      onTap: () => _refuseProposal(proposal),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  Future<void> _negotiateProposal(JobProposalModel proposal) async {
+    final message = await _askMessage(
+      title: 'Négocier la proposition',
+      hint: 'Expliquez votre contre-proposition',
+      required: true,
+    );
+    if (message == null) return;
+    await controller.respondToProposal(
+      proposal,
+      JobProposalAction.negotiate,
+      message: message,
+    );
+  }
+
+  Future<void> _refuseProposal(JobProposalModel proposal) async {
+    final message = await _askMessage(
+      title: 'Refuser la proposition',
+      hint: 'Message optionnel au recruteur',
+      required: false,
+    );
+    if (message == null) return;
+    await controller.respondToProposal(
+      proposal,
+      JobProposalAction.refuse,
+      message: message,
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.primaryAccent),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResponseCard extends StatelessWidget {
+  const _ResponseCard({
+    required this.title,
+    required this.subtitle,
+    required this.meta,
+    required this.color,
+    required this.children,
+  });
+
+  final String title;
+  final String subtitle;
+  final String meta;
+  final Color color;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceCard,
+        shape: AppShapes.cardBordered(color.withValues(alpha: 0.22)),
+        shadows: AppColors.lightShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w800),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.bodyColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              StatusPill(label: meta, color: color, dense: true),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaLine extends StatelessWidget {
+  const _MetaLine({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: AppColors.hintColor),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SmallActionButton extends StatelessWidget {
+  const _SmallActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        AppHaptics.tap();
+        onTap();
+      },
+      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: ShapeDecoration(
+          color: color.withValues(alpha: 0.10),
+          shape: AppShapes.squircle(AppRadius.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTextStyles.labelMd.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<String?> _askMessage({
+  required String title,
+  required String hint,
+  required bool required,
+}) async {
+  final controller = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final result = await Get.dialog<String?>(
+    AlertDialog(
+      backgroundColor: AppColors.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+      ),
+      title: Text(
+        title,
+        style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+      ),
+      content: Form(
+        key: formKey,
+        child: TextFormField(
+          controller: controller,
+          minLines: 3,
+          maxLines: 5,
+          decoration: InputDecoration(hintText: hint),
+          validator: (value) =>
+              required && (value == null || value.trim().isEmpty)
+                  ? 'Message requis'
+                  : null,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back<String?>(result: null),
+          child: const Text('Annuler'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (formKey.currentState?.validate() != true) return;
+            Get.back<String?>(result: controller.text.trim());
+          },
+          child: const Text('Envoyer'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return result;
 }
 
 /// Section "Prochains entretiens" — alimentée par
@@ -260,7 +819,8 @@ class _PendingAppliesSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.cloud_off_rounded, size: 18, color: AppColors.warningAccent),
+            Icon(Icons.cloud_off_rounded,
+                size: 18, color: AppColors.warningAccent),
             const SizedBox(width: 8),
             Expanded(
               child: Text('En attente d\'envoi',
@@ -582,8 +1142,7 @@ class _DismissibleApplication extends StatelessWidget {
           color: AppColors.errorSoft,
           shape: AppShapes.squircle(AppRadius.lg),
         ),
-        child: Icon(IconlyLight.delete,
-            color: AppColors.errorAccent, size: 22),
+        child: Icon(IconlyLight.delete, color: AppColors.errorAccent, size: 22),
       ),
       child: _ApplicationCard(app: app),
     );

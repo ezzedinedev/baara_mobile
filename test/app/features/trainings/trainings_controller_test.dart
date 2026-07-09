@@ -33,6 +33,14 @@ class _FakeTrainingRepository implements ITrainingRepository {
     required String phone,
   }) async =>
       (success: true, message: null);
+
+  @override
+  Future<bool> reviewTraining(
+    String trainingId, {
+    required int rating,
+    String? comment,
+  }) async =>
+      true;
 }
 
 Training _training(String id, String title) {

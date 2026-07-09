@@ -28,6 +28,7 @@ class Offer {
   final bool? isApplied;
   final String? applicationId;
   final String? applicationStatus;
+  final List<ScreeningQuestion> screeningQuestions;
 
   const Offer({
     required this.id,
@@ -52,5 +53,24 @@ class Offer {
     this.isApplied,
     this.applicationId,
     this.applicationStatus,
+    this.screeningQuestions = const [],
+  });
+
+  bool get hasScreeningQuestions => screeningQuestions.isNotEmpty;
+}
+
+class ScreeningQuestion {
+  final String id;
+  final String label;
+  final String type;
+  final bool required;
+  final List<String> options;
+
+  const ScreeningQuestion({
+    required this.id,
+    required this.label,
+    this.type = 'text',
+    this.required = false,
+    this.options = const [],
   });
 }

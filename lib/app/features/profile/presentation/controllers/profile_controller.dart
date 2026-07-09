@@ -28,7 +28,7 @@ class ProfileController extends GetxController {
   // Stubs for UI compatibility
   final cvs = <dynamic>[].obs;
   final portfolioProjects = <dynamic>[].obs;
-  final trainingCertificates = <dynamic>[].obs;
+  final trainingCertificates = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
@@ -43,6 +43,7 @@ class ProfileController extends GetxController {
       errorMessage.value = null;
       profile.value = await _repository.getProfile();
       presentationVideoUrl.value = profile.value?.presentationVideoUrl;
+      await loadCertificates();
       _applyServerTheme();
     } catch (e) {
       errorMessage.value = "Erreur de chargement du profil";
@@ -54,6 +55,14 @@ class ProfileController extends GetxController {
 
   // Legacy method names for UI compatibility
   Future<void> loadProfile() => fetchProfile();
+
+  Future<void> loadCertificates() async {
+    try {
+      trainingCertificates.assignAll(await _repository.getCertificates());
+    } catch (_) {
+      trainingCertificates.clear();
+    }
+  }
 
   /// Applique le thème enregistré côté serveur (`preferences.apparence.theme`)
   /// dès que le profil est chargé → le dark mode suit l'utilisateur d'un
@@ -121,7 +130,8 @@ class ProfileController extends GetxController {
         AppToast.error('Vidéo trop lourde', 'Choisissez une vidéo ≤ 15 Mo.');
         return;
       }
-      final filename = picked.name.isNotEmpty ? picked.name : 'presentation.mp4';
+      final filename =
+          picked.name.isNotEmpty ? picked.name : 'presentation.mp4';
       final url = await _repository.uploadPresentationVideo(bytes, filename);
       presentationVideoUrl.value = url;
       AppToast.success('Vidéo de présentation mise à jour');
@@ -205,6 +215,17 @@ class ProfileController extends GetxController {
     }
     try {
       await _repository.logout();
+    } catch (_) {}
+    await const AuthTokenStore().clearSession();
+    Get.offAllNamed(AppRoutes.profileSelection);
+  }
+
+  Future<void> logoutAll() async {
+    if (Get.isRegistered<RealtimeService>()) {
+      await Get.find<RealtimeService>().stop();
+    }
+    try {
+      await _repository.logoutAll();
     } catch (_) {}
     await const AuthTokenStore().clearSession();
     Get.offAllNamed(AppRoutes.profileSelection);

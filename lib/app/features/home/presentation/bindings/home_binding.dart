@@ -31,6 +31,10 @@ import 'package:opportune_bf/app/features/notifications/data/repositories/notifi
 import 'package:opportune_bf/app/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:opportune_bf/app/features/notifications/presentation/controllers/notifications_controller.dart';
 
+import 'package:opportune_bf/app/features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import 'package:opportune_bf/app/features/dashboard/domain/repositories/i_dashboard_repository.dart';
+import 'package:opportune_bf/app/features/dashboard/presentation/controllers/dashboard_controller.dart';
+
 import 'package:opportune_bf/app/features/suivi/presentation/controllers/suivi_controller.dart';
 import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
 
@@ -40,6 +44,12 @@ class HomeBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(() => HomeController());
+
+    // Dashboard candidat : stats de synthèse consommables par l'accueil.
+    Get.lazyPut<IDashboardRepository>(
+      () => DashboardRepositoryImpl(apiProvider: Get.find<ApiProvider>()),
+    );
+    Get.lazyPut(() => DashboardController(Get.find<IDashboardRepository>()));
 
     // TAB: Offers
     Get.lazyPut<IOfferRepository>(

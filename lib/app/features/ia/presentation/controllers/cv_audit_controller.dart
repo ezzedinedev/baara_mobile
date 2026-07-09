@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../data/models/ai_models.dart';
-import '../../../../data/repositories/ai_repository.dart';
+import '../../domain/repositories/i_ia_repository.dart';
 import '../../../../core/utils/user_facing_error.dart';
 
 /// Charge l'audit qualité du CV (POST /ai/cv/audit) et permet de demander une
@@ -9,7 +9,7 @@ import '../../../../core/utils/user_facing_error.dart';
 class CvAuditController extends GetxController {
   CvAuditController(this._repository);
 
-  final AiRepository _repository;
+  final IIaRepository _repository;
 
   final isLoading = true.obs;
   final errorMessage = RxnString();

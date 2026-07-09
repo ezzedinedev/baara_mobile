@@ -17,6 +17,8 @@ import 'package:opportune_bf/app/features/startup/presentation/pages/profile_sel
 import 'package:opportune_bf/app/features/auth/presentation/bindings/candidate_login_binding.dart';
 import 'package:opportune_bf/app/features/auth/presentation/pages/candidate_login_screen.dart';
 import 'package:opportune_bf/app/features/auth/presentation/bindings/register_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/bindings/register_profile_binding.dart';
+import 'package:opportune_bf/app/features/auth/presentation/pages/register_profile_screen.dart';
 import 'package:opportune_bf/app/features/auth/presentation/pages/register_screen.dart';
 
 import 'package:opportune_bf/app/features/auth/presentation/bindings/otp_verification_binding.dart';
@@ -128,6 +130,14 @@ class AppPages {
       name: AppRoutes.candidateLogin,
       page: () => const CandidateLoginScreen(),
       binding: CandidateLoginBinding(),
+      customTransition: AppPageTransition(),
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.registerProfile,
+      page: () => const RegisterProfileScreen(),
+      binding: RegisterProfileBinding(),
       customTransition: AppPageTransition(),
       transitionDuration: const Duration(milliseconds: 260),
       curve: Curves.easeInOut,

@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import '../../../../data/repositories/ai_repository.dart';
 import '../../../../data/models/ai_models.dart';
+import '../../domain/repositories/i_ia_repository.dart';
 import '../../domain/entities/chat_message.dart';
 
 class ChatbotController extends GetxController {
-  final AiRepository _repository;
+  final IIaRepository _repository;
   ChatbotController(this._repository);
 
   final messages = <ChatMessage>[].obs;

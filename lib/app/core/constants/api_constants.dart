@@ -406,11 +406,11 @@ class ApiConstants {
   // + Bearer token. cf. routes/api.php → api.v1.broadcasting.auth.
   static String get broadcastingAuthUrl => '$baseUrl/broadcasting/auth';
 
-  // Clé applicative Reverb (= REVERB_APP_KEY backend). À surcharger en prod via
-  // --dart-define=REVERB_APP_KEY=...  (défaut = clé de dev locale).
+  // Clé applicative Reverb (= REVERB_APP_KEY backend). En release, fournir via
+  // --dart-define=REVERB_APP_KEY=... (aucune valeur par défaut en prod).
   static const String reverbAppKey = String.fromEnvironment(
     'REVERB_APP_KEY',
-    defaultValue: 'r2isgakfkwfkjt14gupd',
+    defaultValue: kDebugMode ? 'r2isgakfkwfkjt14gupd' : '',
   );
 
   // Hôte du daemon Reverb. Vide => dérivé de l'hôte API (même machine que

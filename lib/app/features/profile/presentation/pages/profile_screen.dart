@@ -232,6 +232,8 @@ class _MyView extends StatelessWidget {
         ],
         const SizedBox(height: 18),
         const _DocumentsStrip(),
+        const SizedBox(height: 18),
+        const _CertificatesStrip(),
         const SizedBox(height: 6),
         const SettingsBody(),
       ],
@@ -1365,6 +1367,108 @@ class _AddDocCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CertificatesStrip extends StatelessWidget {
+  const _CertificatesStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<ProfileController>()) return const SizedBox.shrink();
+    final controller = Get.find<ProfileController>();
+    return Obx(() {
+      final items = controller.trainingCertificates;
+      if (items.isEmpty) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: SectionHeader(title: 'Certificats'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 106,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+              itemBuilder: (_, i) => _CertificateCard(item: items[i]),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _CertificateCard extends StatelessWidget {
+  const _CertificateCard({required this.item});
+
+  final Map<String, dynamic> item;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = (item['training_title'] ??
+            item['title'] ??
+            item['name'] ??
+            'Certificat')
+        .toString();
+    final issued = (item['issued_at'] ?? item['created_at'] ?? '').toString();
+    return SizedBox(
+      width: 176,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(
+            AppColors.outlineVariant.withValues(alpha: 0.2),
+          ),
+          shadows: AppColors.lightShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.successSoft,
+                borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                color: AppColors.successAccent,
+                size: 21,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodySm.copyWith(
+                color: AppColors.titleColor,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (issued.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                issued,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.hintColor,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -26,6 +26,7 @@ class OfferModel extends Offer {
     super.isApplied,
     super.applicationId,
     super.applicationStatus,
+    super.screeningQuestions,
   });
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
@@ -61,11 +62,57 @@ class OfferModel extends Offer {
       isBoosted: json['is_boosted'] == true || json['is_boosted'] == 1,
       boostTier: _parseBoostTier(json, badge),
       boostLabel: badge?['label']?.toString(),
-      isSaved: json['is_saved'] == null ? null : (json['is_saved'] == true || json['is_saved'] == 1),
-      isApplied: json['is_applied'] == null ? null : (json['is_applied'] == true || json['is_applied'] == 1),
+      isSaved: json['is_saved'] == null
+          ? null
+          : (json['is_saved'] == true || json['is_saved'] == 1),
+      isApplied: json['is_applied'] == null
+          ? null
+          : (json['is_applied'] == true || json['is_applied'] == 1),
       applicationId: json['application_id']?.toString(),
       applicationStatus: json['application_status']?.toString(),
+      screeningQuestions: _parseScreeningQuestions(json),
     );
+  }
+
+  static List<ScreeningQuestion> _parseScreeningQuestions(
+      Map<String, dynamic> json) {
+    final raw = json['screening_questions'] ??
+        json['screeningQuestions'] ??
+        json['screening'] ??
+        json['questions'];
+    if (raw is! List) return const [];
+
+    final questions = <ScreeningQuestion>[];
+    for (var i = 0; i < raw.length; i++) {
+      final item = raw[i];
+      if (item is String) {
+        final label = item.trim();
+        if (label.isNotEmpty) {
+          questions.add(ScreeningQuestion(id: 'q_$i', label: label));
+        }
+        continue;
+      }
+      if (item is! Map) continue;
+      final map = Map<String, dynamic>.from(item);
+      final label = (map['label'] ?? map['question'] ?? map['title'] ?? '')
+          .toString()
+          .trim();
+      if (label.isEmpty) continue;
+      final id =
+          (map['id'] ?? map['key'] ?? map['name'] ?? 'q_$i').toString().trim();
+      final options = map['options'] is List
+          ? (map['options'] as List).map((o) => o.toString()).toList()
+          : const <String>[];
+      questions.add(ScreeningQuestion(
+        id: id.isEmpty ? 'q_$i' : id,
+        label: label,
+        type: (map['type'] ?? (options.isNotEmpty ? 'select' : 'text'))
+            .toString(),
+        required: map['required'] == true || map['is_required'] == true,
+        options: options,
+      ));
+    }
+    return questions;
   }
 
   static int _parseBoostTier(

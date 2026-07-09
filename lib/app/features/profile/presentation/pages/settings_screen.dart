@@ -243,6 +243,13 @@ class SettingsBody extends StatelessWidget {
                 },
               ),
               _HeaderRow(
+                icon: Icons.devices_other_rounded,
+                color: AppColors.categoryOrange,
+                title: 'Déconnexion tous appareils',
+                subtitle: 'Ferme les sessions ouvertes ailleurs',
+                onTap: () => _confirmLogoutAll(context),
+              ),
+              _HeaderRow(
                 icon: Icons.support_agent_rounded,
                 color: AppColors.categoryCyan,
                 title: 'Aide et support',
@@ -656,6 +663,26 @@ class SettingsBody extends StatelessWidget {
           ? Get.find<ProfileController>()
           : null;
       await controller?.logout();
+    }
+  }
+
+  Future<void> _confirmLogoutAll(BuildContext context) async {
+    final confirmed = await showConfirmSheet(
+      context: context,
+      icon: Icons.devices_other_rounded,
+      iconColor: AppColors.errorAccent,
+      title: 'Déconnecter tous les appareils ?',
+      message:
+          'Toutes les sessions seront fermées. Vous devrez vous reconnecter sur cet appareil.',
+      confirmLabel: 'Déconnecter partout',
+      isDestructive: true,
+    );
+    if (confirmed == true) {
+      AppHaptics.confirm();
+      final controller = Get.isRegistered<ProfileController>()
+          ? Get.find<ProfileController>()
+          : null;
+      await controller?.logoutAll();
     }
   }
 }

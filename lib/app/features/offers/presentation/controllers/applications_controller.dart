@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../../core/utils/user_facing_error.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/models/application_model.dart';
+import '../../data/models/interview_detail_model.dart';
+import '../../data/models/job_proposal_model.dart';
 import '../../data/models/upcoming_interview_model.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
@@ -16,6 +18,9 @@ class ApplicationsController extends GetxController {
 
   final applications = <ApplicationModel>[].obs;
   final upcomingInterviews = <UpcomingInterview>[].obs;
+  final interviews = <InterviewDetailModel>[].obs;
+  final jobProposals = <JobProposalModel>[].obs;
+  final respondingIds = <String>{}.obs;
   final isLoading = true.obs;
   final errorMessage = RxnString();
 
@@ -32,13 +37,71 @@ class ApplicationsController extends GetxController {
       final results = await Future.wait([
         _repository.getMyApplications(),
         _repository.getUpcomingInterviews(),
+        _repository.getInterviews(),
+        _repository.getJobProposals(),
       ]);
       applications.assignAll(results[0] as List<ApplicationModel>);
       upcomingInterviews.assignAll(results[1] as List<UpcomingInterview>);
+      interviews.assignAll(results[2] as List<InterviewDetailModel>);
+      jobProposals.assignAll(results[3] as List<JobProposalModel>);
     } catch (e) {
       errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<bool> respondToInterview(
+    InterviewDetailModel interview,
+    InterviewAction action, {
+    String? message,
+    DateTime? proposedDate,
+  }) async {
+    if (respondingIds.contains(interview.id)) return false;
+    respondingIds.add(interview.id);
+    try {
+      final ok = await _repository.respondToInterview(
+        interview.id,
+        action: action,
+        message: message,
+        proposedDate: proposedDate,
+      );
+      if (!ok) throw Exception('interview response failed');
+      AppToast.success(
+          'Réponse envoyée', interview.offer?.title ?? 'Entretien');
+      await load();
+      return true;
+    } catch (e) {
+      AppToast.error('Réponse impossible', userFacingError(e));
+      return false;
+    } finally {
+      respondingIds.remove(interview.id);
+    }
+  }
+
+  Future<bool> respondToProposal(
+    JobProposalModel proposal,
+    JobProposalAction action, {
+    String? message,
+  }) async {
+    if (respondingIds.contains(proposal.id)) return false;
+    respondingIds.add(proposal.id);
+    try {
+      final ok = await _repository.respondToProposal(
+        proposal.id,
+        action: action,
+        message: message,
+      );
+      if (!ok) throw Exception('proposal response failed');
+      AppToast.success(
+          'Réponse envoyée', proposal.offer?.title ?? 'Proposition');
+      await load();
+      return true;
+    } catch (e) {
+      AppToast.error('Réponse impossible', userFacingError(e));
+      return false;
+    } finally {
+      respondingIds.remove(proposal.id);
     }
   }
 

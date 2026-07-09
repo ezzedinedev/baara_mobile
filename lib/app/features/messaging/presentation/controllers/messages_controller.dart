@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:opportune_bf/app/core/services/location_service.dart';
+import 'package:opportune_bf/app/core/services/realtime_events.dart';
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/widgets.dart';
 import '../../domain/entities/conversation.dart';
@@ -66,6 +67,8 @@ class MessagesController extends GetxController {
   DateTime? _lastTypingPingAt; // throttle des pings "typing:true".
   bool _myTyping = false; // mon dernier état envoyé.
 
+  StreamSubscription<RealtimeEvent>? _realtimeSub;
+
   @override
   void onInit() {
     super.onInit();
@@ -74,6 +77,49 @@ class MessagesController extends GetxController {
     final id = Get.parameters['id'];
     if (id != null) {
       loadMessages(id);
+    }
+
+    if (Get.isRegistered<RealtimeEventBus>()) {
+      _realtimeSub =
+          Get.find<RealtimeEventBus>().stream.listen(_handleRealtimeEvent);
+    }
+  }
+
+  void _handleRealtimeEvent(RealtimeEvent event) {
+    switch (event) {
+      case RealtimeMessageSent(:final conversationId, :final message):
+        loadConversations();
+        if (conversationId != null &&
+            activeConversationId.value == conversationId) {
+          if (message != null) {
+            final exists = activeMessages.any((m) => m.id == message.id);
+            if (!exists) {
+              activeMessages.add(message);
+              maybeLoadSmartReplies();
+            }
+          } else {
+            loadMessages(conversationId);
+          }
+        }
+      case RealtimeTyping(
+          :final conversationId,
+          :final userId,
+          :final typing,
+        ):
+        onPeerTyping(conversationId, userId, typing);
+      case RealtimeMessagesRead(:final conversationId, :final readAt):
+        onMessagesRead(conversationId, readAt);
+      case RealtimeMessageReaction(
+          :final messageId,
+          :final userId,
+          :final emoji,
+          :final removed,
+        ):
+        onMessageReaction(messageId, userId, emoji, removed);
+      case RealtimeNotificationCreated():
+        loadConversations();
+      case RealtimeStoryCreated():
+        break;
     }
   }
 
@@ -119,6 +165,7 @@ class MessagesController extends GetxController {
 
   @override
   void onClose() {
+    _realtimeSub?.cancel();
     searchCtrl.dispose();
     _peerTypingExpiry?.cancel();
     _typingStopTimer?.cancel();

@@ -57,8 +57,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
     );
 
     if (response['success'] == true && response['data'] != null) {
-      return (response['data'] as Map<String, dynamic>)['presentation_video_url']
-          as String?;
+      return (response['data']
+          as Map<String, dynamic>)['presentation_video_url'] as String?;
     }
     throw Exception('Failed to upload presentation video');
   }
@@ -96,7 +96,32 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getCertificates() async {
+    final response =
+        await _apiProvider.getJson(ApiConstants.profileCertificates);
+    if (response['success'] == true) {
+      final data = response['data'];
+      final items = data is List
+          ? data
+          : data is Map
+              ? data['data']
+              : const [];
+      if (items is List) {
+        return items.whereType<Map>().map((e) {
+          return Map<String, dynamic>.from(e);
+        }).toList();
+      }
+    }
+    return const [];
+  }
+
+  @override
   Future<void> logout() async {
     await _apiProvider.postJson(ApiConstants.logout, {});
+  }
+
+  @override
+  Future<void> logoutAll() async {
+    await _apiProvider.postJson(ApiConstants.logoutAll, {});
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../constants/api_constants.dart';
 import '../../theme/app_colors.dart';
@@ -45,12 +46,12 @@ class BrandAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: resolved != null && resolved.isNotEmpty
           ? ClipOval(
-              child: Image.network(
-                resolved,
+              child: CachedNetworkImage(
+                imageUrl: resolved,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _initialsText(),
+                errorWidget: (_, __, ___) => _initialsText(),
               ),
             )
           : _initialsText(),

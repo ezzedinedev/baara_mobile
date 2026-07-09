@@ -15,6 +15,7 @@ class TrainingDetailController extends GetxController {
   final errorMessage = RxnString();
   final Rxn<Training> training = Rxn<Training>();
   final isEnrolling = false.obs;
+  final isSubmittingReview = false.obs;
   // Vrai dès qu'une inscription réussit dans cette session — l'entité Training
   // est immuable, donc on s'appuie sur ce flag pour basculer le bouton bas en
   // « Continuer » sans recharger.
@@ -65,6 +66,23 @@ class TrainingDetailController extends GetxController {
       return false;
     } finally {
       isEnrolling.value = false;
+    }
+  }
+
+  Future<bool> submitReview({required int rating, String? comment}) async {
+    final t = training.value;
+    if (t == null || isSubmittingReview.value) return false;
+    isSubmittingReview.value = true;
+    try {
+      return await _repository.reviewTraining(
+        t.id,
+        rating: rating,
+        comment: comment,
+      );
+    } catch (_) {
+      return false;
+    } finally {
+      isSubmittingReview.value = false;
     }
   }
 }

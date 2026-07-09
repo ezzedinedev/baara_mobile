@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'package:opportune_bf/app/core/services/realtime_events.dart';
 
 import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
 import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
@@ -17,10 +21,31 @@ class StoryController extends GetxController {
   final isLoading = false.obs;
   final isPublishing = false.obs;
 
+  StreamSubscription<RealtimeEvent>? _realtimeSub;
+  Timer? _storyReloadDebounce;
+
   @override
   void onInit() {
     super.onInit();
     loadStories();
+    if (Get.isRegistered<RealtimeEventBus>()) {
+      _realtimeSub = Get.find<RealtimeEventBus>()
+          .stream
+          .where((e) => e is RealtimeStoryCreated)
+          .listen((_) => _scheduleStoryReload());
+    }
+  }
+
+  void _scheduleStoryReload() {
+    _storyReloadDebounce?.cancel();
+    _storyReloadDebounce = Timer(const Duration(seconds: 2), loadStories);
+  }
+
+  @override
+  void onClose() {
+    _realtimeSub?.cancel();
+    _storyReloadDebounce?.cancel();
+    super.onClose();
   }
 
   Future<void> loadStories() async {

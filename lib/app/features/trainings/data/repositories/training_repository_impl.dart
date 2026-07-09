@@ -68,4 +68,21 @@ class TrainingRepositoryImpl implements ITrainingRepository {
       message: response['message']?.toString(),
     );
   }
+
+  @override
+  Future<bool> reviewTraining(
+    String trainingId, {
+    required int rating,
+    String? comment,
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.trainingReview(trainingId),
+      {
+        'rating': rating,
+        if (comment != null && comment.trim().isNotEmpty)
+          'comment': comment.trim(),
+      },
+    );
+    return response['success'] == true || response['ok'] == true;
+  }
 }

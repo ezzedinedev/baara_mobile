@@ -758,6 +758,8 @@ class _DescriptionTab extends StatelessWidget {
         const SizedBox(height: 14),
         _MetaGrid(training: training),
         const SizedBox(height: 14),
+        _ReviewPrompt(training: training),
+        const SizedBox(height: 14),
         _BulletSection(
           title: 'Objectifs',
           icon: IconlyLight.danger,
@@ -787,6 +789,123 @@ class _DescriptionTab extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _ReviewPrompt extends StatelessWidget {
+  const _ReviewPrompt({required this.training});
+
+  final Training training;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TrainingDetailController>();
+    return Obx(() {
+      if (!controller.isEnrolled) return const SizedBox.shrink();
+      return _DetailSection(
+        title: 'Avis',
+        icon: IconlyBold.star,
+        color: AppColors.warningAccent,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Partagez votre retour sur cette formation.',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.bodyColor,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _showReviewDialog(context, controller),
+              icon: Icon(
+                IconlyLight.edit,
+                size: 16,
+                color: AppColors.primaryAccent,
+              ),
+              label: Text(
+                'Noter',
+                style: AppTextStyles.labelMd.copyWith(
+                  color: AppColors.primaryAccent,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Future<void> _showReviewDialog(
+    BuildContext context,
+    TrainingDetailController controller,
+  ) async {
+    var rating = 5;
+    final commentCtrl = TextEditingController();
+    final ok = await Get.dialog<bool>(
+      StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+          ),
+          title: Text(
+            'Votre avis',
+            style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 1; i <= 5; i++)
+                    IconButton(
+                      onPressed: () => setState(() => rating = i),
+                      icon: Icon(
+                        i <= rating ? IconlyBold.star : IconlyLight.star,
+                        color: AppColors.warningAccent,
+                      ),
+                    ),
+                ],
+              ),
+              TextField(
+                controller: commentCtrl,
+                minLines: 3,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  hintText: 'Commentaire optionnel',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back<bool>(result: false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Get.back<bool>(result: true),
+              child: const Text('Envoyer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final comment = commentCtrl.text;
+    commentCtrl.dispose();
+    if (ok != true) return;
+    final sent = await controller.submitReview(
+      rating: rating,
+      comment: comment,
+    );
+    if (sent) {
+      AppToast.success('Avis envoyé');
+    } else {
+      AppToast.error('Avis non envoyé', 'Réessayez dans un instant.');
+    }
   }
 }
 

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
+import 'package:opportune_bf/app/core/services/realtime_events.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/i_notification_repository.dart';
@@ -14,10 +17,24 @@ class NotificationsController extends GetxController {
   final unreadCount = 0.obs;
   int _page = 1;
 
+  StreamSubscription<RealtimeEvent>? _realtimeSub;
+
   @override
   void onInit() {
     super.onInit();
     fetchNotifications();
+    if (Get.isRegistered<RealtimeEventBus>()) {
+      _realtimeSub = Get.find<RealtimeEventBus>()
+          .stream
+          .where((e) => e is RealtimeNotificationCreated)
+          .listen((_) => fetchNotifications());
+    }
+  }
+
+  @override
+  void onClose() {
+    _realtimeSub?.cancel();
+    super.onClose();
   }
 
   Future<void> fetchNotifications() async {

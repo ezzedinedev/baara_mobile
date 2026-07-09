@@ -22,4 +22,10 @@ abstract class ITrainingRepository {
     required String provider,
     required String phone,
   });
+
+  Future<bool> reviewTraining(
+    String trainingId, {
+    required int rating,
+    String? comment,
+  });
 }

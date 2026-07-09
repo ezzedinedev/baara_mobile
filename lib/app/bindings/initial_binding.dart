@@ -4,6 +4,7 @@ import '../core/constants/api_constants.dart';
 import '../core/network/api_provider.dart';
 import '../core/services/auth_token_store.dart';
 import '../core/services/offline_apply_queue.dart';
+import '../core/services/realtime_events.dart';
 import '../core/services/realtime_service.dart';
 import '../core/theme/app_theme_controller.dart';
 import '../../routes/app_routes.dart';
@@ -42,6 +43,8 @@ class InitialBinding extends Bindings {
     // File d'attente des candidatures hors-ligne : renvoi auto au retour du
     // reseau. Permanent (survit aux changements de page), depend d'ApiProvider.
     Get.put(OfflineApplyQueue(apiProvider), permanent: true);
+
+    Get.put(RealtimeEventBus(), permanent: true);
 
     // Service temps réel (Reverb). Enregistré ici pour toujours être
     // trouvable (start au home, stop au logout) ; ne se connecte qu'une

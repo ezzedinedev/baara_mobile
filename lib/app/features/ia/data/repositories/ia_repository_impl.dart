@@ -1,18 +1,94 @@
-import 'package:opportune_bf/app/core/network/api_provider.dart';
 import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import '../../domain/entities/chat_message.dart';
+import 'package:opportune_bf/app/core/network/api_provider.dart';
+import 'package:opportune_bf/app/data/models/ai_models.dart';
 import '../../domain/repositories/i_ia_repository.dart';
-import '../models/chat_message_model.dart';
 
 class IaRepositoryImpl implements IIaRepository {
-  final ApiProvider _apiProvider;
-
   IaRepositoryImpl({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
 
+  final ApiProvider _apiProvider;
+
   @override
-  Future<Map<String, dynamic>> sendChatMessage(
-      {required String message, String? sessionId}) async {
+  Future<AiMatchFeedResponse> matchFeed(
+      {int limit = 20, bool rerank = true}) async {
+    final response = await _apiProvider.getJson(
+      '${ApiConstants.aiMatchFeed}?limit=$limit&rerank=$rerank',
+    );
+    return AiMatchFeedResponse.fromJson(_unwrapMap(response));
+  }
+
+  @override
+  Future<AiCoverLetter> coverLetter({
+    required String offerId,
+    String tone = 'formal',
+    String length = 'medium',
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.aiCoverLetter,
+      {
+        'offer_id': offerId,
+        'tone': tone,
+        'length': length,
+      },
+    );
+    return AiCoverLetter.fromJson(_unwrapMap(response));
+  }
+
+  @override
+  Future<Map<String, dynamic>> cvAdapt(String offerId) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.aiCvAdapt,
+      {'offer_id': offerId},
+    );
+    return _unwrapMap(response);
+  }
+
+  @override
+  Future<Map<String, dynamic>> cvAdaptApply(String offerId) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.aiCvAdaptApply,
+      {'offer_id': offerId},
+    );
+    return _unwrapMap(response);
+  }
+
+  @override
+  Future<Map<String, dynamic>> cvRewrite({
+    String? section,
+    String? content,
+    String tone = 'professional',
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.aiCvRewrite,
+      {
+        if (section != null) 'section': section,
+        if (content != null) 'content': content,
+        'tone': tone,
+      },
+    );
+    return _unwrapMap(response);
+  }
+
+  @override
+  Future<AiCvAudit> cvAudit() async {
+    final response =
+        await _apiProvider.postJson(ApiConstants.aiCvAudit, const {});
+    return AiCvAudit.fromJson(_unwrapMap(response));
+  }
+
+  @override
+  Future<AiProfileScore> profileScore() async {
+    final response =
+        await _apiProvider.postJson(ApiConstants.aiProfileScore, const {});
+    return AiProfileScore.fromJson(_unwrapMap(response));
+  }
+
+  @override
+  Future<AiChatResponse> chatSend({
+    required String message,
+    String? sessionId,
+  }) async {
     final response = await _apiProvider.postJson(
       ApiConstants.aiChatSend,
       {
@@ -20,14 +96,22 @@ class IaRepositoryImpl implements IIaRepository {
         if (sessionId != null) 'session_id': sessionId,
       },
     );
-    return _unwrap(response);
+    return AiChatResponse.fromJson(_unwrapMap(response));
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getChatSessions() async {
+  Future<List<Map<String, dynamic>>> chatSessions() async {
     final response = await _apiProvider.getJson(ApiConstants.aiChatSessions);
     final data = _unwrap(response);
-    return List<Map<String, dynamic>>.from(data['sessions'] ?? []);
+    return List<Map<String, dynamic>>.from(data is List ? data : []);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> chatSession(String sessionId) async {
+    final response =
+        await _apiProvider.getJson(ApiConstants.aiChatSession(sessionId));
+    final data = _unwrap(response);
+    return List<Map<String, dynamic>>.from(data is List ? data : []);
   }
 
   @override
@@ -58,55 +142,29 @@ class IaRepositoryImpl implements IIaRepository {
     }
   }
 
-  @override
-  Future<List<ChatMessage>> getChatMessages(String sessionId) async {
-    final response =
-        await _apiProvider.getJson(ApiConstants.aiChatSession(sessionId));
+  dynamic _unwrap(Map<String, dynamic> response) {
+    final statusCode = response['statusCode'] as int?;
+    final success = response['success'] as bool? ??
+        (statusCode != null && statusCode < 400);
+
+    if (!success) {
+      throw ApiException(
+        message: response['message']?.toString() ?? 'Réponse API IA invalide.',
+        statusCode: statusCode,
+      );
+    }
+
+    return response['data'];
+  }
+
+  Map<String, dynamic> _unwrapMap(Map<String, dynamic> response) {
     final data = _unwrap(response);
-    final messages = (data['messages'] as List?) ?? [];
-    return messages
-        .whereType<Map<String, dynamic>>()
-        .map((m) => ChatMessageModel.fromJson(m))
-        .toList();
-  }
-
-  @override
-  Future<Map<String, dynamic>> getProfileScore() async {
-    final response =
-        await _apiProvider.postJson(ApiConstants.aiProfileScore, const {});
-    return _unwrap(response);
-  }
-
-  @override
-  Future<Map<String, dynamic>> auditCv() async {
-    final response =
-        await _apiProvider.postJson(ApiConstants.aiCvAudit, const {});
-    return _unwrap(response);
-  }
-
-  @override
-  Future<Map<String, dynamic>> generateCoverLetter({
-    required String offerId,
-    String tone = 'formal',
-    String length = 'medium',
-  }) async {
-    final response = await _apiProvider.postJson(
-      ApiConstants.aiCoverLetter,
-      {
-        'offer_id': offerId,
-        'tone': tone,
-        'length': length,
-      },
-    );
-    return _unwrap(response);
-  }
-
-  Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final data = response['data'];
     if (data is Map<String, dynamic>) {
       return data;
     }
-    throw Exception(
-        response['message']?.toString() ?? 'Réponse API IA invalide.');
+    throw ApiException(
+      message: 'Format de données invalide (attendu: Map).',
+      statusCode: response['statusCode'] as int?,
+    );
   }
 }

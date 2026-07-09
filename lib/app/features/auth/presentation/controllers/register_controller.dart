@@ -101,6 +101,10 @@ class RegisterController extends GetxController {
         'password': passwordCtrl.text,
         'password_confirmation': confirmPasswordCtrl.text,
         'user_type': 'candidate',
+        if (registrationProfile.value.isNotEmpty)
+          'registration_profile': registrationProfile.value,
+        if (registrationProfile.value.isNotEmpty)
+          'profile_type': registrationProfile.value,
         'device_name': ApiConstants.authDeviceName,
       });
       final phone = phoneCtrl.text.trim();

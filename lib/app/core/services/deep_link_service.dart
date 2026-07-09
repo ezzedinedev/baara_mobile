@@ -7,7 +7,7 @@ import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 
 /// Gère les liens entrants (deep links) :
-/// - schéma custom `opportunebf://profil/{id}` (et `…/communaute/membre/{id}`)
+/// - schéma custom `opportunebf://profil/{id}` (et `…/offres/{id}`)
 /// - liens web `https://<site>/profil/{id}` (App Links / Universal Links)
 ///
 /// Mappe l'URI vers une route interne et y navigue via GetX. Singleton initialisé
@@ -50,8 +50,9 @@ class DeepLinkService {
     if (route == null) return;
     // À froid, on laisse le GetMaterialApp et la route initiale se monter
     // avant de pousser la destination du lien.
-    final delay =
-        cold ? const Duration(milliseconds: 350) : const Duration(milliseconds: 50);
+    final delay = cold
+        ? const Duration(milliseconds: 350)
+        : const Duration(milliseconds: 50);
     Future<void>.delayed(delay, () => Get.toNamed<void>(route));
   }
 
@@ -63,6 +64,17 @@ class DeepLinkService {
     if (uri.scheme == ApiConstants.deepLinkScheme) {
       if (uri.host == 'profil' && segs.isNotEmpty) {
         return AppRoutes.communityProfile.replaceFirst(':id', segs.first);
+      }
+      if ((uri.host == 'offres' || uri.host == 'offers') && segs.isNotEmpty) {
+        return AppRoutes.offerDetail.replaceFirst(':id', segs.first);
+      }
+      if ((uri.host == 'formations' || uri.host == 'trainings') &&
+          segs.isNotEmpty) {
+        return AppRoutes.trainingDetail.replaceFirst(':id', segs.first);
+      }
+      if ((uri.host == 'messages' || uri.host == 'conversations') &&
+          segs.isNotEmpty) {
+        return AppRoutes.conversation.replaceFirst(':id', segs.first);
       }
       if (uri.host == 'communaute' && segs.length >= 2 && segs[0] == 'membre') {
         return AppRoutes.communityProfile.replaceFirst(':id', segs[1]);
@@ -76,6 +88,17 @@ class DeepLinkService {
     }
     if (segs.length >= 3 && segs[0] == 'communaute' && segs[1] == 'membre') {
       return AppRoutes.communityProfile.replaceFirst(':id', segs[2]);
+    }
+    if (segs.length >= 2 && (segs[0] == 'offres' || segs[0] == 'offers')) {
+      return AppRoutes.offerDetail.replaceFirst(':id', segs[1]);
+    }
+    if (segs.length >= 2 &&
+        (segs[0] == 'formations' || segs[0] == 'trainings')) {
+      return AppRoutes.trainingDetail.replaceFirst(':id', segs[1]);
+    }
+    if (segs.length >= 2 &&
+        (segs[0] == 'messages' || segs[0] == 'conversations')) {
+      return AppRoutes.conversation.replaceFirst(':id', segs[1]);
     }
     return null;
   }

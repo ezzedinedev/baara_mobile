@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../data/models/ai_models.dart';
-import '../../../../data/repositories/ai_repository.dart';
+import '../../domain/repositories/i_ia_repository.dart';
 import '../../../../core/utils/user_facing_error.dart';
 
 /// Charge le score de profil intelligent (POST /ai/profile/score) et expose
@@ -9,7 +9,7 @@ import '../../../../core/utils/user_facing_error.dart';
 class ScoreProfilController extends GetxController {
   ScoreProfilController(this._repository);
 
-  final AiRepository _repository;
+  final IIaRepository _repository;
 
   final isLoading = true.obs;
   final errorMessage = RxnString();

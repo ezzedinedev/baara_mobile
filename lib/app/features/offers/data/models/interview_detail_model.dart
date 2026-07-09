@@ -11,6 +11,8 @@ class InterviewDetailModel {
   final DateTime? scheduledAt;
   final String? location;
   final String? instructions;
+  final String? qrCode;
+  final String? qrCodeUrl;
   final InterviewOfferRef? offer;
   final String? applicationId;
   final List<InterviewAction> actions;
@@ -24,6 +26,8 @@ class InterviewDetailModel {
     this.scheduledAt,
     this.location,
     this.instructions,
+    this.qrCode,
+    this.qrCodeUrl,
     this.offer,
     this.applicationId,
     this.actions = const [],
@@ -42,6 +46,8 @@ class InterviewDetailModel {
       scheduledAt: DateTime.tryParse(json['scheduled_at']?.toString() ?? ''),
       location: json['location']?.toString(),
       instructions: json['instructions']?.toString(),
+      qrCode: (json['qr_code'] ?? json['qr'])?.toString(),
+      qrCodeUrl: (json['qr_code_url'] ?? json['qr_url'])?.toString(),
       offer: offer == null ? null : InterviewOfferRef.fromJson(offer),
       applicationId: json['application_id']?.toString(),
       actions: ((json['actions'] as List?) ?? const [])
@@ -50,6 +56,8 @@ class InterviewDetailModel {
           .toList(),
     );
   }
+
+  bool get hasQr => (qrCodeUrl ?? qrCode ?? '').isNotEmpty;
 }
 
 class InterviewOfferRef {
@@ -69,7 +77,8 @@ class InterviewOfferRef {
     this.logoUrl,
   });
 
-  factory InterviewOfferRef.fromJson(Map<String, dynamic> j) => InterviewOfferRef(
+  factory InterviewOfferRef.fromJson(Map<String, dynamic> j) =>
+      InterviewOfferRef(
         id: j['id']?.toString() ?? '',
         title: j['title']?.toString() ?? '',
         city: j['city']?.toString(),

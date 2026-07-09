@@ -9,6 +9,8 @@ import 'package:opportune_bf/app/features/offers/domain/entities/matched_offer.d
 import 'package:opportune_bf/app/features/offers/domain/entities/sector_option.dart';
 import 'package:opportune_bf/app/features/offers/domain/repositories/i_offer_repository.dart';
 import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_detail_controller.dart';
+import 'package:opportune_bf/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:opportune_bf/app/data/models/ai_models.dart';
 
 class _FakeOfferRepository implements IOfferRepository {
   Offer? offerById;
@@ -115,13 +117,87 @@ class _FakeOfferRepository implements IOfferRepository {
       true;
 }
 
+class _FakeIaRepository implements IIaRepository {
+  @override
+  Future<AiCoverLetter> coverLetter({
+    required String offerId,
+    String tone = 'formal',
+    String length = 'medium',
+  }) async =>
+      const AiCoverLetter(
+        fullText: 'Lettre',
+        tone: 'formal',
+        length: 'medium',
+        warnings: [],
+      );
+
+  @override
+  Future<Map<String, dynamic>> cvAdapt(String offerId) async => {};
+
+  @override
+  Future<Map<String, dynamic>> cvAdaptApply(String offerId) async => {};
+
+  @override
+  Future<AiCvAudit> cvAudit() async => const AiCvAudit(
+        overallQuality: 0,
+        atsFriendly: true,
+        keywordsMissing: [],
+        sections: {},
+      );
+
+  @override
+  Future<AiMatchFeedResponse> matchFeed({
+    int limit = 20,
+    bool rerank = true,
+  }) async =>
+      const AiMatchFeedResponse(offers: [], count: 0, reranked: false);
+
+  @override
+  Future<AiProfileScore> profileScore() async => const AiProfileScore(
+        overall: 0,
+        breakdown: {},
+        suggestions: [],
+      );
+
+  @override
+  Future<Map<String, dynamic>> cvRewrite({
+    String? section,
+    String? content,
+    String tone = 'professional',
+  }) async =>
+      {};
+
+  @override
+  Future<AiChatResponse> chatSend({
+    required String message,
+    String? sessionId,
+  }) async =>
+      const AiChatResponse(reply: '', ctaActions: []);
+
+  @override
+  Future<List<Map<String, dynamic>>> chatSession(String sessionId) async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> chatSessions() async => [];
+
+  @override
+  Future<bool> sendChatFeedback({
+    required String sessionId,
+    required int rating,
+    int? assistantMessageIndex,
+    String? comment,
+    String? correction,
+  }) async =>
+      true;
+}
+
 void main() {
   late OfferDetailController controller;
   late _FakeOfferRepository fakeOfferRepo;
 
   setUp(() {
     fakeOfferRepo = _FakeOfferRepository();
-    controller = OfferDetailController(fakeOfferRepo);
+    controller = OfferDetailController(fakeOfferRepo, _FakeIaRepository());
   });
 
   group('OfferDetailController', () {

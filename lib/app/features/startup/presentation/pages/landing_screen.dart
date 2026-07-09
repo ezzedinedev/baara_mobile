@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:opportune_bf/app/core/constants/api_constants.dart';
 import 'package:opportune_bf/app/core/theme/app_colors.dart';
 import 'package:opportune_bf/app/core/theme/app_motion.dart';
 import 'package:opportune_bf/app/core/theme/app_shapes.dart';
@@ -150,6 +152,14 @@ class _LandingScreenState extends State<LandingScreen>
                       onPressed: () => Get.toNamed(AppRoutes.candidateLogin),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  RevealOnMount(
+                    delay: const Duration(milliseconds: 400),
+                    child: _SecondaryButton(
+                      label: 'Je recrute',
+                      onPressed: _openEmployerRegistration,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -157,6 +167,13 @@ class _LandingScreenState extends State<LandingScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _openEmployerRegistration() async {
+    AppHaptics.tap();
+    final uri = Uri.tryParse(ApiConstants.companyRegisterWebUrl);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

@@ -8,13 +8,15 @@ import 'package:opportune_bf/app/core/widgets/common/success_sheet.dart';
 import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
 import 'package:opportune_bf/routes/app_routes.dart';
 import '../../../../data/models/ai_models.dart';
+import '../../../ia/domain/repositories/i_ia_repository.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
 class OfferDetailController extends GetxController {
   final IOfferRepository _repository;
+  final IIaRepository _iaRepository;
 
-  OfferDetailController(this._repository);
+  OfferDetailController(this._repository, this._iaRepository);
 
   final offer = Rxn<Offer>();
   final aiMatchScore = Rxn<AiMatchScore>();
@@ -22,6 +24,7 @@ class OfferDetailController extends GetxController {
   final isAiLoading = false.obs;
   final errorMessage = RxnString();
   final isApplying = false.obs;
+  final isAiActionLoading = false.obs;
   final hasApplied = false.obs;
   final isSaved = false.obs;
   final isSaving = false.obs;
@@ -68,12 +71,15 @@ class OfferDetailController extends GetxController {
   // qu'aucun score n'est fourni (cf. _buildAiMatchBanner).
 
   /// Candidature réelle à l'offre (POST /applications via le repo).
-  Future<void> apply() async {
+  Future<void> apply({Map<String, dynamic>? screeningAnswers}) async {
     final o = offer.value;
     if (o == null || isApplying.value || hasApplied.value) return;
     isApplying.value = true;
     try {
-      final result = await _repository.applyToOffer(o.id);
+      final result = await _repository.applyToOffer(
+        o.id,
+        screeningAnswers: screeningAnswers,
+      );
       hasApplied.value = true;
       if (result.isMatch && result.score >= 60) {
         Get.toNamed(AppRoutes.offerMatch, arguments: {
@@ -92,7 +98,7 @@ class OfferDetailController extends GetxController {
       }
     } catch (e) {
       if (isOfflineError(e)) {
-        await _queueOffline(o);
+        await _queueOffline(o, screeningAnswers: screeningAnswers);
       } else {
         AppToast.error('Candidature non envoyée', userFacingError(e));
       }
@@ -103,13 +109,17 @@ class OfferDetailController extends GetxController {
 
   /// Hors-ligne : on met la candidature en file d'attente (renvoyee au retour
   /// du reseau) et on bascule l'etat en « postule » de facon optimiste.
-  Future<void> _queueOffline(Offer o) async {
+  Future<void> _queueOffline(
+    Offer o, {
+    Map<String, dynamic>? screeningAnswers,
+  }) async {
     await Get.find<OfflineApplyQueue>().enqueue(PendingApply(
       offerId: o.id,
       offerTitle: o.title,
       company: o.company,
       logoUrl: o.companyLogo,
       queuedAt: DateTime.now(),
+      screeningAnswers: screeningAnswers,
     ));
     hasApplied.value = true;
     AppHaptics.success();
@@ -134,6 +144,49 @@ class OfferDetailController extends GetxController {
       message: '${o.company} · ${o.title}\n'
           'Votre candidature a bien été transmise au recruteur.',
     );
+  }
+
+  Future<AiCoverLetter?> generateCoverLetter() async {
+    final o = offer.value;
+    if (o == null || isAiActionLoading.value) return null;
+    isAiActionLoading.value = true;
+    try {
+      return await _iaRepository.coverLetter(offerId: o.id);
+    } catch (e) {
+      AppToast.error('Lettre non générée', userFacingError(e));
+      return null;
+    } finally {
+      isAiActionLoading.value = false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> adaptCv() async {
+    final o = offer.value;
+    if (o == null || isAiActionLoading.value) return null;
+    isAiActionLoading.value = true;
+    try {
+      return await _iaRepository.cvAdapt(o.id);
+    } catch (e) {
+      AppToast.error('CV non adapté', userFacingError(e));
+      return null;
+    } finally {
+      isAiActionLoading.value = false;
+    }
+  }
+
+  Future<void> adaptCvAndApply() async {
+    final o = offer.value;
+    if (o == null || isAiActionLoading.value || hasApplied.value) return;
+    isAiActionLoading.value = true;
+    try {
+      await _iaRepository.cvAdaptApply(o.id);
+      hasApplied.value = true;
+      AppToast.success('Candidature envoyée', 'CV adapté pour ${o.title}.');
+    } catch (e) {
+      AppToast.error('Action impossible', userFacingError(e));
+    } finally {
+      isAiActionLoading.value = false;
+    }
   }
 
   /// Toggle favori optimiste : on bascule l'état localement tout de suite, puis

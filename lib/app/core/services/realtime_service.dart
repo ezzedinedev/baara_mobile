@@ -7,20 +7,23 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import 'auth_token_store.dart';
+import 'realtime_events.dart';
 import '../../features/messaging/domain/entities/message.dart';
-import '../../features/messaging/presentation/controllers/messages_controller.dart';
-import '../../features/notifications/presentation/controllers/notifications_controller.dart';
-import '../../features/community/presentation/controllers/story_controller.dart';
 
 /// Temps réel via Laravel Reverb — client pur-Dart du protocole Pusher
 /// (sur [WebSocketChannel]).
 class RealtimeService extends GetxService {
-  RealtimeService({ApiProvider? apiProvider, AuthTokenStore? tokenStore})
-      : _apiProvider = apiProvider ?? Get.find<ApiProvider>(),
-        _tokenStore = tokenStore ?? const AuthTokenStore();
+  RealtimeService({
+    ApiProvider? apiProvider,
+    AuthTokenStore? tokenStore,
+    RealtimeEventBus? eventBus,
+  })  : _apiProvider = apiProvider ?? Get.find<ApiProvider>(),
+        _tokenStore = tokenStore ?? const AuthTokenStore(),
+        _eventBus = eventBus ?? Get.find<RealtimeEventBus>();
 
   final ApiProvider _apiProvider;
   final AuthTokenStore _tokenStore;
+  final RealtimeEventBus _eventBus;
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _sub;
@@ -76,7 +79,6 @@ class RealtimeService extends GetxService {
     _started = false;
     _reconnectTimer?.cancel();
     _pingTimer?.cancel();
-    _storyReloadDebounce?.cancel();
     await _sub?.cancel();
     await _channel?.sink.close();
     _channel = null;
@@ -229,28 +231,15 @@ class RealtimeService extends GetxService {
     }
   }
 
-  // ── Events → rechargement via controllers existants ──────────────────────
+  // ── Events → bus (controllers UI s'abonnent) ─────────────────────────────
   void _handleMessageEvent(dynamic raw) {
     final data = _decode(raw);
     final convId = data?['conversation_id']?.toString();
-    _withMessages((ctrl) {
-      ctrl.loadConversations();
-      if (convId != null && ctrl.activeConversationId.value == convId) {
-        // Incrémental : parse le payload broadcast et ajoute localement.
-        // Fallback : reload REST complet si le parsing échoue.
-        final msg = _parseMessageFromBroadcast(data);
-        if (msg != null) {
-          final exists = ctrl.activeMessages.any((m) => m.id == msg.id);
-          if (!exists) {
-            ctrl.activeMessages.add(msg);
-            // Nouveau message reçu : propose des réponses suggérées (IA).
-            ctrl.maybeLoadSmartReplies();
-          }
-        } else {
-          ctrl.loadMessages(convId);
-        }
-      }
-    });
+    _eventBus.emit(RealtimeMessageSent(
+      conversationId: convId,
+      message: _parseMessageFromBroadcast(data),
+      raw: data,
+    ));
   }
 
   Message? _parseMessageFromBroadcast(Map<String, dynamic>? data) {
@@ -293,71 +282,53 @@ class RealtimeService extends GetxService {
     final data = _decode(raw);
     if (data == null) return;
     final userId = data['user_id']?.toString();
-    if (userId != null && userId == _userId) return; // mon propre event
+    if (userId != null && userId == _userId) return;
     final convId = data['conversation_id']?.toString();
-    if (convId == null) return;
-    final typing = data['typing'] == true;
-    _withMessages((ctrl) => ctrl.onPeerTyping(convId, userId ?? '', typing));
+    if (convId == null || userId == null) return;
+    _eventBus.emit(RealtimeTyping(
+      conversationId: convId,
+      userId: userId,
+      typing: data['typing'] == true,
+    ));
   }
 
   void _handleMessagesReadEvent(dynamic raw) {
     final data = _decode(raw);
     if (data == null) return;
     final readerId = data['reader_id']?.toString();
-    if (readerId != null && readerId == _userId) return; // ma propre lecture
+    if (readerId != null && readerId == _userId) return;
     final convId = data['conversation_id']?.toString();
     final readAt = DateTime.tryParse(data['read_at']?.toString() ?? '');
-    if (convId == null || readAt == null) return;
-    _withMessages((ctrl) => ctrl.onMessagesRead(convId, readAt));
+    if (convId == null || readAt == null || readerId == null) return;
+    _eventBus.emit(RealtimeMessagesRead(
+      conversationId: convId,
+      readerId: readerId,
+      readAt: readAt,
+    ));
   }
 
   void _handleReactionEvent(dynamic raw) {
     final data = _decode(raw);
     if (data == null) return;
     final userId = data['user_id']?.toString();
-    // Ma réaction est déjà appliquée en optimiste côté controller.
     if (userId != null && userId == _userId) return;
     final messageId = data['message_id']?.toString();
     final emoji = data['emoji']?.toString();
-    if (messageId == null || emoji == null) return;
-    final removed = data['removed'] == true;
-    _withMessages(
-      (ctrl) => ctrl.onMessageReaction(messageId, userId ?? '', emoji, removed),
-    );
+    if (messageId == null || emoji == null || userId == null) return;
+    _eventBus.emit(RealtimeMessageReaction(
+      messageId: messageId,
+      userId: userId,
+      emoji: emoji,
+      removed: data['removed'] == true,
+    ));
   }
 
-  Timer? _storyReloadDebounce;
-
   void _handleStoryEvent() {
-    // Plusieurs stories peuvent arriver en rafale : on regroupe les
-    // rechargements (un seul appel feed après le calme) pour ne pas marteler
-    // le backend ni reconstruire la barre à chaque event.
-    if (!Get.isRegistered<StoryController>()) return;
-    _storyReloadDebounce?.cancel();
-    _storyReloadDebounce = Timer(const Duration(seconds: 2), () {
-      if (Get.isRegistered<StoryController>()) {
-        Get.find<StoryController>().loadStories();
-      }
-    });
+    _eventBus.emit(RealtimeStoryCreated());
   }
 
   void _handleNotificationEvent() {
-    _withNotifications((ctrl) => ctrl.fetchNotifications());
-    // Une notif new_message met l'inbox à jour même si l'utilisateur a coupé
-    // un canal de notif : on rafraîchit aussi la liste des conversations.
-    _withMessages((ctrl) => ctrl.loadConversations());
-  }
-
-  void _withMessages(void Function(MessagesController) action) {
-    if (Get.isRegistered<MessagesController>()) {
-      action(Get.find<MessagesController>());
-    }
-  }
-
-  void _withNotifications(void Function(NotificationsController) action) {
-    if (Get.isRegistered<NotificationsController>()) {
-      action(Get.find<NotificationsController>());
-    }
+    _eventBus.emit(RealtimeNotificationCreated());
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

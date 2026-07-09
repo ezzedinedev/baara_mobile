@@ -68,6 +68,12 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                         RevealOnMount(
                           delay: AppMotion.stagger * 2,
                           offsetY: 16,
+                          child: _buildAiOfferActions(offer),
+                        ),
+                        const SizedBox(height: AppSpacing.xxl),
+                        RevealOnMount(
+                          delay: AppMotion.stagger * 3,
+                          offsetY: 16,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -85,7 +91,7 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                         if (offer.requiredSkills.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.xxl),
                           RevealOnMount(
-                            delay: AppMotion.stagger * 3,
+                            delay: AppMotion.stagger * 4,
                             offsetY: 16,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,6 +355,142 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
     );
   }
 
+  Widget _buildAiOfferActions(Offer offer) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceCard,
+        shape: AppShapes.cardBordered(
+          AppColors.primaryAccent.withValues(alpha: 0.18),
+        ),
+        shadows: AppColors.lightShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  color: AppColors.primaryAccent.withValues(alpha: 0.12),
+                  shape: AppShapes.squircle(AppRadius.xs),
+                ),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 18,
+                  color: AppColors.primaryAccent,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'Assistant candidature',
+                  style: AppTextStyles.titleLg.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Obx(
+                () => controller.isAiActionLoading.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _AiActionChip(
+                icon: IconlyLight.document,
+                label: 'Adapter CV',
+                onTap: () async {
+                  final data = await controller.adaptCv();
+                  if (data != null) _showAiResult('CV adapté', data);
+                },
+              ),
+              _AiActionChip(
+                icon: IconlyLight.paper,
+                label: 'Lettre IA',
+                onTap: () async {
+                  final letter = await controller.generateCoverLetter();
+                  if (letter != null) {
+                    _showTextResult('Lettre de motivation', letter.fullText);
+                  }
+                },
+              ),
+              _AiActionChip(
+                icon: IconlyLight.send,
+                label: 'Adapter + postuler',
+                onTap: controller.adaptCvAndApply,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTextResult(String title, String text) {
+    _showResultSheet(
+      title: title,
+      child: SelectableText(
+        text.trim().isEmpty ? 'Aucun contenu renvoyé.' : text.trim(),
+        style: AppTextStyles.bodyMd.copyWith(
+          color: AppColors.bodyColor,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  void _showAiResult(String title, Map<String, dynamic> data) {
+    final text = data.entries
+        .map((entry) => '${entry.key}: ${entry.value}')
+        .join('\n\n')
+        .trim();
+    _showTextResult(title, text);
+  }
+
+  void _showResultSheet({required String title, required Widget child}) {
+    Get.bottomSheet<void>(
+      SafeArea(
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 560),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style:
+                    AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              Flexible(child: SingleChildScrollView(child: child)),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
@@ -413,7 +555,11 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                   trailing: applied
                       ? IconlyBold.tick_square
                       : IconlyLight.arrow_right_2,
-                  onPressed: applied ? null : () => controller.apply(),
+                  onPressed: applied
+                      ? null
+                      : () => _applyWithOptionalScreening(
+                            controller.offer.value,
+                          ),
                 );
               }),
             ),
@@ -421,6 +567,119 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
         ),
       ),
     );
+  }
+
+  void _applyWithOptionalScreening(Offer? offer) {
+    if (offer == null) return;
+    if (!offer.hasScreeningQuestions) {
+      controller.apply();
+      return;
+    }
+    final formKey = GlobalKey<FormState>();
+    final answers = <String, dynamic>{};
+    final textControllers = <String, TextEditingController>{
+      for (final q in offer.screeningQuestions)
+        if (q.options.isEmpty) q.id: TextEditingController(),
+    };
+
+    Get.bottomSheet<void>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SheetHandle(),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Questions de présélection',
+                    style: AppTextStyles.titleLg.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Répondez aux questions demandées par le recruteur avant de postuler.',
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.bodyColor,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  for (final question in offer.screeningQuestions) ...[
+                    if (question.options.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          labelText: question.label,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                AppShapes.squircleRadius(AppRadius.md),
+                          ),
+                        ),
+                        items: question.options
+                            .map((option) => DropdownMenuItem(
+                                  value: option,
+                                  child: Text(option),
+                                ))
+                            .toList(),
+                        validator: (value) => question.required &&
+                                (value == null || value.trim().isEmpty)
+                            ? 'Réponse requise'
+                            : null,
+                        onChanged: (value) => answers[question.id] = value,
+                      )
+                    else
+                      TextFormField(
+                        controller: textControllers[question.id],
+                        minLines: question.type == 'textarea' ? 3 : 1,
+                        maxLines: question.type == 'textarea' ? 5 : 1,
+                        decoration: InputDecoration(
+                          labelText: question.label,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                AppShapes.squircleRadius(AppRadius.md),
+                          ),
+                        ),
+                        validator: (value) => question.required &&
+                                (value == null || value.trim().isEmpty)
+                            ? 'Réponse requise'
+                            : null,
+                      ),
+                    const SizedBox(height: 14),
+                  ],
+                  AuthCtaButton(
+                    label: 'Envoyer ma candidature',
+                    trailing: IconlyLight.send,
+                    onPressed: () {
+                      if (formKey.currentState?.validate() != true) return;
+                      for (final entry in textControllers.entries) {
+                        final value = entry.value.text.trim();
+                        if (value.isNotEmpty) answers[entry.key] = value;
+                      }
+                      Get.back<void>();
+                      controller.apply(screeningAnswers: answers);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    ).whenComplete(() {
+      for (final c in textControllers.values) {
+        c.dispose();
+      }
+    });
   }
 }
 
@@ -500,6 +759,50 @@ class _InfoPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AiActionChip extends StatelessWidget {
+  const _AiActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        AppHaptics.tap();
+        onTap();
+      },
+      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: ShapeDecoration(
+          color: AppColors.primaryAccent.withValues(alpha: 0.10),
+          shape: AppShapes.squircle(AppRadius.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: AppColors.primaryAccent),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: AppTextStyles.labelMd.copyWith(
+                color: AppColors.primaryAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

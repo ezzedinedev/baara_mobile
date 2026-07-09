@@ -66,7 +66,19 @@ const Map<String, String> _fr = {
 
   // ── Greeting / accueil ────────────────────────────────────
   'home.greeting': 'Bonjour 👋',
+  'home.greeting_morning': 'Bonjour',
+  'home.greeting_afternoon': 'Bon après-midi',
+  'home.greeting_evening': 'Bonsoir',
   'home.greeting_fallback': 'bienvenue',
+  'home.welcome': 'Bienvenue',
+  'home.for_you': 'Pour toi',
+  'home.suggestions_unavailable':
+      'Suggestions indisponibles pour le moment.',
+  'home.quick_applications': 'Candidatures',
+  'home.quick_applications_caption': 'Suivre mes envois',
+  'home.quick_cv': 'Mon CV',
+  'home.quick_documents': 'Documents',
+  'home.quick_portfolio': 'Portfolio',
   'home.hero_badge': 'POUR VOUS',
   'home.hero_title': 'Trouvez votre\nprochaine opportunité',
   'home.hero_cta': 'Explorer les offres',
@@ -273,7 +285,18 @@ const Map<String, String> _en = {
 
   // ── Greeting / home ───────────────────────────────────────
   'home.greeting': 'Hello 👋',
+  'home.greeting_morning': 'Good morning',
+  'home.greeting_afternoon': 'Good afternoon',
+  'home.greeting_evening': 'Good evening',
   'home.greeting_fallback': 'welcome',
+  'home.welcome': 'Welcome',
+  'home.for_you': 'For you',
+  'home.suggestions_unavailable': 'Suggestions unavailable right now.',
+  'home.quick_applications': 'Applications',
+  'home.quick_applications_caption': 'Track my submissions',
+  'home.quick_cv': 'My resume',
+  'home.quick_documents': 'Documents',
+  'home.quick_portfolio': 'Portfolio',
   'home.hero_badge': 'FOR YOU',
   'home.hero_title': 'Find your\nnext opportunity',
   'home.hero_cta': 'Browse jobs',

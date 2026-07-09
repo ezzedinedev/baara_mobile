@@ -20,5 +20,9 @@ abstract class IProfileRepository {
   /// 'public' | 'connections'. Retourne le profil mis à jour.
   Future<Profile> setProfileVisibility(String visibility);
 
+  Future<List<Map<String, dynamic>>> getCertificates();
+
   Future<void> logout();
+
+  Future<void> logoutAll();
 }

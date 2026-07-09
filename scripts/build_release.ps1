@@ -62,6 +62,19 @@ if ($Flavor) { $flavorArgs = @('--flavor', $Flavor) }
 
 $common = @('--release', '--obfuscate', "--split-debug-info=$symbolsDir") + $flavorArgs
 
+# Secrets prod : définir REVERB_APP_KEY (et optionnellement API_BASE_URL) via
+# dart_defines.json à la racine du projet, ou variables d'environnement.
+$dartDefineArgs = @()
+$definesFile = Join-Path $ProjectRoot 'dart_defines.json'
+if (Test-Path $definesFile) {
+    Write-Host "Using dart_defines.json for --dart-define-from-file" -ForegroundColor Cyan
+    $dartDefineArgs = @('--dart-define-from-file', $definesFile)
+} elseif ($env:REVERB_APP_KEY) {
+    $dartDefineArgs = @("--dart-define=REVERB_APP_KEY=$($env:REVERB_APP_KEY)")
+}
+
+$common = $common + $dartDefineArgs
+
 foreach ($target in $Targets) {
     Write-Host "`n--> flutter build $target $($common -join ' ')" -ForegroundColor Yellow
     & flutter build $target @common
