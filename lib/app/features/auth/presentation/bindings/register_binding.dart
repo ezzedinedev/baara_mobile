@@ -9,6 +9,10 @@ class RegisterBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<IAuthRepository>(
         () => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
-    Get.lazyPut(() => RegisterController(Get.find<IAuthRepository>()));
+    // fenix: recrée le controller après un dispose (Get.offAllNamed vers l'OTP),
+    // sinon les TextEditingController réutilisés déclenchent « used after being
+    // disposed » si l'on revient sur l'inscription.
+    Get.lazyPut(() => RegisterController(Get.find<IAuthRepository>()),
+        fenix: true);
   }
 }

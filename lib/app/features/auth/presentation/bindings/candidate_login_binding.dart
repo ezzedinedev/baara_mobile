@@ -9,6 +9,11 @@ class CandidateLoginBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<IAuthRepository>(
         () => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
-    Get.lazyPut(() => CandidateLoginController(Get.find<IAuthRepository>()));
+    // fenix: recrée une instance fraîche si le controller a été disposé par un
+    // Get.offAllNamed (OTP / mot de passe oublié → connexion). Sans ça, l'ancien
+    // controller disposé était réutilisé → « TextEditingController used after
+    // being disposed » sur les champs.
+    Get.lazyPut(() => CandidateLoginController(Get.find<IAuthRepository>()),
+        fenix: true);
   }
 }

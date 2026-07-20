@@ -10,6 +10,9 @@ class ForgotPasswordBinding extends Bindings {
     Get.lazyPut<IAuthRepository>(
       () => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()),
     );
-    Get.lazyPut(() => ForgotPasswordController(Get.find<IAuthRepository>()));
+    // fenix: recrée le controller après un dispose (Get.offAllNamed), sinon les
+    // TextEditingController réutilisés déclenchent « used after being disposed ».
+    Get.lazyPut(() => ForgotPasswordController(Get.find<IAuthRepository>()),
+        fenix: true);
   }
 }
