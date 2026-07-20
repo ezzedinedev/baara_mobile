@@ -1,11 +1,13 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:opportune_bf/app/features/trainings/domain/entities/training.dart';
-import 'package:opportune_bf/app/features/trainings/domain/repositories/i_training_repository.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/controllers/trainings_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:jobaway/app/features/trainings/domain/entities/enrolled_training.dart';
+import 'package:jobaway/app/features/trainings/domain/entities/training.dart';
+import 'package:jobaway/app/features/trainings/domain/repositories/i_training_repository.dart';
+import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
 
 class _FakeTrainingRepository implements ITrainingRepository {
   Object? errorOnLoad;
   List<Training> trainings = [];
+  List<EnrolledTraining> enrolled = [];
 
   @override
   Future<List<Training>> getTrainings({int page = 1}) async {
@@ -14,10 +16,18 @@ class _FakeTrainingRepository implements ITrainingRepository {
   }
 
   @override
+  Future<List<EnrolledTraining>> getEnrolledTrainings({int page = 1}) async =>
+      enrolled;
+
+  @override
   Future<Training?> getTrainingById(String id) async => null;
 
   @override
-  Future<bool> enrollInTraining(String trainingId) async => true;
+  Future<bool> enrollInTraining(
+    String trainingId, {
+    Map<String, dynamic>? applicationData,
+  }) async =>
+      true;
 
   @override
   Future<bool> updateProgress(
@@ -31,6 +41,7 @@ class _FakeTrainingRepository implements ITrainingRepository {
     String trainingId, {
     required String provider,
     required String phone,
+    Map<String, dynamic>? applicationData,
   }) async =>
       (success: true, message: null);
 

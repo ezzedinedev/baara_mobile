@@ -1,15 +1,17 @@
+﻿import 'dart:math' as math;
+
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 
 class MatchCelebrationScreen extends StatefulWidget {
   const MatchCelebrationScreen({super.key});
@@ -91,155 +93,184 @@ class _MatchCelebrationScreenState extends State<MatchCelebrationScreen>
                 ),
               ),
             ),
+            // Trois émetteurs : une pluie depuis chaque coin haut, dirigée vers
+            // l'intérieur, plus un burst explosif calé sur le badge. Un unique
+            // émetteur `topCenter` explosif envoyait la moitié des particules
+            // hors cadre, au-dessus de l'écran.
             Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                shouldLoop: false,
-                colors: const [
-                  AppColors.onPrimary,
-                  AppColors.celebrationGold,
-                  AppColors.secondary,
-                  AppColors.celebrationGreen,
-                ],
-                numberOfParticles: 30,
-                maxBlastForce: 20,
-                minBlastForce: 5,
-                gravity: 0.15,
+              alignment: Alignment.topLeft,
+              child: _MatchConfetti(
+                controller: _confettiController,
+                blastDirection: math.pi / 3,
+                particles: 18,
+              ),
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: _MatchConfetti(
+                controller: _confettiController,
+                blastDirection: 2 * math.pi / 3,
+                particles: 18,
+              ),
+            ),
+            Align(
+              alignment: const Alignment(0, -0.42),
+              child: _MatchConfetti(
+                controller: _confettiController,
+                particles: 24,
               ),
             ),
             SafeArea(
               child: Center(
-                child: SlideTransition(
-                  position: _contentSlide,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ScaleTransition(
-                        scale: _badgePop,
-                        child: ScaleTransition(
-                          scale: _pulseAnim,
-                          child: Container(
-                            width: 124,
-                            height: 124,
-                            decoration: BoxDecoration(
-                              color:
-                                  AppColors.onPrimary.withValues(alpha: 0.18),
-                              shape: BoxShape.circle,
-                              border: Border.all(
+                // Scrollable : à fort `textScaleFactor` la colonne dépasse la
+                // hauteur d'un petit écran et déclenche un RenderFlex overflow.
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: SlideTransition(
+                    position: _contentSlide,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ScaleTransition(
+                          scale: _badgePop,
+                          child: ScaleTransition(
+                            scale: _pulseAnim,
+                            child: Container(
+                              width: 124,
+                              height: 124,
+                              decoration: BoxDecoration(
                                 color:
-                                    AppColors.onPrimary.withValues(alpha: 0.28),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
+                                    AppColors.onPrimary.withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                                border: Border.all(
                                   color: AppColors.onPrimary
-                                      .withValues(alpha: 0.22),
-                                  blurRadius: 36,
-                                  spreadRadius: 4,
+                                      .withValues(alpha: 0.28),
+                                  width: 2,
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.auto_awesome_rounded,
-                              color: AppColors.onPrimary,
-                              size: 60,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxl + AppSpacing.sm),
-                      Text(
-                        'VOUS AVEZ MATCHÉ !',
-                        style: AppTextStyles.headlineLg.copyWith(
-                          color: AppColors.onPrimary,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xxl,
-                            vertical: AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: AppColors.onPrimary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(
-                            color: AppColors.onPrimary.withValues(alpha: 0.24),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(IconlyBold.heart,
-                                color: AppColors.onPrimary, size: 22),
-                            const SizedBox(width: 8),
-                            Text(
-                              '$score% de correspondance',
-                              style: AppTextStyles.titleLg.copyWith(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.onPrimary
+                                        .withValues(alpha: 0.22),
+                                    blurRadius: 36,
+                                    spreadRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.auto_awesome_rounded,
                                 color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
+                                size: 60,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          title,
-                          style: AppTextStyles.headlineMd.copyWith(
+                        const SizedBox(height: AppSpacing.xxl + AppSpacing.sm),
+                        Text(
+                          'VOUS AVEZ MATCHÉ !',
+                          style: AppTextStyles.headlineLg.copyWith(
                             color: AppColors.onPrimary,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
                           ),
                           textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        company,
-                        style: AppTextStyles.titleMd.copyWith(
-                          color: AppColors.onPrimary.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 48),
-                      SizedBox(
-                        width: 240,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            AppHaptics.tap();
-                            Get.offNamedUntil('/accueil', (_) => true);
-                          },
-                          icon: const Icon(IconlyLight.arrow_right_2, size: 20),
-                          label: Text(
-                            'Continuer',
-                            style: AppTextStyles.buttonLg.copyWith(
-                              color: AppColors.primaryAccent,
-                              fontWeight: FontWeight.w800,
+                        const SizedBox(height: 12),
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xl),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xxl,
+                              vertical: AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.onPrimary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                              color:
+                                  AppColors.onPrimary.withValues(alpha: 0.24),
                             ),
                           ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.onPrimary,
-                            foregroundColor: AppColors.primaryAccent,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.lg),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  AppShapes.squircleRadius(AppRadius.md),
-                            ),
-                            elevation: 6,
-                            shadowColor:
-                                AppColors.onDark.withValues(alpha: 0.25),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(IconlyBold.heart,
+                                  color: AppColors.onPrimary, size: 22),
+                              const SizedBox(width: 8),
+                              // Flexible : sans lui le Text prend sa largeur
+                              // intrinsèque et la pastille déborde de l'écran dès
+                              // que la police grossit (réglage d'accessibilité).
+                              Flexible(
+                                child: Text(
+                                  '$score% de correspondance',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.titleLg.copyWith(
+                                    color: AppColors.onPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            title,
+                            style: AppTextStyles.headlineMd.copyWith(
+                              color: AppColors.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          company,
+                          style: AppTextStyles.titleMd.copyWith(
+                            color: AppColors.onPrimary.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                        SizedBox(
+                          width: 240,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              AppHaptics.tap();
+                              // Retour à l'écran d'origine (deck d'accueil ou
+                              // détail de l'offre). L'ancien
+                              // `offNamedUntil('/accueil', (_) => true)` ne
+                              // retirait aucune route — la célébration restait
+                              // sous l'accueil et réapparaissait au retour.
+                              Get.back<void>();
+                            },
+                            icon:
+                                const Icon(IconlyLight.arrow_right_2, size: 20),
+                            label: Text(
+                              'Continuer',
+                              style: AppTextStyles.buttonLg.copyWith(
+                                color: AppColors.primaryAccent,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.onPrimary,
+                              foregroundColor: AppColors.primaryAccent,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.lg),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    AppShapes.squircleRadius(AppRadius.md),
+                              ),
+                              elevation: 6,
+                              shadowColor:
+                                  AppColors.onDark.withValues(alpha: 0.25),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -247,6 +278,40 @@ class _MatchCelebrationScreenState extends State<MatchCelebrationScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Un émetteur de confetti de l'écran de match. [blastDirection] est en radians
+/// (0 = vers la droite, pi/2 = vers le bas) ; s'il est nul le blast est
+/// explosif (omnidirectionnel). Les émetteurs partagent le même
+/// [ConfettiController].
+class _MatchConfetti extends StatelessWidget {
+  const _MatchConfetti({
+    required this.controller,
+    required this.particles,
+    this.blastDirection,
+  });
+
+  final ConfettiController controller;
+  final int particles;
+  final double? blastDirection;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConfettiWidget(
+      confettiController: controller,
+      blastDirectionality: blastDirection == null
+          ? BlastDirectionality.explosive
+          : BlastDirectionality.directional,
+      blastDirection: blastDirection ?? 0,
+      shouldLoop: false,
+      colors: AppColors.celebrationOnBrandConfetti,
+      numberOfParticles: particles,
+      maxBlastForce: 22,
+      minBlastForce: 8,
+      gravity: 0.18,
+      emissionFrequency: 0.04,
     );
   }
 }

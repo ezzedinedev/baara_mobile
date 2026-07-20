@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,15 +6,16 @@ import 'package:iconly/iconly.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 import '../../domain/entities/message.dart';
 import '../controllers/messages_controller.dart';
+import 'chat_structured_actions.dart';
 import 'voice_message_player.dart';
 
 class ChatMessageBubble extends StatelessWidget {
@@ -23,12 +24,21 @@ class ChatMessageBubble extends StatelessWidget {
   final bool isRead;
   final ValueChanged<String> onReact;
 
+  /// Rejoue une action d'un message structuré (invitation d'entretien, report,
+  /// offre d'emploi). `null` masque les boutons.
+  final ValueChanged<MessageAction>? onStructuredAction;
+
+  /// Une action est en vol : les boutons se grisent le temps de l'aller-retour.
+  final bool isRespondingToActions;
+
   const ChatMessageBubble({
     super.key,
     required this.message,
     required this.showAvatar,
     required this.isRead,
     required this.onReact,
+    this.onStructuredAction,
+    this.isRespondingToActions = false,
   });
 
   @override
@@ -110,6 +120,17 @@ class ChatMessageBubble extends StatelessWidget {
                             ],
                           ],
                         ),
+                        // Invitation d'entretien, report, offre d'emploi : le
+                        // backend joint les actions, on les rend en boutons.
+                        if (message.hasActions && onStructuredAction != null)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ChatStructuredActions(
+                              message: message,
+                              isBusy: isRespondingToActions,
+                              onAction: onStructuredAction!,
+                            ),
+                          ),
                       ],
                     ),
                   ),

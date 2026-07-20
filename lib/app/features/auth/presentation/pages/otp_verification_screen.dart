@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../controllers/otp_verification_controller.dart';
 
 class OtpVerificationScreen extends GetView<OtpVerificationController> {
@@ -43,9 +43,9 @@ class OtpVerificationScreen extends GetView<OtpVerificationController> {
                   RevealOnMount(
                     delay: const Duration(milliseconds: 60),
                     child: Text(
-                      controller.phone.isNotEmpty
-                          ? 'Code à 6 chiffres envoyé au ${controller.phone}.'
-                          : 'Code à 6 chiffres reçu par SMS.',
+                      controller.codeDestination.isNotEmpty
+                          ? 'Code à 6 chiffres envoyé à ${controller.codeDestination}.'
+                          : 'Code à 6 chiffres reçu par email.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.bodyColor,

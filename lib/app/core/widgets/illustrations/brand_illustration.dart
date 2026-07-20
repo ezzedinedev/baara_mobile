@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 
-/// Langage commun des illustrations de marque OpporTune (2026).
+/// Langage commun des illustrations de marque JobAway (2026).
 ///
 /// Toutes les scènes partagent :
 /// - un **blob** de fond doux dérivé du mesh de marque,

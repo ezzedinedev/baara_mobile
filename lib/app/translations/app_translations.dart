@@ -1,4 +1,4 @@
-import 'dart:ui' show Locale;
+﻿import 'dart:ui' show Locale;
 
 import 'package:get/get.dart';
 
@@ -161,7 +161,7 @@ const Map<String, String> _fr = {
   'messages.online': 'En ligne',
   'messages.offline': 'Hors ligne',
   'messages.encryption_notice':
-      'Vos échanges sont chiffrés de bout en bout. Personne en dehors de cette conversation, pas même OpporTune, ne peut les lire.',
+      'Vos échanges sont chiffrés de bout en bout. Personne en dehors de cette conversation, pas même JobAway, ne peut les lire.',
   'messages.section.today': "Aujourd'hui",
   'messages.section.yesterday': 'Hier',
   'messages.section.this_week': 'Cette semaine',
@@ -375,7 +375,7 @@ const Map<String, String> _en = {
   'messages.online': 'Online',
   'messages.offline': 'Offline',
   'messages.encryption_notice':
-      'Your messages are end-to-end encrypted. No one outside this conversation, not even OpporTune, can read them.',
+      'Your messages are end-to-end encrypted. No one outside this conversation, not even JobAway, can read them.',
   'messages.section.today': 'Today',
   'messages.section.yesterday': 'Yesterday',
   'messages.section.this_week': 'This week',

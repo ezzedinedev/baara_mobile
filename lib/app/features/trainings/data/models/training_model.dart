@@ -1,4 +1,4 @@
-import 'package:opportune_bf/app/core/utils/asset_url.dart';
+﻿import 'package:jobaway/app/core/utils/asset_url.dart';
 import '../../domain/entities/training.dart';
 
 class TrainingModel extends Training {
@@ -30,6 +30,8 @@ class TrainingModel extends Training {
     required super.isBookmarked,
     required super.isEnrolled,
     required super.coverUrl,
+    super.enrollmentFormRequired,
+    super.formFields,
   });
 
   factory TrainingModel.fromJson(Map<String, dynamic> json) {
@@ -61,12 +63,31 @@ class TrainingModel extends Training {
       isBookmarked: json['is_bookmarked'] ?? false,
       isEnrolled: json['is_enrolled'] ?? false,
       coverUrl: _resolveCoverUrl(json),
+      enrollmentFormRequired: json['enrollment_form_required'] == true,
+      formFields: _parseFormFields(json['form_fields']),
     );
   }
 
+  static List<TrainingFormField> _parseFormFields(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .toList()
+        .asMap()
+        .entries
+        .map((e) => TrainingFormField.fromJson(
+              Map<String, dynamic>.from(e.value),
+              e.key,
+            ))
+        .toList(growable: false);
+  }
+
   static String _resolveCoverUrl(Map<String, dynamic> json) {
-    final raw = (json['image_path'] ??
-            json['image_url'] ??
+    // `image_url` d'abord : le backend le résout entièrement (image réelle, ou
+    // illustration de repli comme sur le web). `image_path` est le chemin brut
+    // en base, souvent vide — s'y fier en premier laissait la carte sans visuel.
+    final raw = (json['image_url'] ??
+            json['image_path'] ??
             json['cover_url'] ??
             json['cover'] ??
             json['banner_url'] ??
@@ -200,6 +221,7 @@ class TrainingModuleModel extends TrainingModule {
     super.imageUrl,
     super.textContent,
     super.resourceUrl,
+    super.quizCount,
   });
 
   factory TrainingModuleModel.fromJson(Map<String, dynamic> json) {
@@ -272,6 +294,7 @@ class TrainingModuleModel extends TrainingModule {
       imageUrl: resolveAssetUrl(imageUrl),
       textContent: textContent,
       resourceUrl: resolveAssetUrl(resourceUrl),
+      quizCount: _moduleInt(json, const ['quizzes_count']),
     );
   }
 

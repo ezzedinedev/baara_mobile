@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/services/auth_token_store.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/services/auth_token_store.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 class SplashController extends GetxController {
   SplashController(this._tokenStore);

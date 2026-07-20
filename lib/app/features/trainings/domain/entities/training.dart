@@ -27,6 +27,13 @@ class Training {
   final bool isEnrolled;
   final String coverUrl;
 
+  /// Le formateur exige un dossier d'inscription (motivation + son
+  /// questionnaire) avant toute inscription — gratuite ou payante.
+  final bool enrollmentFormRequired;
+
+  /// Questions libres définies par le formateur (`form_fields`).
+  final List<TrainingFormField> formFields;
+
   const Training({
     required this.id,
     required this.title,
@@ -55,7 +62,42 @@ class Training {
     required this.isBookmarked,
     required this.isEnrolled,
     required this.coverUrl,
+    this.enrollmentFormRequired = false,
+    this.formFields = const [],
   });
+}
+
+/// Question libre du questionnaire d'inscription, telle que définie par le
+/// formateur côté web (`form_fields` : libellé, type, obligatoire, options).
+class TrainingFormField {
+  const TrainingFormField({
+    required this.label,
+    this.type = 'text',
+    this.required = false,
+    this.options = const [],
+  });
+
+  factory TrainingFormField.fromJson(Map<String, dynamic> json, int index) {
+    final rawOptions = json['options'];
+    return TrainingFormField(
+      label: (json['label'] ?? 'Champ ${index + 1}').toString(),
+      type: (json['type'] ?? 'text').toString(),
+      required: json['required'] == true,
+      options: rawOptions is List
+          ? rawOptions.map((o) => o.toString()).toList(growable: false)
+          : const [],
+    );
+  }
+
+  final String label;
+
+  /// `text` | `textarea` | `select`.
+  final String type;
+  final bool required;
+  final List<String> options;
+
+  bool get isTextarea => type == 'textarea';
+  bool get isSelect => type == 'select' && options.isNotEmpty;
 }
 
 /// Type de contenu d'une leçon (module). Mappé depuis `content_type` côté
@@ -91,6 +133,11 @@ class TrainingModule {
   /// Lien externe / ressource complémentaire.
   final String resourceUrl;
 
+  /// Nombre de quiz actifs rattachés au module (`quizzes_count`). L'épreuve
+  /// elle-même n'est jamais servie avec la formation : elle passe par
+  /// l'endpoint quiz, seul habilité à tirer les questions.
+  final int quizCount;
+
   const TrainingModule({
     required this.id,
     required this.title,
@@ -104,7 +151,10 @@ class TrainingModule {
     this.imageUrl = '',
     this.textContent = '',
     this.resourceUrl = '',
+    this.quizCount = 0,
   });
+
+  bool get hasQuiz => quizCount > 0;
 
   bool get isVideo => contentType == LessonContentType.video;
   bool get isPdf => contentType == LessonContentType.pdf;

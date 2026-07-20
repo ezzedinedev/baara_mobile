@@ -1,11 +1,12 @@
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
 import '../../domain/entities/apply_result.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
 import '../../domain/entities/sector_option.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 import '../models/offer_model.dart';
+import '../../domain/exceptions/missing_skills_exception.dart';
 import '../models/application_model.dart';
 import '../models/upcoming_interview_model.dart';
 import '../models/interview_detail_model.dart';
@@ -70,6 +71,10 @@ class OfferRepositoryImpl implements IOfferRepository {
       if (isRemote == true) 'is_remote': '1',
       if (salaryMin != null && salaryMin > 0) 'salary_min': '$salaryMin',
       if (sort != null && sort.isNotEmpty) 'sort': sort,
+      // Demande le score de compatibilité pour chaque offre de la page. Sans ce
+      // drapeau, le backend sert la liste mise en cache, sans `match_score` :
+      // les cartes du swipe affichaient alors 0 % pour tout le monde.
+      'match': '1',
     };
     final query = params.entries
         .map((e) =>
@@ -225,6 +230,18 @@ class OfferRepositoryImpl implements IOfferRepository {
       final score = (match?['score'] as num?)?.toInt() ?? 0;
       return ApplyResult(application: app, isMatch: isMatch, score: score);
     }
+
+    // Refus spécifique : le CV n'a aucune compétence, la candidature serait
+    // écartée automatiquement. On le remonte typé pour que l'écran propose
+    // d'aller compléter le CV, au lieu d'afficher une erreur de plus.
+    final data = response['data'];
+    if (data is Map && data['requires_skills'] == true) {
+      throw MissingSkillsException(
+        response['message']?.toString() ??
+            'Ajoutez vos compétences à votre CV avant de postuler.',
+      );
+    }
+
     throw Exception(response['message'] ?? 'Failed to apply');
   }
 

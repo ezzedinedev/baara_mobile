@@ -1,21 +1,22 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/utils/map_navigation.dart';
-import 'package:opportune_bf/app/core/utils/relative_time.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/utils/map_navigation.dart';
+import 'package:jobaway/app/core/utils/relative_time.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 import '../../../community/domain/entities/profile_viewer.dart';
 import '../../../offers/data/models/application_model.dart';
+import '../../../offers/data/models/interview_detail_model.dart';
 import '../../../offers/data/models/upcoming_interview_model.dart';
 import '../../../offers/domain/entities/matched_offer.dart';
 import '../../../offers/domain/entities/offer.dart';
@@ -495,6 +496,14 @@ class _MatchMiniCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Onglet 4 — Entretiens
 // ─────────────────────────────────────────────────────────────────────────────
+/// Deux sources coexistent côté backend et l'onglet n'en lisait qu'une :
+/// - `interviews` : les vraies convocations (table `interviews`), y compris
+///   celles en attente de réponse — c'est là que vit la fonctionnalité ;
+/// - `upcomingInterviews` : une vue dérivée des candidatures
+///   (`status = interview` + date posée), utile pour l'itinéraire et le .ics.
+///
+/// L'onglet n'affichait que la seconde, donc il restait vide tant qu'un
+/// recruteur n'avait pas basculé la candidature à la main. On affiche les deux.
 class _InterviewsTab extends StatelessWidget {
   const _InterviewsTab({required this.suivi});
   final SuiviController suivi;
@@ -503,11 +512,13 @@ class _InterviewsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final apps = suivi.applications;
     return Obx(() {
-      if (apps.isLoading.value && apps.upcomingInterviews.isEmpty) {
+      final invitations = apps.interviews.toList();
+      final upcoming = apps.upcomingInterviews.toList();
+
+      if (apps.isLoading.value && invitations.isEmpty && upcoming.isEmpty) {
         return const _SuiviSkeleton(kind: _SkKind.interview);
       }
-      final items = apps.upcomingInterviews.toList();
-      if (items.isEmpty) {
+      if (invitations.isEmpty && upcoming.isEmpty) {
         return _EmptyTab(
           illustration: const EmptyApplicationsIllustration(),
           title: 'Pas d\'entretiens en attente',
@@ -516,11 +527,113 @@ class _InterviewsTab extends StatelessWidget {
           onRefresh: apps.load,
         );
       }
+
+      // Une convocation déjà datée apparaît dans les deux listes : on ne garde
+      // sa carte « à venir » (itinéraire, calendrier) que si elle n'est pas
+      // déjà présente comme invitation.
+      final invitedApplicationIds =
+          invitations.map((i) => i.applicationId).whereType<String>().toSet();
+      final extraUpcoming = upcoming
+          .where((u) => !invitedApplicationIds.contains(u.applicationId))
+          .toList();
+
       return _RefreshList(
         onRefresh: apps.load,
-        children: [for (final i in items) _InterviewMiniCard(item: i)],
+        children: [
+          for (final i in invitations) _InterviewInvitationCard(item: i),
+          for (final i in extraUpcoming) _InterviewMiniCard(item: i),
+        ],
       );
     });
+  }
+}
+
+/// Convocation issue de la table `interviews` : statut, date, modalité, et
+/// renvoi vers « Mes candidatures » quand une réponse est attendue (c'est là que
+/// vivent les actions accepter / proposer une autre date).
+class _InterviewInvitationCard extends StatelessWidget {
+  const _InterviewInvitationCard({required this.item});
+  final InterviewDetailModel item;
+
+  @override
+  Widget build(BuildContext context) {
+    final when = item.scheduledAt != null ? _formatDate(item.scheduledAt!) : null;
+
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        Get.toNamed<void>(AppRoutes.myApplications);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: ShapeDecoration(
+          color: AppColors.warningSoft,
+          shape: AppShapes.squircle(AppRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.offer?.title ?? 'Entretien',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.titleMd.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.titleColor,
+                    ),
+                  ),
+                ),
+                StatusPill(
+                  label: item.statusLabel,
+                  color: AppColors.warningAccent,
+                ),
+              ],
+            ),
+            if ((item.offer?.companyName ?? '').isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                item.offer!.companyName!,
+                style: AppTextStyles.bodySm
+                    .copyWith(color: AppColors.primaryAccent),
+              ),
+            ],
+            if (when != null || item.typeLabel != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Icon(IconlyLight.calendar,
+                      size: 14, color: AppColors.hintColor),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      [when, item.typeLabel].whereType<String>().join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.bodyColor),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (item.canRespond) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Réponse attendue — appuyez pour répondre',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.warningAccent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

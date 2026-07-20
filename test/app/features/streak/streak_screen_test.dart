@@ -1,9 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
-import 'package:opportune_bf/app/features/streak/presentation/pages/streak_screen.dart';
+import 'package:jobaway/app/features/streak/presentation/controllers/streak_controller.dart';
+import 'package:jobaway/app/features/streak/presentation/pages/streak_screen.dart';
 
 void main() {
   testWidgets('StreakScreen builds without throwing', (tester) async {

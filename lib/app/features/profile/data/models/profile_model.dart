@@ -32,6 +32,7 @@ class ProfileModel extends Profile {
     super.themePref,
     super.languagePref,
     super.profileVisibility,
+    super.isEmailVerified,
   });
 
   /// Clés des canaux de notification renvoyées par le backend.
@@ -69,6 +70,7 @@ class ProfileModel extends Profile {
       firstName: user['first_name'] ?? '',
       lastName: user['last_name'] ?? '',
       email: user['email'] ?? '',
+      isEmailVerified: user['is_email_verified'] == true,
       phone: user['phone'] ?? '',
       country: user['country'] ?? user['region'] ?? '',
       city: user['city'] ?? '',

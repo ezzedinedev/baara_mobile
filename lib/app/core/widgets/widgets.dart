@@ -1,9 +1,10 @@
-// Centralized widget exports for easier imports and scalability
+﻿// Centralized widget exports for easier imports and scalability
 export 'gradient_button.dart';
 export 'google_logo_asset.dart';
 export 'input_field.dart';
 export 'labeled_input.dart';
-export 'opportune_logo.dart';
+export 'jobaway_logo.dart';
+export 'jobaway_mark.dart';
 export 'common/app_card.dart';
 export 'common/auth_header.dart';
 export 'common/filter_sheet.dart';
@@ -18,6 +19,8 @@ export 'common/status_pill.dart';
 export 'common/score_ring.dart';
 export 'auth/wavy_auth_header.dart';
 export 'auth/auth_text_field.dart';
+export 'auth/auth_phone_field.dart';
+export 'auth/phone_country.dart';
 export 'auth/auth_cta_button.dart';
 export 'auth/auth_error_banner.dart';
 export 'auth/auth_or_divider.dart';

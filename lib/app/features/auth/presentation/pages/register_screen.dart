@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 import '../controllers/register_controller.dart';
 
 class RegisterScreen extends GetView<RegisterController> {
@@ -117,12 +117,14 @@ class RegisterScreen extends GetView<RegisterController> {
               label: 'Prénom',
               hint: 'Votre prénom',
               controller: controller.firstNameCtrl,
+              validator: controller.validateRequired,
               icon: IconlyLight.profile),
           const SizedBox(height: 16),
           AuthTextField(
               label: 'Nom',
               hint: 'Votre nom',
               controller: controller.lastNameCtrl,
+              validator: controller.validateRequired,
               icon: IconlyLight.profile),
         ],
       ),
@@ -139,14 +141,15 @@ class RegisterScreen extends GetView<RegisterController> {
               hint: 'nom@exemple.com',
               controller: controller.emailCtrl,
               keyboardType: TextInputType.emailAddress,
+              validator: controller.validateEmail,
               icon: IconlyLight.message),
           const SizedBox(height: 16),
-          AuthTextField(
-              label: 'Téléphone',
-              hint: '+226 ...',
-              controller: controller.phoneCtrl,
-              keyboardType: TextInputType.phone,
-              icon: IconlyLight.call),
+          Obx(() => AuthPhoneField(
+                controller: controller.phoneCtrl,
+                country: controller.selectedCountry,
+                onCountryChanged: (c) => controller.selectCountry(c.isoCode),
+                validator: controller.validatePhone,
+              )),
         ],
       ),
     );
@@ -162,6 +165,7 @@ class RegisterScreen extends GetView<RegisterController> {
               hint: 'Au moins 8 caractères',
               controller: controller.passwordCtrl,
               obscureText: true,
+              validator: controller.validatePassword,
               icon: IconlyLight.lock),
           const SizedBox(height: 16),
           AuthTextField(
@@ -169,6 +173,7 @@ class RegisterScreen extends GetView<RegisterController> {
               hint: 'Retapez le mot de passe',
               controller: controller.confirmPasswordCtrl,
               obscureText: true,
+              validator: controller.validateConfirmPassword,
               icon: IconlyLight.password),
           const SizedBox(height: 16),
           Obx(() => _TermsTile(

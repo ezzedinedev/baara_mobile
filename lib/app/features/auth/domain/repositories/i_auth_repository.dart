@@ -12,10 +12,16 @@ abstract class IAuthRepository {
   Future<void> verifyOtp({required String phone, required String otp});
   Future<void> resendOtp(String phone);
 
-  // Réinitialisation du mot de passe par OTP — clé = téléphone.
-  Future<void> forgotPassword(String phone);
+  // Vérification de l'email (utilisateur connecté). Le code part par email.
+  Future<void> sendEmailVerification();
+  Future<void> verifyEmail(String code);
+
+  // Réinitialisation du mot de passe par OTP. Identification par email OU
+  // téléphone (au moins l'un des deux). Le code part toujours par email.
+  Future<void> forgotPassword({String? phone, String? email});
   Future<void> resetPassword({
-    required String phone,
+    String? phone,
+    String? email,
     required String otp,
     required String password,
   });

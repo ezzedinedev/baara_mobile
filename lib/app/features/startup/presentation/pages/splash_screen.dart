@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/widgets/jobaway_mark.dart';
 import '../controllers/splash_controller.dart';
 
 /// Splash sobre et performant : un seul [AnimationController] pour l'entrée
 /// (fade + léger scale), pas de blur plein écran / particules / orbites pendant
-/// le boot (le moment le plus sensible en perf). Logo centré, wordmark, tagline,
-/// puis une barre de progression fine en bas. Tap n'importe où pour passer.
+/// le boot (le moment le plus sensible en perf). Symbole de marque centré,
+/// tagline, puis une barre de progression fine en bas. Tap n'importe où pour
+/// passer.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -87,16 +87,41 @@ class _SplashScreenState extends State<SplashScreen>
                       t: taglineIn,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 280),
-                        child: Text(
-                          'Votre prochaine opportunité, à portée de main',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.titleColor.withValues(alpha: 0.72),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            height: 1.4,
-                            letterSpacing: 0.1,
-                          ),
+                        child: Builder(
+                          builder: (context) {
+                            // Style commun : le mot animé doit couler dans la
+                            // phrase sans décrochage de ligne de base.
+                            final base = AppTextStyles.bodyMd.copyWith(
+                              color:
+                                  AppColors.titleColor.withValues(alpha: 0.72),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                              letterSpacing: 0.1,
+                            );
+                            return Text.rich(
+                              TextSpan(
+                                style: base,
+                                children: [
+                                  const TextSpan(text: 'Votre prochaine '),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.baseline,
+                                    baseline: TextBaseline.alphabetic,
+                                    child: _ShimmerWord(
+                                      'opportunité',
+                                      // Même métrique que le reste : seul le
+                                      // poids + le reflet changent.
+                                      style: base.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  const TextSpan(text: ', à portée de main'),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -184,56 +209,90 @@ class _BreathingLogo extends StatelessWidget {
             ),
           );
         },
-        child: const _LogoMark(),
+        // Le symbole officiel seul (sans le wordmark) : vectoriel, donc net
+        // quelle que soit la densité d'écran.
+        child: const JobAwayMark(size: 132),
       ),
     );
   }
 }
 
-/// Logo de marque, affiché selon le thème : variante foncée sur fond clair,
-/// variante blanche sur fond sombre (pour rester lisible dans les deux modes).
-/// Repli sur une tuile-icône si les fichiers logo sont absents (aucun crash).
-class _LogoMark extends StatelessWidget {
-  const _LogoMark();
+/// Un mot mis en avant par un reflet lumineux qui le balaie en boucle.
+///
+/// Rendu via [ShaderMask] : un dégradé vert (accent → éclat → accent) dont la
+/// bande claire glisse de gauche à droite. Le mot reste net et coule dans la
+/// phrase (mêmes métriques que le texte porteur). Animation purement GPU,
+/// isolée dans un [RepaintBoundary] → coût négligeable même pendant le boot.
+class _ShimmerWord extends StatefulWidget {
+  const _ShimmerWord(this.word, {required this.style});
 
-  // Texte foncé → fond clair ; texte blanc → fond sombre.
-  static const String _logoDark = 'assets/images/logo/opportune_logo.png';
-  static const String _logoLight =
-      'assets/images/logo/opportune_logo_light.png';
+  final String word;
+  final TextStyle style;
+
+  @override
+  State<_ShimmerWord> createState() => _ShimmerWordState();
+}
+
+class _ShimmerWordState extends State<_ShimmerWord>
+    with SingleTickerProviderStateMixin {
+  // Contrôleur dédié, une seule direction : un reflet va-et-vient (reverse)
+  // aurait l'air d'un balancier, pas d'une brillance qui passe.
+  late final _shine = _RepeatingTicker(this);
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Get.isRegistered<AppThemeController>() &&
-        Get.find<AppThemeController>().isDarkMode.value;
-    return SizedBox(
-      width: 230,
-      child: Image.asset(
-        isDark ? _logoLight : _logoDark,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        errorBuilder: (_, __, ___) => _fallbackTile(),
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _shine.controller,
+        builder: (context, child) {
+          final v = _shine.controller.value;
+          // Position de la bande d'éclat, débordant des deux côtés pour qu'elle
+          // entre et sorte complètement du mot à chaque passage.
+          final p = -0.3 + 1.6 * v;
+          return ShaderMask(
+            blendMode: BlendMode.srcIn,
+            shaderCallback: (bounds) {
+              return LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: const [
+                  AppColors.primaryDark, // accent lisible sur fond clair
+                  AppColors.primaryLight, // l'éclat qui passe
+                  AppColors.primaryDark,
+                ],
+                stops: [
+                  (p - 0.3).clamp(0.0, 1.0),
+                  p.clamp(0.0, 1.0),
+                  (p + 0.3).clamp(0.0, 1.0),
+                ],
+              ).createShader(bounds);
+            },
+            child: child,
+          );
+        },
+        child: Text(widget.word, style: widget.style),
       ),
     );
   }
 
-  Widget _fallbackTile() {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppRadius.xxl),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.32),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: const Icon(IconlyLight.work, size: 52, color: AppColors.onPrimary),
-    );
+  @override
+  void dispose() {
+    _shine.dispose();
+    super.dispose();
   }
+}
+
+/// Petit ticker répétitif encapsulé, pour ne pas alourdir l'état de l'écran.
+class _RepeatingTicker {
+  _RepeatingTicker(TickerProvider vsync)
+      : controller = AnimationController(
+          vsync: vsync,
+          duration: const Duration(milliseconds: 2200),
+        )..repeat();
+
+  final AnimationController controller;
+
+  void dispose() => controller.dispose();
 }
 
 /// Fade + léger glissement vers le haut, piloté par une valeur 0→1.

@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_animations.dart';
-import 'package:opportune_bf/app/core/widgets/common/sank_sheet_scaffold.dart';
-import 'package:opportune_bf/app/core/widgets/effects/gyro_tilt.dart';
-import 'package:opportune_bf/app/core/widgets/effects/sheen_sweep.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/widgets/common/app_animations.dart';
+import 'package:jobaway/app/core/widgets/common/sank_sheet_scaffold.dart';
+import 'package:jobaway/app/core/widgets/effects/gyro_tilt.dart';
+import 'package:jobaway/app/core/widgets/effects/sheen_sweep.dart';
 
 import '../controllers/streak_controller.dart';
 

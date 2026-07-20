@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/services/auth_token_store.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/app/core/services/auth_token_store.dart';
 import '../controllers/splash_controller.dart';
 
 class SplashBinding extends Bindings {

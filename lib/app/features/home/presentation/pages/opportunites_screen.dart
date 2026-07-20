@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:opportune_bf/app/features/offers/presentation/pages/offer_list_screen.dart';
-import 'package:opportune_bf/app/features/offers/presentation/widgets/offer_swipe_deck.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/controllers/trainings_controller.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/pages/trainings_screen.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:jobaway/app/features/offers/presentation/pages/offer_list_screen.dart';
+import 'package:jobaway/app/features/offers/presentation/widgets/offer_swipe_deck.dart';
+import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:jobaway/app/features/trainings/presentation/pages/trainings_screen.dart';
 import '../controllers/home_controller.dart';
 
 /// Hub « Opportunités » : un seul en-tête + un segmented control qui bascule

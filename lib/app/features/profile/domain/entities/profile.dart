@@ -101,12 +101,16 @@ class Profile {
   /// Visibilité du profil communauté : 'public' | 'connections'.
   final String profileVisibility;
 
+  /// L'adresse email a-t-elle été vérifiée (code confirmé) ?
+  final bool isEmailVerified;
+
   const Profile({
     required this.id,
     required this.firstName,
     required this.lastName,
     required this.email,
     required this.phone,
+    this.isEmailVerified = false,
     required this.country,
     required this.city,
     required this.userType,

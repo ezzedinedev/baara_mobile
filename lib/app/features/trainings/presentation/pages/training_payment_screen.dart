@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart' show AppRadius;
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
@@ -32,9 +32,18 @@ class _PayOperator {
 /// `POST /trainings/{id}/pay`. Le paiement backend est synchrone : en cas de
 /// succès l'inscription est créée (payment_status = paid).
 class TrainingPaymentScreen extends StatefulWidget {
-  const TrainingPaymentScreen({super.key, required this.training});
+  const TrainingPaymentScreen({
+    super.key,
+    required this.training,
+    this.applicationData,
+  });
 
   final Training training;
+
+  /// Dossier d'inscription déjà rempli, quand le formateur l'exige : il part
+  /// avec le paiement, sinon le backend refuse (422) et le candidat serait
+  /// débité pour rien.
+  final Map<String, dynamic>? applicationData;
 
   @override
   State<TrainingPaymentScreen> createState() => _TrainingPaymentScreenState();
@@ -93,6 +102,7 @@ class _TrainingPaymentScreenState extends State<TrainingPaymentScreen> {
       widget.training.id,
       provider: provider,
       phone: phone,
+      applicationData: widget.applicationData,
     );
     if (!mounted) return;
     setState(() => _isPaying = false);

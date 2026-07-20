@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -65,7 +65,7 @@ Future<void> _bootstrap() async {
     unawaited(fcm.init());
   }
 
-  runApp(const OpportuneBFApp());
+  runApp(const JobAwayBFApp());
 }
 
 void _wireCrashlytics() {
@@ -81,14 +81,14 @@ void _wireCrashlytics() {
   };
 }
 
-class OpportuneBFApp extends StatefulWidget {
-  const OpportuneBFApp({super.key});
+class JobAwayBFApp extends StatefulWidget {
+  const JobAwayBFApp({super.key});
 
   @override
-  State<OpportuneBFApp> createState() => _OpportuneBFAppState();
+  State<JobAwayBFApp> createState() => _JobAwayBFAppState();
 }
 
-class _OpportuneBFAppState extends State<OpportuneBFApp> {
+class _JobAwayBFAppState extends State<JobAwayBFApp> {
   @override
   void initState() {
     super.initState();
@@ -118,7 +118,7 @@ class _OpportuneBFAppState extends State<OpportuneBFApp> {
         themeController.amoled.value;
         themeController.accentSeed.value;
         return GetMaterialApp(
-          title: 'OpporTune BF',
+          title: 'JobAway',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

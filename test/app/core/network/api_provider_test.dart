@@ -1,9 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 void main() {
   group('ApiProvider', () {

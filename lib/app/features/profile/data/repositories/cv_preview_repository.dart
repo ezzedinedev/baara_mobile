@@ -1,7 +1,9 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+
+import '../../domain/entities/cv_template.dart';
 
 /// Accès au CV structuré pour l'aperçu : chargement des données, choix du
 /// modèle, et téléchargement du PDF généré côté serveur.
@@ -19,7 +21,35 @@ class CvPreviewRepository {
     return _unwrap(response);
   }
 
-  /// Marque un modèle comme "le CV" de l'utilisateur (classic | modern | minimal).
+  /// Catalogue complet des modèles (identique au web), avec le statut d'achat
+  /// des modèles premium pour l'utilisateur courant.
+  Future<List<CvTemplate>> loadTemplates() async {
+    final response =
+        await _apiProvider.getJson(ApiConstants.profileCvBuilderTemplates);
+    final data = _unwrap(response);
+    final raw = data['templates'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => CvTemplate.fromJson(Map<String, dynamic>.from(e)))
+        .toList(growable: false);
+  }
+
+  /// Débloque un modèle premium (mobile money). Le backend facture, trace
+  /// l'achat et crédite le wallet — exactement comme le parcours web.
+  Future<void> purchaseTemplate(
+    String template, {
+    required String provider,
+    required String phone,
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.profileCvBuilderPurchaseTemplate(template),
+      {'provider': provider, 'phone': phone},
+    );
+    _unwrap(response);
+  }
+
+  /// Marque un modèle comme "le CV" de l'utilisateur.
   Future<void> selectTemplate(String template) async {
     await _apiProvider.postJson(
       ApiConstants.profileCvBuilderSelectTemplate,
@@ -27,7 +57,16 @@ class CvPreviewRepository {
     );
   }
 
-  /// Récupère le PDF (octets bruts) pour un modèle donné.
+  /// PDF d'aperçu : toujours disponible, filigrané côté serveur si le modèle
+  /// premium n'est pas débloqué.
+  Future<Uint8List> previewPdf(String template) {
+    return _apiProvider.getBytes(
+      '${ApiConstants.profileCvBuilderPreviewPdf}?template=$template',
+    );
+  }
+
+  /// PDF propre, destiné au téléchargement. Le serveur répond 402 si le modèle
+  /// premium n'a pas été acheté.
   Future<Uint8List> downloadPdf(String template) {
     return _apiProvider.getBytes(
       '${ApiConstants.profileCvBuilderDownload}?template=$template',

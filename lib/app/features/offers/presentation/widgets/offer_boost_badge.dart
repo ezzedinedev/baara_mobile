@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
 
 /// Badge de mise en avant d'une offre, distinct par plan (aligne sur le web) :
 /// tier 1 = Essentiel (ambre clair), 2 = Populaire (ambre), 3 = Pro (or).

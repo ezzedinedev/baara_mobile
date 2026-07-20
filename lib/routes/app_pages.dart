@@ -1,102 +1,107 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/theme/app_transitions.dart';
+import 'package:jobaway/app/core/theme/app_transitions.dart';
 import 'app_routes.dart';
-import 'package:opportune_bf/app/features/errors/presentation/pages/error_404_screen.dart';
+import 'package:jobaway/app/features/errors/presentation/pages/error_404_screen.dart';
 
 // ── Startup ──
-import 'package:opportune_bf/app/features/startup/presentation/bindings/splash_binding.dart';
-import 'package:opportune_bf/app/features/startup/presentation/pages/splash_screen.dart';
-import 'package:opportune_bf/app/features/startup/presentation/bindings/landing_binding.dart';
-import 'package:opportune_bf/app/features/startup/presentation/pages/landing_screen.dart';
-import 'package:opportune_bf/app/features/startup/presentation/bindings/profile_selection_binding.dart';
-import 'package:opportune_bf/app/features/startup/presentation/pages/profile_selection_screen.dart';
+import 'package:jobaway/app/features/startup/presentation/bindings/splash_binding.dart';
+import 'package:jobaway/app/features/startup/presentation/pages/splash_screen.dart';
+import 'package:jobaway/app/features/startup/presentation/bindings/landing_binding.dart';
+import 'package:jobaway/app/features/startup/presentation/pages/landing_screen.dart';
+import 'package:jobaway/app/features/startup/presentation/bindings/profile_selection_binding.dart';
+import 'package:jobaway/app/features/startup/presentation/pages/profile_selection_screen.dart';
 
 // ── Auth ──
-import 'package:opportune_bf/app/features/auth/presentation/bindings/candidate_login_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/candidate_login_screen.dart';
-import 'package:opportune_bf/app/features/auth/presentation/bindings/register_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/bindings/register_profile_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/register_profile_screen.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/register_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/candidate_login_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/candidate_login_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/register_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/register_profile_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/register_profile_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/register_screen.dart';
 
-import 'package:opportune_bf/app/features/auth/presentation/bindings/otp_verification_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/otp_verification_screen.dart';
-import 'package:opportune_bf/app/features/auth/presentation/bindings/forgot_password_binding.dart';
-import 'package:opportune_bf/app/features/auth/presentation/pages/forgot_password_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/otp_verification_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/otp_verification_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/email_verification_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/email_verification_screen.dart';
+import 'package:jobaway/app/features/auth/presentation/bindings/forgot_password_binding.dart';
+import 'package:jobaway/app/features/auth/presentation/pages/forgot_password_screen.dart';
 
 // ── Home ──
-import 'package:opportune_bf/app/features/home/presentation/bindings/home_binding.dart';
-import 'package:opportune_bf/app/features/home/presentation/pages/home_screen.dart';
+import 'package:jobaway/app/features/home/presentation/bindings/home_binding.dart';
+import 'package:jobaway/app/features/home/presentation/pages/home_screen.dart';
 
 // ── Offres ──
-import 'package:opportune_bf/app/features/offers/presentation/bindings/offer_binding.dart';
-import 'package:opportune_bf/app/features/offers/presentation/pages/offer_list_screen.dart';
-import 'package:opportune_bf/app/features/offers/presentation/bindings/offer_detail_binding.dart';
-import 'package:opportune_bf/app/features/offers/presentation/pages/match_celebration_screen.dart';
-import 'package:opportune_bf/app/features/offers/presentation/pages/offer_detail_screen.dart';
-import 'package:opportune_bf/app/features/offers/presentation/pages/my_applications_screen.dart';
+import 'package:jobaway/app/features/offers/presentation/bindings/offer_binding.dart';
+import 'package:jobaway/app/features/offers/presentation/pages/offer_list_screen.dart';
+import 'package:jobaway/app/features/offers/presentation/bindings/offer_detail_binding.dart';
+import 'package:jobaway/app/features/offers/presentation/pages/match_celebration_screen.dart';
+import 'package:jobaway/app/features/offers/presentation/pages/offer_detail_screen.dart';
+import 'package:jobaway/app/features/offers/presentation/pages/my_applications_screen.dart';
 
 // ── Alertes emploi (recherches sauvegardées) ──
-import 'package:opportune_bf/app/features/alerts/presentation/bindings/alerts_binding.dart';
-import 'package:opportune_bf/app/features/alerts/presentation/pages/alerts_screen.dart';
+import 'package:jobaway/app/features/alerts/presentation/bindings/alerts_binding.dart';
+import 'package:jobaway/app/features/alerts/presentation/pages/alerts_screen.dart';
 
 // ── Formations ──
-import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_binding.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/pages/trainings_screen.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_detail_binding.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/pages/training_detail_screen.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/bindings/training_player_binding.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/pages/training_player_screen.dart';
+import 'package:jobaway/app/features/trainings/presentation/bindings/training_binding.dart';
+import 'package:jobaway/app/features/trainings/presentation/pages/trainings_screen.dart';
+import 'package:jobaway/app/features/trainings/presentation/bindings/training_detail_binding.dart';
+import 'package:jobaway/app/features/trainings/presentation/pages/training_detail_screen.dart';
+import 'package:jobaway/app/features/trainings/presentation/bindings/quiz_binding.dart';
+import 'package:jobaway/app/features/trainings/presentation/bindings/training_player_binding.dart';
+import 'package:jobaway/app/features/trainings/presentation/pages/quiz_screen.dart';
+import 'package:jobaway/app/features/trainings/presentation/pages/training_player_screen.dart';
 
 // ── Messaging ──
-import 'package:opportune_bf/app/features/messaging/presentation/bindings/messaging_binding.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/pages/messages_screen.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/pages/chat_thread_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/bindings/community_binding.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/community_feed_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/community_profile_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/community_search_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/community_network_list_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/community_connections_screen.dart';
-import 'package:opportune_bf/app/features/community/presentation/pages/profile_views_screen.dart';
+import 'package:jobaway/app/features/messaging/presentation/bindings/messaging_binding.dart';
+import 'package:jobaway/app/features/messaging/presentation/pages/messages_screen.dart';
+import 'package:jobaway/app/features/messaging/presentation/pages/chat_thread_screen.dart';
+import 'package:jobaway/app/features/community/presentation/bindings/community_binding.dart';
+import 'package:jobaway/app/features/community/presentation/pages/community_feed_screen.dart';
+import 'package:jobaway/app/features/community/presentation/pages/community_profile_screen.dart';
+import 'package:jobaway/app/features/community/presentation/pages/community_search_screen.dart';
+import 'package:jobaway/app/features/community/presentation/pages/community_network_list_screen.dart';
+import 'package:jobaway/app/features/community/presentation/pages/community_connections_screen.dart';
+import 'package:jobaway/app/features/community/presentation/pages/profile_views_screen.dart';
 
 // ── Notifications ──
-import 'package:opportune_bf/app/features/notifications/presentation/bindings/notifications_binding.dart';
-import 'package:opportune_bf/app/features/notifications/presentation/pages/notifications_screen.dart';
+import 'package:jobaway/app/features/notifications/presentation/bindings/notifications_binding.dart';
+import 'package:jobaway/app/features/notifications/presentation/pages/notifications_screen.dart';
 
 // ── Profile ──
-import 'package:opportune_bf/app/features/profile/presentation/bindings/profile_binding.dart';
-import 'package:opportune_bf/app/features/profile/presentation/bindings/documents_binding.dart';
-import 'package:opportune_bf/app/features/profile/presentation/bindings/parcours_editor_binding.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/profile_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/profile_edit_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/documents_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/parcours_editor_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/settings_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/bindings/cv_builder_binding.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_builder_landing_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_assistant_chat_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_import_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_manual_editor_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/cv/cv_preview_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_screen.dart';
-import 'package:opportune_bf/app/features/profile/presentation/pages/portfolio/portfolio_edit_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/bindings/profile_binding.dart';
+import 'package:jobaway/app/features/profile/presentation/bindings/documents_binding.dart';
+import 'package:jobaway/app/features/profile/presentation/bindings/my_cv_binding.dart';
+import 'package:jobaway/app/features/profile/presentation/bindings/parcours_editor_binding.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/profile_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/profile_edit_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/documents_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/parcours_editor_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/settings_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/bindings/cv_builder_binding.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_builder_landing_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_assistant_chat_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_import_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_manual_editor_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/cv/cv_preview_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/portfolio/portfolio_screen.dart';
+import 'package:jobaway/app/features/profile/presentation/pages/portfolio/portfolio_edit_screen.dart';
 
 // ── Abonnement ──
-import 'package:opportune_bf/app/features/subscription/presentation/pages/subscription_screen.dart';
+import 'package:jobaway/app/features/subscription/presentation/pages/subscription_screen.dart';
 
 // ── Série quotidienne (streak) ──
-import 'package:opportune_bf/app/features/streak/presentation/controllers/streak_controller.dart';
-import 'package:opportune_bf/app/features/streak/presentation/pages/streak_screen.dart';
+import 'package:jobaway/app/features/streak/presentation/controllers/streak_controller.dart';
+import 'package:jobaway/app/features/streak/presentation/pages/streak_screen.dart';
 
 // ── IA ──
-import 'package:opportune_bf/app/features/ia/presentation/bindings/ia_binding.dart';
-import 'package:opportune_bf/app/features/ia/presentation/pages/score_profil_screen.dart';
-import 'package:opportune_bf/app/features/ia/presentation/pages/chatbot_screen.dart';
-import 'package:opportune_bf/app/features/ia/presentation/pages/cv_audit_screen.dart';
+import 'package:jobaway/app/features/ia/presentation/bindings/ia_binding.dart';
+import 'package:jobaway/app/features/ia/presentation/pages/score_profil_screen.dart';
+import 'package:jobaway/app/features/ia/presentation/pages/chatbot_screen.dart';
+import 'package:jobaway/app/features/ia/presentation/pages/cv_audit_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -154,6 +159,14 @@ class AppPages {
       name: AppRoutes.otpVerification,
       page: () => const OtpVerificationScreen(),
       binding: OtpVerificationBinding(),
+      customTransition: AppPageTransition(),
+      transitionDuration: const Duration(milliseconds: 260),
+      curve: Curves.easeInOut,
+    ),
+    GetPage(
+      name: AppRoutes.emailVerification,
+      page: () => const EmailVerificationScreen(),
+      binding: EmailVerificationBinding(),
       customTransition: AppPageTransition(),
       transitionDuration: const Duration(milliseconds: 260),
       curve: Curves.easeInOut,
@@ -233,6 +246,12 @@ class AppPages {
       customTransition: AppPageTransition(),
     ),
     GetPage(
+      name: AppRoutes.trainingQuiz,
+      page: () => const QuizScreen(),
+      binding: QuizBinding(),
+      customTransition: AppPageTransition(),
+    ),
+    GetPage(
       name: AppRoutes.messages,
       page: () => const MessagesScreen(),
       binding: MessagingBinding(),
@@ -309,7 +328,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.profileCv,
       page: () => const CvScreen(),
-      binding: ProfileBinding(),
+      binding: MyCvBinding(),
       customTransition: AppPageTransition(),
     ),
     GetPage(

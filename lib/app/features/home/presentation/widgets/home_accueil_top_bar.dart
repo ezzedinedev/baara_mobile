@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
-import 'package:opportune_bf/app/features/notifications/presentation/controllers/notifications_controller.dart';
-import 'package:opportune_bf/app/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:jobaway/app/features/notifications/presentation/controllers/notifications_controller.dart';
+import 'package:jobaway/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../controllers/home_controller.dart';
 
 /// Top bar plat (SafeArea) : avatar + salutation + vrai prénom, cloche à

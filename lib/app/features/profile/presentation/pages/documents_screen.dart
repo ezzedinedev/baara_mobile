@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 
 import '../../data/models/candidate_document_model.dart';
 import '../controllers/documents_controller.dart';
@@ -78,13 +78,17 @@ class DocumentsScreen extends GetView<DocumentsController> {
                     final doc = controller.documents[index];
                     return RevealOnMount(
                       delay: Duration(milliseconds: 60 * index),
-                      child: _DocumentCard(
-                        doc: doc,
-                        onOpen: () {
-                          AppHaptics.tap();
-                          controller.open(doc);
-                        },
-                        onDelete: () => _confirmDelete(context, doc),
+                      // Obx ciblé : seule la carte en téléchargement se rebâtit.
+                      child: Obx(
+                        () => _DocumentCard(
+                          doc: doc,
+                          isDownloading: controller.openingId.value == doc.id,
+                          onOpen: () {
+                            AppHaptics.tap();
+                            controller.open(doc);
+                          },
+                          onDelete: () => _confirmDelete(context, doc),
+                        ),
                       ),
                     );
                   },
@@ -203,11 +207,15 @@ class _DocumentCard extends StatelessWidget {
     required this.doc,
     required this.onOpen,
     required this.onDelete,
+    this.isDownloading = false,
   });
 
   final CandidateDocument doc;
   final VoidCallback onOpen;
   final VoidCallback onDelete;
+
+  /// Téléchargement en cours : on bloque le tap et on affiche un spinner.
+  final bool isDownloading;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +223,7 @@ class _DocumentCard extends StatelessWidget {
       color: AppColors.surfaceCard,
       shape: AppShapes.cardBordered(AppColors.outlineVariant),
       child: InkWell(
-        onTap: onOpen,
+        onTap: isDownloading ? null : onOpen,
         customBorder: AppShapes.cardBordered(AppColors.outlineVariant),
         child: Container(
           padding: const EdgeInsets.all(12),
@@ -235,10 +243,21 @@ class _DocumentCard extends StatelessWidget {
                   color: AppColors.primaryAccent.withValues(alpha: 0.12),
                   shape: AppShapes.squircle(AppRadius.sm),
                 ),
-                child: Icon(
-                  doc.isImage ? IconlyBold.image : IconlyBold.document,
-                  color: AppColors.primaryAccent,
-                ),
+                child: isDownloading
+                    ? Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: AppColors.primaryAccent,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        doc.isImage ? IconlyBold.image : IconlyBold.document,
+                        color: AppColors.primaryAccent,
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

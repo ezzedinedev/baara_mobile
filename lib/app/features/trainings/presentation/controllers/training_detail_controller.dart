@@ -25,7 +25,10 @@ class TrainingDetailController extends GetxController {
   bool get isEnrolled =>
       justEnrolled.value || (training.value?.isEnrolled ?? false);
 
-  String? get _id => Get.parameters['id'] ?? Get.arguments?.toString();
+  /// Id figé au montage : `Get.parameters` suit la route courante, donc le
+  /// relire après une navigation (quiz, paiement…) viserait la mauvaise entité.
+  late final String? _id =
+      Get.parameters['id'] ?? Get.arguments?.toString();
 
   @override
   void onInit() {
@@ -54,12 +57,16 @@ class TrainingDetailController extends GetxController {
     }
   }
 
-  Future<bool> enroll() async {
+  /// [applicationData] : le dossier d'inscription, quand le formateur l'exige.
+  Future<bool> enroll({Map<String, dynamic>? applicationData}) async {
     final t = training.value;
     if (t == null || isEnrolling.value) return false;
     isEnrolling.value = true;
     try {
-      final ok = await _repository.enrollInTraining(t.id);
+      final ok = await _repository.enrollInTraining(
+        t.id,
+        applicationData: applicationData,
+      );
       if (ok) justEnrolled.value = true;
       return ok;
     } catch (_) {

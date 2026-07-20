@@ -1,6 +1,6 @@
-import 'package:http/http.dart' as http;
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:http/http.dart' as http;
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/community_comment.dart';
 import '../../domain/entities/network_user.dart';

@@ -1,9 +1,9 @@
-import 'package:file_picker/file_picker.dart';
+﻿import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/common/app_toast.dart';
 
 import '../../data/models/candidate_document_model.dart';
 import '../../domain/repositories/i_document_repository.dart';
@@ -19,6 +19,8 @@ class DocumentsController extends GetxController {
   final isLoading = true.obs;
   final isUploading = false.obs;
   final deletingId = RxnString();
+  /// Id du document en cours de téléchargement (spinner sur sa carte).
+  final openingId = RxnString();
   final errorMessage = RxnString();
 
   @override
@@ -99,18 +101,38 @@ class DocumentsController extends GetxController {
     }
   }
 
-  /// Ouvre le document (téléchargement backend) dans une appli externe.
+  /// Télécharge le document puis le confie à l'OS (ouvrir / enregistrer /
+  /// partager).
+  ///
+  /// On ne lance PAS `doc.downloadUrl` dans un navigateur : cette URL pointe
+  /// vers la route API protégée par Sanctum, et un navigateur externe n'a pas
+  /// le Bearer → 401 systématique. On récupère donc les octets via le
+  /// repository (qui porte le token) avant de les partager.
   Future<void> open(CandidateDocument doc) async {
-    final url = doc.downloadUrl.trim();
-    final uri = Uri.tryParse(url);
-    if (url.isEmpty || uri == null) {
-      AppToast.error('Lien indisponible', 'Impossible d\'ouvrir ce document.');
-      return;
-    }
+    if (openingId.value != null) return;
+    openingId.value = doc.id;
     try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      AppToast.error('Ouverture impossible', 'Aucune appli ne peut l\'ouvrir.');
+      final bytes = await _repository.download(doc.id);
+      final filename = doc.originalFilename.trim().isNotEmpty
+          ? doc.originalFilename.trim()
+          : '${doc.typeLabel}-${doc.id}';
+      await Share.shareXFiles(
+        [
+          XFile.fromData(
+            bytes,
+            name: filename,
+            mimeType: doc.mimeType.trim().isEmpty ? null : doc.mimeType.trim(),
+          ),
+        ],
+        // `name` de XFile.fromData est ignoré hors web : c'est
+        // fileNameOverrides qui donne son vrai nom au fichier partagé.
+        fileNameOverrides: [filename],
+        subject: doc.title.trim().isEmpty ? doc.typeLabel : doc.title.trim(),
+      );
+    } catch (e) {
+      AppToast.error('Ouverture impossible', userFacingError(e));
+    } finally {
+      openingId.value = null;
     }
   }
 }

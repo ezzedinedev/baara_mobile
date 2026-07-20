@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart' show AppRadius;
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
+import '../../domain/entities/quiz.dart';
 import '../../domain/entities/training.dart';
 import '../controllers/training_player_controller.dart';
 import 'training_lesson_screen.dart';
@@ -295,6 +297,10 @@ class _ModuleCard extends StatelessWidget {
                   .copyWith(color: AppColors.bodyColor, height: 1.4),
             ),
           ],
+          if (module.hasQuiz) ...[
+            const SizedBox(height: 10),
+            _QuizButton(module: module),
+          ],
           const SizedBox(height: 12),
           _CompleteButton(
             completed: completed,
@@ -302,6 +308,220 @@ class _ModuleCard extends StatelessWidget {
             onComplete: onComplete,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Accès à l'épreuve du module. Une leçon de type quiz était jusqu'ici affichée
+/// comme du simple texte : il n'existait aucun moteur de quiz sur mobile.
+class _QuizButton extends StatelessWidget {
+  const _QuizButton({required this.module});
+
+  final TrainingModule module;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TrainingPlayerController>();
+
+    return Obx(() {
+      final busy = controller.loadingQuizModuleId.value == module.id;
+      final quizzes = controller.quizzesFor(module);
+
+      // L'état vient du serveur : quiz déjà validé, meilleur score, tentatives
+      // restantes. L'apprenant ne devrait jamais avoir à ouvrir l'épreuve pour
+      // savoir où il en est.
+      final allPassed = quizzes.isNotEmpty && quizzes.every((q) => q.passed);
+      final bestScore = quizzes
+          .map((q) => q.bestScore)
+          .whereType<int>()
+          .fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+      final exhausted =
+          quizzes.isNotEmpty && !allPassed && quizzes.every((q) => q.isExhausted);
+
+      final Color accent;
+      final String label;
+      if (allPassed) {
+        accent = AppColors.successAccent;
+        label = bestScore != null
+            ? 'Quiz validé · $bestScore %'
+            : 'Quiz validé';
+      } else if (exhausted) {
+        accent = AppColors.errorAccent;
+        label = 'Tentatives épuisées'
+            '${bestScore != null ? ' · $bestScore %' : ''}';
+      } else {
+        accent = AppColors.warningAccent;
+        final attempted = quizzes.any((q) => q.attemptsUsed > 0);
+        label = attempted
+            ? 'Reprendre le quiz'
+                '${bestScore != null ? ' · meilleur score $bestScore %' : ''}'
+            : (module.quizCount > 1
+                ? '${module.quizCount} quiz à passer'
+                : 'Passer le quiz du module');
+      }
+
+      return PressScale(
+        curve: AppMotion.spring,
+        onTap: busy || exhausted ? null : () => _open(context, controller),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: ShapeDecoration(
+            color: accent.withValues(alpha: 0.10),
+            shape: AppShapes.squircle(AppRadius.sm),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                allPassed ? IconlyBold.tick_square : IconlyBold.document,
+                size: 16,
+                color: accent,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (busy)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  ),
+                )
+              else if (!exhausted)
+                Icon(IconlyLight.arrow_right_2, size: 16, color: accent),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Future<void> _open(
+    BuildContext context,
+    TrainingPlayerController controller,
+  ) async {
+    AppHaptics.tap();
+    final quizzes = await controller.quizzesOf(module);
+    if (quizzes.isEmpty) return;
+
+    if (quizzes.length == 1) {
+      await _launch(quizzes.first, controller);
+      return;
+    }
+
+    if (!context.mounted) return;
+    await Get.bottomSheet<void>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: 12),
+              Text(
+                'Quiz du module',
+                style:
+                    AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              for (final quiz in quizzes)
+                _QuizChoiceTile(
+                  quiz: quiz,
+                  onTap: () {
+                    Get.back<void>();
+                    _launch(quiz, controller);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Future<void> _launch(
+    QuizSummary quiz,
+    TrainingPlayerController controller,
+  ) async {
+    if (quiz.isExhausted) {
+      AppToast.info(
+        'Tentatives épuisées',
+        'Vous avez utilisé toutes vos tentatives pour ce quiz.',
+      );
+      return;
+    }
+
+    await Get.toNamed<void>(
+      AppRoutes.trainingQuiz.replaceFirst(':id', quiz.id),
+    );
+    // Réussir un quiz peut valider le module côté serveur : on recharge plutôt
+    // que de deviner l'état localement.
+    await controller.load();
+  }
+}
+
+class _QuizChoiceTile extends StatelessWidget {
+  const _QuizChoiceTile({required this.quiz, required this.onTap});
+
+  final QuizSummary quiz;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: PressScale(
+        onTap: onTap,
+        curve: AppMotion.spring,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: ShapeDecoration(
+            color: AppColors.surfaceLow,
+            shape: AppShapes.squircle(AppRadius.sm),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      quiz.title,
+                      style: AppTextStyles.labelMd
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      '${quiz.durationMinutes} min · réussite à '
+                      '${quiz.passingScore} %'
+                      '${quiz.remainingAttempts != null ? ' · ${quiz.remainingAttempts} tentative(s) restante(s)' : ''}',
+                      style: AppTextStyles.labelSm
+                          .copyWith(color: AppColors.hintColor),
+                    ),
+                  ],
+                ),
+              ),
+              if (quiz.passed)
+                Icon(IconlyBold.tick_square,
+                    size: 18, color: AppColors.successAccent),
+            ],
+          ),
+        ),
       ),
     );
   }

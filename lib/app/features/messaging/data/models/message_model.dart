@@ -1,4 +1,4 @@
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:jobaway/app/core/constants/api_constants.dart';
 import '../../domain/entities/message.dart';
 
 class MessageModel extends Message {
@@ -17,6 +17,7 @@ class MessageModel extends Message {
     super.readAt,
     super.reactionsSummary,
     super.myEmoji,
+    super.meta,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +45,28 @@ class MessageModel extends Message {
       myEmoji: (json['my_emoji'] as String?)?.isEmpty == true
           ? null
           : json['my_emoji'] as String?,
+      meta: _meta(json['meta_json']),
+    );
+  }
+
+  static MessageMeta? _meta(dynamic raw) {
+    if (raw is! Map) return null;
+    final type = raw['type']?.toString();
+    if (type == null || type.isEmpty) return null;
+
+    final actions = (raw['actions'] is List)
+        ? (raw['actions'] as List)
+            .map((a) => MessageAction.fromWire(a.toString()))
+            .whereType<MessageAction>()
+            .toList()
+        : const <MessageAction>[];
+
+    return MessageMeta(
+      type: type,
+      interviewId: raw['interview_id']?.toString(),
+      proposalId: raw['proposal_id']?.toString(),
+      proposedDate: DateTime.tryParse(raw['proposed_date']?.toString() ?? ''),
+      actions: actions,
     );
   }
 

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/services/google_auth_service.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/utils/validators.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/services/google_auth_service.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/utils/validators.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class CandidateLoginController extends GetxController {
@@ -21,6 +22,19 @@ class CandidateLoginController extends GetxController {
 
   /// Méthode de connexion choisie : 'email' (défaut) ou 'phone'.
   final loginMode = 'email'.obs;
+
+  /// Pays / indicatif du champ téléphone (défaut Burkina Faso). Aligné sur
+  /// l'inscription : le drapeau fixe l'indicatif, `phoneCtrl` = partie locale.
+  final selectedCountryIso = 'BF'.obs;
+  PhoneCountry get selectedCountry =>
+      PhoneCountry.byIso(selectedCountryIso.value);
+  void selectCountry(String isoCode) => selectedCountryIso.value = isoCode;
+
+  /// Numéro complet au format international (ex. `+22670000000`) envoyé à l'API.
+  String get fullPhone {
+    final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+    return '${selectedCountry.dialCode}$digits';
+  }
 
   final isLoading = false.obs;
   final errorMsg = ''.obs;
@@ -58,8 +72,7 @@ class CandidateLoginController extends GetxController {
       isLoading.value = true;
       errorMsg.value = '';
       if (loginMode.value == 'phone') {
-        await _authRepository.loginWithPhone(
-            phoneCtrl.text.trim(), passwordCtrl.text);
+        await _authRepository.loginWithPhone(fullPhone, passwordCtrl.text);
       } else {
         await _authRepository.loginWithEmail(
             emailCtrl.text.trim(), passwordCtrl.text);
@@ -102,16 +115,21 @@ class CandidateLoginController extends GetxController {
   }
 
   String? validateEmail(String? value) => Validators.email(value);
-  String? validatePassword(String? value) =>
-      Validators.password(value, minLength: 8);
 
-  /// Validation simple du téléphone : non vide + 8 chiffres minimum (indicatif
-  /// pays inclus, ex. +226 70 00 00 00). Format aligné sur l'inscription.
+  /// Au login on NE valide PAS la complexité (majuscule/spécial…) : c'est le
+  /// serveur qui vérifie l'exactitude. On exige seulement un champ non vide,
+  /// sinon un mot de passe valide mais sans caractère spécial serait rejeté.
+  String? validatePassword(String? value) =>
+      (value == null || value.isEmpty) ? 'Entrez votre mot de passe' : null;
+
+  /// Validation de la partie locale du numéro (chiffres seuls, 6 à 12).
+  /// L'indicatif vient du drapeau sélectionné. Aligné sur l'inscription.
   String? validatePhone(String? value) {
-    final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Entrez votre numéro de téléphone';
-    final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length < 8) return 'Numéro de téléphone invalide';
+    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return 'Entrez votre numéro de téléphone';
+    if (digits.length < 6 || digits.length > 12) {
+      return 'Numéro de téléphone invalide';
+    }
     return null;
   }
 }

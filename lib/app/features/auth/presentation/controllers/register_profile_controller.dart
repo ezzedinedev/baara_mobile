@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 class RegisterProfileController extends GetxController {
   final RxString selectedProfile = ''.obs;

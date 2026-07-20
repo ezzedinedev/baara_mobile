@@ -1,14 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
+import '../../domain/entities/enrolled_training.dart';
 import '../controllers/trainings_controller.dart';
 import '../widgets/training_card.dart';
 
@@ -129,9 +132,14 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         );
       }
 
+      // « Mes formations » en tête de liste : un parcours commencé doit se
+      // retrouver immédiatement, sans refouiller le catalogue.
+      final resumable = controller.inProgress;
+      final headerCount = resumable.isEmpty ? 0 : 1;
+
       return AppRefreshIndicator(
         color: AppColors.primaryAccent,
-        onRefresh: () => controller.loadTrainings(refresh: true),
+        onRefresh: controller.refreshAll,
         child: AnimationLimiter(
           child: NotificationListener<ScrollNotification>(
             onNotification: (notif) {
@@ -146,9 +154,14 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: trainings.length + 1,
+              itemCount: headerCount + trainings.length + 1,
               separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
+              itemBuilder: (context, rawIndex) {
+                if (headerCount == 1 && rawIndex == 0) {
+                  return _MyTrainingsSection(items: resumable);
+                }
+                final index = rawIndex - headerCount;
+
                 if (index == trainings.length) {
                   return Obx(
                     () => controller.isLoadingMore.value
@@ -233,5 +246,132 @@ Future<void> openTrainingsFilter(
     controller.activeFormat.value = result['format'];
     controller.activeLevel.value = result['level'];
     controller.freeOnly.value = result['price'] == 'Gratuites';
+  }
+}
+
+/// « Mes formations » : les parcours commencés, avec la progression réelle.
+///
+/// Ces inscriptions existaient déjà côté API et repository, mais n'étaient
+/// affichées nulle part : une fois inscrit, l'apprenant perdait son parcours de
+/// vue et devait le retrouver dans le catalogue.
+class _MyTrainingsSection extends StatelessWidget {
+  const _MyTrainingsSection({required this.items});
+
+  final List<EnrolledTraining> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Mes formations'),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 132,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) =>
+                _EnrolledCard(item: items[index]),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const SectionHeader(title: 'Catalogue'),
+      ],
+    );
+  }
+}
+
+class _EnrolledCard extends StatelessWidget {
+  const _EnrolledCard({required this.item});
+
+  final EnrolledTraining item;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = item.progressPct.clamp(0, 100);
+
+    return PressScale(
+      curve: AppMotion.spring,
+      onTap: () {
+        AppHaptics.tap();
+        // Directement dans le parcours : l'apprenant est déjà inscrit, le
+        // renvoyer sur la fiche de vente n'aurait aucun sens.
+        Get.toNamed<void>(
+          AppRoutes.trainingPlayer.replaceFirst(':id', item.training.id),
+        );
+      },
+      child: Container(
+        width: 240,
+        padding: const EdgeInsets.all(14),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: AppColors.lightShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.training.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.labelMd.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.titleColor,
+                height: 1.25,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item.training.providerName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.labelSm.copyWith(color: AppColors.hintColor),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Text(
+                  item.isCompleted ? 'Terminée' : '$pct % complété',
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: item.isCompleted
+                        ? AppColors.successAccent
+                        : AppColors.primaryAccent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  item.isCompleted
+                      ? IconlyBold.tick_square
+                      : IconlyLight.play,
+                  size: 16,
+                  color: item.isCompleted
+                      ? AppColors.successAccent
+                      : AppColors.primaryAccent,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: pct / 100,
+                minHeight: 5,
+                backgroundColor: AppColors.surfaceHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  item.isCompleted
+                      ? AppColors.successAccent
+                      : AppColors.primaryAccent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

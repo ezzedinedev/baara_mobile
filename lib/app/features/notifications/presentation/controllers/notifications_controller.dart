@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/services/realtime_events.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/services/realtime_events.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 

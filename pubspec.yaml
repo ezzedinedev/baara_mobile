@@ -1,5 +1,5 @@
-name: opportune_bf
-description: OpporTune BF — Plateforme de recrutement du Burkina Faso
+name: jobaway
+description: JobAway — Plateforme de recrutement du Burkina Faso
 publish_to: none
 version: 1.0.0+1
 
@@ -57,6 +57,26 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Icônes de lancement JobAway (remplacent le logo Flutter par défaut).
+# Régénérer après modif : `dart run flutter_launcher_icons`.
+flutter_launcher_icons:
+  image_path: "assets/icon/jobaway_icon.png"
+  # Android : icône adaptative (fond de marque + symbole détouré).
+  android: "ic_launcher"
+  adaptive_icon_background: "#0E8A4D"
+  adaptive_icon_foreground: "assets/icon/jobaway_icon_foreground.png"
+  min_sdk_android: 21
+  # iOS n'accepte pas la transparence : on aplatit sur le fond de marque.
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#0E8A4D"
+  # Web + PWA.
+  web:
+    generate: true
+    background_color: "#0E8A4D"
+    theme_color: "#0E8A4D"
 
 flutter:
   uses-material-design: true
@@ -65,3 +85,4 @@ flutter:
     - assets/images/landing/
     - assets/images/logo/
     - assets/images/operators/
+    - assets/icon/

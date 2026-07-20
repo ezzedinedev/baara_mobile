@@ -1,12 +1,12 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:opportune_bf/app/core/services/realtime_events.dart';
+import 'package:jobaway/app/core/services/realtime_events.dart';
 
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/common/app_toast.dart';
 
 import '../../domain/entities/story.dart';
 import '../../domain/repositories/i_community_repository.dart';

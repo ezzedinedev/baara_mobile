@@ -1,7 +1,9 @@
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import '../../domain/entities/enrolled_training.dart';
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
+import '../models/enrolled_training_model.dart';
 import '../models/training_model.dart';
 
 class TrainingRepositoryImpl implements ITrainingRepository {
@@ -33,9 +35,31 @@ class TrainingRepositoryImpl implements ITrainingRepository {
   }
 
   @override
-  Future<bool> enrollInTraining(String trainingId) async {
+  Future<List<EnrolledTraining>> getEnrolledTrainings({int page = 1}) async {
     final response = await _apiProvider
-        .postJson(ApiConstants.trainingEnroll(trainingId), {});
+        .getJson('${ApiConstants.trainingsEnrolled}?page=$page');
+    if (response['success'] != true) return [];
+
+    // Paginator Laravel : les lignes sont sous data.data.
+    final data = response['data'];
+    final items = data is List ? data : (data is Map ? data['data'] : null);
+    if (items is! List) return [];
+
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map(EnrolledTrainingModel.fromJson)
+        .toList();
+  }
+
+  @override
+  Future<bool> enrollInTraining(
+    String trainingId, {
+    Map<String, dynamic>? applicationData,
+  }) async {
+    final response = await _apiProvider.postJson(
+      ApiConstants.trainingEnroll(trainingId),
+      {...?applicationData},
+    );
     return response['success'] == true;
   }
 
@@ -58,10 +82,11 @@ class TrainingRepositoryImpl implements ITrainingRepository {
     String trainingId, {
     required String provider,
     required String phone,
+    Map<String, dynamic>? applicationData,
   }) async {
     final response = await _apiProvider.postJson(
       ApiConstants.trainingPay(trainingId),
-      {'provider': provider, 'phone': phone},
+      {'provider': provider, 'phone': phone, ...?applicationData},
     );
     return (
       success: response['success'] == true,

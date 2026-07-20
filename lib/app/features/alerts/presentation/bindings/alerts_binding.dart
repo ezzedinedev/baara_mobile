@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 import '../../data/repositories/alerts_repository_impl.dart';
 import '../../domain/repositories/i_alerts_repository.dart';

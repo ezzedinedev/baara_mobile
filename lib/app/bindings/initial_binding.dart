@@ -65,7 +65,7 @@ class InitialBinding extends Bindings {
     if (currentToken.trim().isEmpty) return null;
     try {
       final response = await provider.postJson(
-        '/auth/refresh',
+        ApiConstants.authRefresh,
         const <String, dynamic>{},
         headers: {
           ...ApiConstants.jsonHeaders,

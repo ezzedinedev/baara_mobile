@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class ForgotPasswordController extends GetxController {
@@ -11,9 +11,49 @@ class ForgotPasswordController extends GetxController {
   final IAuthRepository _authRepository;
 
   final phoneCtrl = TextEditingController();
+  final emailCtrl = TextEditingController();
   final otpCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
   final confirmCtrl = TextEditingController();
+
+  /// Identifiant choisi pour la réinitialisation : 'phone' (défaut) ou 'email'.
+  final mode = 'phone'.obs;
+  void setMode(String m) {
+    if (mode.value == m) return;
+    mode.value = m;
+    errorMsg.value = '';
+  }
+
+  String? validateEmail(String? value) {
+    final s = (value ?? '').trim();
+    if (s.isEmpty) return 'Entrez votre email';
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s)) {
+      return 'Email invalide';
+    }
+    return null;
+  }
+
+  /// Pays / indicatif du champ téléphone (défaut Burkina Faso). Aligné sur
+  /// l'inscription/connexion : le drapeau fixe l'indicatif, `phoneCtrl` = local.
+  final selectedCountryIso = 'BF'.obs;
+  PhoneCountry get selectedCountry =>
+      PhoneCountry.byIso(selectedCountryIso.value);
+  void selectCountry(String isoCode) => selectedCountryIso.value = isoCode;
+
+  /// Numéro complet au format international (ex. `+22670000000`) envoyé à l'API.
+  String get fullPhone {
+    final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+    return '${selectedCountry.dialCode}$digits';
+  }
+
+  String? validatePhone(String? value) {
+    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return 'Entrez votre numéro de téléphone';
+    if (digits.length < 6 || digits.length > 12) {
+      return 'Numéro de téléphone invalide';
+    }
+    return null;
+  }
 
   /// 1 = saisie du téléphone, 2 = saisie du code + nouveau mot de passe.
   final step = 1.obs;
@@ -24,22 +64,26 @@ class ForgotPasswordController extends GetxController {
   static const int _maxOtpAttempts = 3;
   static const Duration _otpCooldownDuration = Duration(seconds: 30);
 
-  /// Étape 1 : envoie le code de réinitialisation au téléphone.
+  /// Étape 1 : envoie le code de réinitialisation (email ou téléphone).
   Future<void> requestReset() async {
-    final phone = phoneCtrl.text.trim();
-    if (phone.isEmpty) {
-      errorMsg.value = 'Entrez votre numéro de téléphone.';
+    final isEmail = mode.value == 'email';
+    final error = isEmail ? validateEmail(emailCtrl.text) : validatePhone(phoneCtrl.text);
+    if (error != null) {
+      errorMsg.value = error;
       return;
     }
     try {
       isLoading.value = true;
       errorMsg.value = '';
-      await _authRepository.forgotPassword(phone);
+      await _authRepository.forgotPassword(
+        email: isEmail ? emailCtrl.text.trim() : null,
+        phone: isEmail ? null : fullPhone,
+      );
       step.value = 2;
       _otpAttempts = 0;
       AppToast.success(
         'Code envoyé',
-        'Un code de réinitialisation a été envoyé au $phone.',
+        'Un code de réinitialisation a été envoyé par email.',
       );
     } catch (e) {
       errorMsg.value = userFacingError(e);
@@ -71,8 +115,10 @@ class ForgotPasswordController extends GetxController {
     try {
       isLoading.value = true;
       errorMsg.value = '';
+      final isEmail = mode.value == 'email';
       await _authRepository.resetPassword(
-        phone: phoneCtrl.text.trim(),
+        email: isEmail ? emailCtrl.text.trim() : null,
+        phone: isEmail ? null : fullPhone,
         otp: otp,
         password: pwd,
       );
@@ -100,6 +146,7 @@ class ForgotPasswordController extends GetxController {
   @override
   void onClose() {
     phoneCtrl.dispose();
+    emailCtrl.dispose();
     otpCtrl.dispose();
     passwordCtrl.dispose();
     confirmCtrl.dispose();

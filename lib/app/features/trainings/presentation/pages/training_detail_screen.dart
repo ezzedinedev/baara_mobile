@@ -1,19 +1,20 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 import '../../domain/entities/training.dart';
 import '../controllers/training_detail_controller.dart';
+import 'training_enrollment_form_screen.dart';
 import 'training_payment_screen.dart';
 
 /// Détail d'une formation — design "MasterClass" : hero banner aux couleurs de
@@ -1319,12 +1320,28 @@ class _EnrollBottomBar extends StatelessWidget {
       return;
     }
 
+    // Dossier d'inscription exigé par le formateur : il précède TOUT le reste,
+    // paiement compris — le backend refuse l'inscription sans lui.
+    Map<String, dynamic>? applicationData;
+    if (training.enrollmentFormRequired) {
+      applicationData = await Get.to<Map<String, dynamic>>(
+        () => TrainingEnrollmentFormScreen(training: training),
+        transition: Transition.rightToLeft,
+      );
+      if (applicationData == null) return; // Abandon assumé.
+    }
+
     if (isPaid) {
-      Get.to<void>(() => TrainingPaymentScreen(training: training));
+      Get.to<void>(
+        () => TrainingPaymentScreen(
+          training: training,
+          applicationData: applicationData,
+        ),
+      );
       return;
     }
 
-    final success = await controller.enroll();
+    final success = await controller.enroll(applicationData: applicationData);
     if (success) {
       AppToast.success(
         'Inscription confirmée',

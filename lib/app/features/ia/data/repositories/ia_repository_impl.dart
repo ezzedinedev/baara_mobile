@@ -1,6 +1,6 @@
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/data/models/ai_models.dart';
+﻿import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/data/models/ai_models.dart';
 import '../../domain/repositories/i_ia_repository.dart';
 
 class IaRepositoryImpl implements IIaRepository {

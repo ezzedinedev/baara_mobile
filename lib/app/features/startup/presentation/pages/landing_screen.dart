@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/routes/app_routes.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -96,7 +96,7 @@ class _LandingScreenState extends State<LandingScreen>
                   const SizedBox(height: 8),
                   RevealOnMount(
                     child: Image.asset(
-                      'assets/images/logo/opportune_logo_light.png',
+                      'assets/images/logo/jobaway_logo_light.png',
                       height: 34,
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
@@ -104,7 +104,7 @@ class _LandingScreenState extends State<LandingScreen>
                   const Spacer(),
                   RevealOnMount(
                     child: Text(
-                      'Bienvenue sur OpporTune',
+                      'Bienvenue sur JobAway',
                       style: AppTextStyles.displayHero.copyWith(
                         fontSize: 38,
                         height: 1.05,

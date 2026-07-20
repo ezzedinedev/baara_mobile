@@ -60,6 +60,11 @@ String _safe(String message, {required String fallback}) {
 
 /// Convertit n'importe quelle erreur en message affichable et **non sensible**.
 String userFacingError(Object error) {
+  // Erreur de validation : les messages par champ sont déjà rédigés côté
+  // serveur (français) et présentables tels quels.
+  if (error is ApiValidationException) {
+    return error.message;
+  }
   if (error is ApiException) {
     final code = error.statusCode;
     final raw = error.message.toLowerCase();

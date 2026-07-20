@@ -1,7 +1,7 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/community_comment.dart';

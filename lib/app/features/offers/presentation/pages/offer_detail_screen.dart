@@ -1,15 +1,15 @@
-import 'dart:ui' show ImageFilter;
+﻿import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 import '../controllers/offer_detail_controller.dart';
 import '../widgets/offer_boost_badge.dart';
 import '../../domain/entities/offer.dart';
@@ -311,6 +311,11 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
+            // Compatibilité IA : c'est sur cette page que le candidat décide de
+            // postuler, il lui faut donc le chiffre ici. `null` = score inconnu
+            // (pas encore de CV) → on n'affiche rien plutôt qu'un faux 0 %.
+            if (offer.matchScore != null)
+              MatchScorePill(score: offer.matchScore!),
             _InfoPill(icon: IconlyLight.location, label: offer.location),
             if (offer.contractType.isNotEmpty)
               _InfoPill(icon: IconlyLight.work, label: offer.contractType),
@@ -453,11 +458,11 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
   }
 
   void _showAiResult(String title, Map<String, dynamic> data) {
-    final text = data.entries
-        .map((entry) => '${entry.key}: ${entry.value}')
-        .join('\n\n')
-        .trim();
-    _showTextResult(title, text);
+    // Le CV adapté est une réponse STRUCTURÉE (match_score, suggestions.bio,
+    // .objective, .experiences, gaps). L'aplatir en « clé: valeur » affichait
+    // les sous-objets via leur .toString() Dart → le dump « {bio: {current:
+    // null, suggested: …}} ». On rend chaque section proprement.
+    _showResultSheet(title: title, child: _CvAdaptView(data: data));
   }
 
   void _showResultSheet({required String title, required Widget child}) {
@@ -883,6 +888,282 @@ class _OfferDetailSkeleton extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Rendu structuré du résultat « CV adapté » renvoyé par POST /ai/cv/adapt.
+///
+/// Forme : { match_score:int, match_summary:String, suggestions:{ bio, objective,
+/// hard_skills_reorder:[String], experiences:[{suggested_description, reason}] },
+/// gaps:[String] }. On ne montre que ce qui est exploitable (suggestion non vide).
+class _CvAdaptView extends StatelessWidget {
+  const _CvAdaptView({required this.data});
+
+  final Map<String, dynamic> data;
+
+  static String? _str(dynamic v) {
+    final s = v?.toString().trim() ?? '';
+    return s.isEmpty || s == 'null' ? null : s;
+  }
+
+  static Map<String, dynamic> _map(dynamic v) =>
+      v is Map ? Map<String, dynamic>.from(v) : <String, dynamic>{};
+
+  static List<String> _strings(dynamic v) => (v is List ? v : const [])
+      .map((e) => e.toString().trim())
+      .where((e) => e.isNotEmpty && e != 'null')
+      .toList();
+
+  @override
+  Widget build(BuildContext context) {
+    final score = (data['match_score'] as num?)?.round();
+    final summary = _str(data['match_summary']);
+    final sug = _map(data['suggestions']);
+    final bio = _map(sug['bio']);
+    final objective = _map(sug['objective']);
+    final skills = _strings(sug['hard_skills_reorder']);
+    final experiences =
+        (sug['experiences'] is List ? sug['experiences'] as List : const [])
+            .map(_map)
+            .toList();
+    final gaps = _strings(data['gaps']);
+
+    final blocks = <Widget>[
+      _AdaptScoreHeader(score: score, summary: summary),
+    ];
+
+    final bioSug = _str(bio['suggested']);
+    if (bioSug != null) {
+      blocks.add(_AdaptSuggestion(
+        label: 'Bio adaptée',
+        suggested: bioSug,
+        reason: _str(bio['reason']),
+      ));
+    }
+
+    final objSug = _str(objective['suggested']);
+    if (objSug != null) {
+      blocks.add(_AdaptSuggestion(
+        label: 'Objectif adapté',
+        suggested: objSug,
+        reason: _str(objective['reason']),
+      ));
+    }
+
+    if (skills.isNotEmpty) {
+      blocks.add(_AdaptSkills(skills: skills));
+    }
+
+    var expShown = 0;
+    for (final exp in experiences) {
+      final desc = _str(exp['suggested_description']);
+      if (desc == null) continue;
+      expShown++;
+      blocks.add(_AdaptSuggestion(
+        label: 'Expérience $expShown',
+        suggested: desc,
+        reason: _str(exp['reason']),
+      ));
+    }
+
+    if (gaps.isNotEmpty) {
+      blocks.add(_AdaptGaps(gaps: gaps));
+    }
+
+    // Seul le score : rien à suggérer, on le dit clairement plutôt que du vide.
+    if (blocks.length == 1) {
+      blocks.add(Text(
+        'Aucune modification suggérée : votre CV est déjà bien aligné sur cette offre.',
+        style: AppTextStyles.bodyMd
+            .copyWith(color: AppColors.bodyColor, height: 1.5),
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < blocks.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.lg),
+          blocks[i],
+        ],
+      ],
+    );
+  }
+}
+
+class _AdaptScoreHeader extends StatelessWidget {
+  const _AdaptScoreHeader({required this.score, required this.summary});
+
+  final int? score;
+  final String? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (score != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryAccent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Text(
+              '$score % de correspondance',
+              style: AppTextStyles.labelMd.copyWith(
+                color: AppColors.primaryAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        if (summary != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            summary!,
+            style: AppTextStyles.bodyMd
+                .copyWith(color: AppColors.bodyColor, height: 1.5),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _AdaptSuggestion extends StatelessWidget {
+  const _AdaptSuggestion({
+    required this.label,
+    required this.suggested,
+    this.reason,
+  });
+
+  final String label;
+  final String suggested;
+  final String? reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLow,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.labelMd.copyWith(
+              color: AppColors.primaryAccent,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          SelectableText(
+            suggested,
+            style: AppTextStyles.bodyMd
+                .copyWith(color: AppColors.titleColor, height: 1.5),
+          ),
+          if (reason != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              reason!,
+              style: AppTextStyles.bodySm.copyWith(
+                color: AppColors.hintColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdaptSkills extends StatelessWidget {
+  const _AdaptSkills({required this.skills});
+
+  final List<String> skills;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Compétences à mettre en avant',
+          style: AppTextStyles.labelMd.copyWith(
+            color: AppColors.titleColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final skill in skills)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSelected,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  skill,
+                  style: AppTextStyles.labelSm
+                      .copyWith(color: AppColors.primaryAccent),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AdaptGaps extends StatelessWidget {
+  const _AdaptGaps({required this.gaps});
+
+  final List<String> gaps;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'À renforcer pour cette offre',
+          style: AppTextStyles.labelMd.copyWith(
+            color: AppColors.titleColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        for (final gap in gaps)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(IconlyLight.arrow_right_2,
+                    size: 16, color: AppColors.warningAccent),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    gap,
+                    style: AppTextStyles.bodyMd
+                        .copyWith(color: AppColors.bodyColor, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

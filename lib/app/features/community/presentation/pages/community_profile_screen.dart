@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
-import 'package:opportune_bf/app/features/messaging/data/repositories/messaging_repository_impl.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
+import 'package:jobaway/app/features/messaging/data/repositories/messaging_repository_impl.dart';
+import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/skill.dart';
@@ -269,8 +269,8 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     final name = _profile?['full_name']?.toString() ?? 'Ce membre';
     final url = ApiConstants.webProfileUrl(_userId);
     await Share.share(
-      'Découvrez le profil de $name sur OpporTune.\n$url',
-      subject: 'Profil de $name — OpporTune',
+      'Découvrez le profil de $name sur JobAway.\n$url',
+      subject: 'Profil de $name — JobAway',
     );
   }
 

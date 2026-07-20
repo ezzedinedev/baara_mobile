@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 void main() {
   group('RetryPolicy', () {

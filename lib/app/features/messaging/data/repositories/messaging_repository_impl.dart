@@ -1,8 +1,8 @@
-import 'package:http/http.dart' as http;
+﻿import 'package:http/http.dart' as http;
 
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/services/auth_token_store.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/services/auth_token_store.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/i_messaging_repository.dart';

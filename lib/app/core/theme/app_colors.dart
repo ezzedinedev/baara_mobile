@@ -167,9 +167,28 @@ class AppColors {
   static const Color boostSoft = Color(0xFFFFF3D4);
   static const Color onBoostSoft = Color(0xFF8A5A00);
 
-  // Vert vif de celebration (confetti / match). Plus saturé que [success].
-  static const Color celebrationGreen = Color(0xFF00E676);
   static const Color celebrationGold = Color(0xFFFFEB3B);
+
+  /// Confetti posé SUR le hero vert de marque (écran de match). Aucune teinte
+  /// verte : les verts de la charte sont les couleurs mêmes du dégradé de fond,
+  /// un confetti vert y est invisible.
+  static const List<Color> celebrationOnBrandConfetti = [
+    onPrimary,
+    celebrationGold,
+    categoryOrange,
+    categoryPink,
+    primaryLight,
+  ];
+
+  /// Confetti posé sur les surfaces de l'app (overlay de succès). Teintes
+  /// contrastées en light comme en dark.
+  static const List<Color> celebrationSurfaceConfetti = [
+    primary,
+    celebrationGold,
+    categoryOrange,
+    categoryPink,
+    categoryBlue,
+  ];
 
   // Surface sombre profonde pour overlays/dialogs immersifs (independante du
   // theme : ces surfaces restent sombres en light comme en dark).

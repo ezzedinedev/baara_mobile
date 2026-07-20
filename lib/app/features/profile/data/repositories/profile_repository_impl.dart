@@ -1,6 +1,6 @@
-import 'package:http/http.dart' as http;
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:http/http.dart' as http;
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../models/profile_model.dart';

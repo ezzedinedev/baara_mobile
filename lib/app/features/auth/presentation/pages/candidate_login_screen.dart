@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../controllers/candidate_login_controller.dart';
 
 class CandidateLoginScreen extends GetView<CandidateLoginController> {
@@ -37,7 +37,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                       height: 200,
                       showLeading: true,
                       foregroundIcon: IconlyLight.login,
-                      title: 'OpporTune',
+                      title: 'JobAway',
                       onLeadingTap: () => Get.back(),
                     ),
                     Padding(
@@ -84,13 +84,12 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                             // la fois → seul son validateur s'exécute).
                             Obx(
                               () => controller.loginMode.value == 'phone'
-                                  ? AuthTextField(
+                                  ? AuthPhoneField(
                                       key: const ValueKey('login-phone'),
-                                      label: 'Téléphone',
-                                      hint: '+226 70 00 00 00',
-                                      icon: IconlyLight.call,
                                       controller: controller.phoneCtrl,
-                                      keyboardType: TextInputType.phone,
+                                      country: controller.selectedCountry,
+                                      onCountryChanged: (c) =>
+                                          controller.selectCountry(c.isoCode),
                                       validator: controller.validatePhone,
                                     )
                                   : AuthTextField(

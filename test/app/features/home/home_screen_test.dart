@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/features/home/presentation/controllers/home_controller.dart';
+import 'package:jobaway/app/features/home/presentation/controllers/home_controller.dart';
 
 void main() {
   late HomeController controller;

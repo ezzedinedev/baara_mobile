@@ -8,6 +8,7 @@ import '../constants/api_constants.dart';
 import '../network/api_provider.dart';
 import '../utils/offline_error.dart';
 import '../widgets/common/app_toast.dart';
+import '../widgets/effects/celebration_overlay.dart';
 import 'local_cache_service.dart';
 
 /// Une candidature soumise alors que l'appareil etait hors-ligne, en attente de
@@ -50,8 +51,8 @@ class PendingApply {
       screeningAnswers: json['screening_answers'] is Map<String, dynamic>
           ? json['screening_answers'] as Map<String, dynamic>
           : null,
-      queuedAt:
-          DateTime.tryParse(json['queued_at']?.toString() ?? '') ?? DateTime.now(),
+      queuedAt: DateTime.tryParse(json['queued_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 }
@@ -145,10 +146,22 @@ class OfflineApplyQueue extends GetxService {
           );
           if (response['success'] == true) {
             await remove(apply.offerId);
-            AppToast.success(
-              'Candidature envoyee',
-              '${apply.company.isEmpty ? '' : '${apply.company} · '}${apply.offerTitle}',
-            );
+            final match = response['match'] as Map<String, dynamic>?;
+            if (match?['is_match'] == true) {
+              // Match decroche hors-ligne. On ne pousse PAS l'ecran de
+              // celebration : le flush survient a un moment arbitraire (retour
+              // du reseau), il volerait l'ecran en cours. Confetti + toast.
+              showCelebration();
+              AppToast.success(
+                'Vous avez matche !',
+                '${apply.offerTitle}${apply.company.isEmpty ? '' : ' · ${apply.company}'}',
+              );
+            } else {
+              AppToast.success(
+                'Candidature envoyee',
+                '${apply.company.isEmpty ? '' : '${apply.company} · '}${apply.offerTitle}',
+              );
+            }
           } else {
             // Le serveur a repondu (ex. 422 deja postule) : action resolue,
             // on ne boucle pas dessus.

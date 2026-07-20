@@ -1,15 +1,21 @@
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
-import 'package:opportune_bf/app/core/utils/offline_error.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
-import 'package:opportune_bf/app/core/widgets/common/success_sheet.dart';
-import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/services/offline_apply_queue.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/offline_error.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/common/app_toast.dart';
+import 'package:jobaway/app/core/widgets/common/sheet_handle.dart';
+import 'package:jobaway/app/core/widgets/common/success_sheet.dart';
+import 'package:jobaway/app/core/widgets/effects/celebration_overlay.dart';
+import 'package:jobaway/app/core/widgets/gradient_button.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../../../../data/models/ai_models.dart';
 import '../../../ia/domain/repositories/i_ia_repository.dart';
 import '../../domain/entities/offer.dart';
+import '../../domain/exceptions/missing_skills_exception.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
 class OfferDetailController extends GetxController {
@@ -81,7 +87,11 @@ class OfferDetailController extends GetxController {
         screeningAnswers: screeningAnswers,
       );
       hasApplied.value = true;
-      if (result.isMatch && result.score >= 60) {
+      // Le seuil de match est décidé par le backend (`matching.match_threshold`)
+      // et porté par `isMatch` : le rejouer ici avec un 60 en dur désynchronise
+      // l'app dès que la config serveur change.
+      if (result.isMatch) {
+        AppHaptics.success();
         Get.toNamed(AppRoutes.offerMatch, arguments: {
           'offerTitle': o.title,
           'company': o.company,
@@ -96,6 +106,12 @@ class OfferDetailController extends GetxController {
         showCelebration();
         _showApplySuccess(o);
       }
+    } on MissingSkillsException catch (e) {
+      // Pas une erreur à balayer d'un toast : la candidature aurait été
+      // écartée automatiquement. On explique, et on emmène le candidat au bon
+      // endroit plutôt que de le laisser buter sur le bouton.
+      AppHaptics.error();
+      _promptCompleteSkills(e.message);
     } catch (e) {
       if (isOfflineError(e)) {
         await _queueOffline(o, screeningAnswers: screeningAnswers);
@@ -105,6 +121,52 @@ class OfferDetailController extends GetxController {
     } finally {
       isApplying.value = false;
     }
+  }
+
+  void _promptCompleteSkills(String message) {
+    Get.bottomSheet<void>(
+      SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SheetHandle(),
+              const SizedBox(height: 12),
+              Text(
+                'Complétez vos compétences',
+                style:
+                    AppTextStyles.titleLg.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                message,
+                style:
+                    AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor),
+              ),
+              const SizedBox(height: 20),
+              GradientButton(
+                label: 'COMPLÉTER MON CV',
+                textColor: AppColors.onPrimary,
+                height: 52,
+                borderRadius: 14,
+                onPressed: () {
+                  AppHaptics.tap();
+                  Get.back<void>();
+                  Get.toNamed<void>(AppRoutes.profileCvManual);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
   }
 
   /// Hors-ligne : on met la candidature en file d'attente (renvoyee au retour

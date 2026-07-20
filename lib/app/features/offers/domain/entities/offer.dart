@@ -30,6 +30,11 @@ class Offer {
   final String? applicationStatus;
   final List<ScreeningQuestion> screeningQuestions;
 
+  /// Compatibilité IA (0–100) calculée pour le candidat connecté.
+  /// `null` = score réellement inconnu (pas de CV, offre non indexée, ou liste
+  /// publique) — dans ce cas on masque le badge au lieu d'afficher « 0 % ».
+  final int? matchScore;
+
   const Offer({
     required this.id,
     required this.title,
@@ -54,6 +59,7 @@ class Offer {
     this.applicationId,
     this.applicationStatus,
     this.screeningQuestions = const [],
+    this.matchScore,
   });
 
   bool get hasScreeningQuestions => screeningQuestions.isNotEmpty;

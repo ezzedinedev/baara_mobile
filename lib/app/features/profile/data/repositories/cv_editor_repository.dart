@@ -1,5 +1,5 @@
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+﻿import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 /// Édition manuelle du CV : chargement (GET cv-builder) et sauvegarde groupée
 /// des champs (PUT cv-builder avec `{fields: {...}}`).

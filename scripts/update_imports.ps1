@@ -1,5 +1,5 @@
-$dst = "e:\laragon\www\appli_pour_lemploie\lib\app\fonctionnalites"
-$pkg = "package:opportune_bf"
+﻿$dst = "e:\laragon\www\appli_pour_lemploie\lib\app\fonctionnalites"
+$pkg = "package:jobaway"
 
 # Step 1: For ALL dart files in fonctionnalites/, convert external imports to package imports
 Get-ChildItem -Path $dst -Recurse -Filter "*.dart" | ForEach-Object {

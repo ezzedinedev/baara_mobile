@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 /// Types de profil disponibles à l'inscription MOBILE. Le recrutement
 /// (entreprise) se fait exclusivement sur la plateforme web → plus d'option

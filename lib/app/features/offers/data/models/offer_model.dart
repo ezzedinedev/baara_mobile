@@ -27,6 +27,7 @@ class OfferModel extends Offer {
     super.applicationId,
     super.applicationStatus,
     super.screeningQuestions,
+    super.matchScore,
   });
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
@@ -71,6 +72,10 @@ class OfferModel extends Offer {
       applicationId: json['application_id']?.toString(),
       applicationStatus: json['application_status']?.toString(),
       screeningQuestions: _parseScreeningQuestions(json),
+      // Absent (liste publique) ou null (CV/offre non indexés) = score inconnu.
+      matchScore: json['match_score'] is num
+          ? (json['match_score'] as num).round()
+          : null,
     );
   }
 

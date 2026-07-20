@@ -4,8 +4,8 @@ import 'package:iconly/iconly.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-class OpportuneLogo extends StatelessWidget {
-  const OpportuneLogo({
+class JobAwayLogo extends StatelessWidget {
+  const JobAwayLogo({
     super.key,
     this.iconSize = 20,
     this.fontSize = 22,
@@ -52,18 +52,12 @@ class OpportuneLogo extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: 'Oppor',
+                text: 'Job',
                 style: AppTextStyles.logoGreen(size: fontSize),
               ),
               TextSpan(
-                text: 'Tune',
+                text: 'Away',
                 style: AppTextStyles.logoDark(size: fontSize),
-              ),
-              TextSpan(
-                text: ' BF',
-                style: AppTextStyles.logoDark(size: fontSize * 0.75).copyWith(
-                  color: AppColors.bodyColor,
-                ),
               ),
             ],
           ),

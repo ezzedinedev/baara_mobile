@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../data/repositories/portfolio_repository.dart';
 import '../../data/repositories/document_repository_impl.dart';

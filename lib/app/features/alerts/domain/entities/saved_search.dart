@@ -1,8 +1,4 @@
-/// Recherche d'offres sauvegardée par le candidat ("alerte emploi").
-///
-/// [filters] reprend les mêmes clés que la liste d'offres (search, sector_id,
-/// contract_type, is_remote, region, city, salary_min, sort). Le backend
-/// notifie les nouvelles offres correspondantes via le cron `alerts:dispatch`.
+
 class SavedSearch {
   const SavedSearch({
     required this.id,

@@ -1,6 +1,6 @@
-import 'package:opportune_bf/app/core/network/api_provider.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/services/auth_token_store.dart';
+﻿import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/services/auth_token_store.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../models/user_model.dart';
@@ -35,7 +35,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<User> loginWithPhone(String phone, String password) async {
     final response = await _apiProvider.postJson(ApiConstants.loginPhone, {
       'phone': phone,
-      'pin': password, // Assuming PIN for phone login
+      'password': password, // comptes app = mot de passe (PIN legacy en repli)
       'device_name': ApiConstants.authDeviceName,
       'user_type': 'candidate',
     });
@@ -74,6 +74,8 @@ class AuthRepositoryImpl implements IAuthRepository {
     final response =
         await _apiProvider.postJson(ApiConstants.register, userData);
     if (response['success'] != true) {
+      final validation = ApiValidationException.tryFrom(response);
+      if (validation != null) throw validation;
       throw Exception(response['message'] ?? 'Registration failed');
     }
   }
@@ -109,28 +111,55 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Future<void> forgotPassword(String phone) async {
-    final response = await _apiProvider.postJson(ApiConstants.forgotPassword, {
-      'phone': phone,
+  Future<void> sendEmailVerification() async {
+    final response =
+        await _apiProvider.postJson(ApiConstants.emailSendVerification, {});
+    if (response['success'] != true) {
+      throw Exception(
+          response['message'] ?? "Impossible d'envoyer le code par email.");
+    }
+  }
+
+  @override
+  Future<void> verifyEmail(String code) async {
+    final response = await _apiProvider.postJson(ApiConstants.emailVerify, {
+      'code': code,
     });
     if (response['success'] != true) {
+      throw Exception(response['message'] ?? 'Code invalide ou expiré.');
+    }
+  }
+
+  @override
+  Future<void> forgotPassword({String? phone, String? email}) async {
+    final response = await _apiProvider.postJson(ApiConstants.forgotPassword, {
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      if (email != null && email.isNotEmpty) 'email': email,
+    });
+    if (response['success'] != true) {
+      final validation = ApiValidationException.tryFrom(response);
+      if (validation != null) throw validation;
       throw Exception(response['message'] ?? "Impossible d'envoyer le code.");
     }
   }
 
   @override
   Future<void> resetPassword({
-    required String phone,
+    String? phone,
+    String? email,
     required String otp,
     required String password,
   }) async {
     final response = await _apiProvider.postJson(ApiConstants.resetPassword, {
-      'phone': phone,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      if (email != null && email.isNotEmpty) 'email': email,
       'otp': otp,
       'password': password,
       'password_confirmation': password,
     });
     if (response['success'] != true) {
+      final validation = ApiValidationException.tryFrom(response);
+      if (validation != null) throw validation;
       throw Exception(response['message'] ?? 'Réinitialisation impossible.');
     }
   }

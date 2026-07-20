@@ -1,4 +1,4 @@
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:jobaway/app/core/constants/api_constants.dart';
 import '../../domain/entities/post.dart';
 import 'network_user_model.dart';
 

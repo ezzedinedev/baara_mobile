@@ -1,24 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/routes/app_routes.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 import '../../domain/repositories/i_auth_repository.dart';
-
-class RegisterCountryOption {
-  const RegisterCountryOption({
-    required this.isoCode,
-    required this.flag,
-    required this.name,
-    required this.dialCode,
-  });
-
-  final String isoCode;
-  final String flag;
-  final String name;
-  final String dialCode;
-}
 
 class RegisterController extends GetxController {
   final IAuthRepository _authRepository;
@@ -31,14 +18,12 @@ class RegisterController extends GetxController {
   final registrationProfile = ''.obs;
   final selectedCountryIso = 'BF'.obs;
 
-  final countries = const <RegisterCountryOption>[
-    RegisterCountryOption(
-        isoCode: 'BF', flag: '🇧🇫', name: 'Burkina Faso', dialCode: '+226'),
-    RegisterCountryOption(
-        isoCode: 'CI', flag: '🇨🇮', name: 'Côte d\'Ivoire', dialCode: '+225'),
-    RegisterCountryOption(
-        isoCode: 'SN', flag: '🇸🇳', name: 'Sénégal', dialCode: '+221'),
-  ];
+  /// Liste des pays proposés (zone UEMOA) — cf. [PhoneCountry.uemoa].
+  final countries = PhoneCountry.uemoa;
+
+  /// Pays / indicatif actuellement sélectionné, dérivé de [selectedCountryIso].
+  PhoneCountry get selectedCountry =>
+      PhoneCountry.byIso(selectedCountryIso.value);
 
   final stepOneFormKey = GlobalKey<FormState>();
   final stepTwoFormKey = GlobalKey<FormState>();
@@ -63,15 +48,80 @@ class RegisterController extends GetxController {
 
   void selectCountry(String isoCode) {
     selectedCountryIso.value = isoCode;
-    final country = countries.firstWhere((c) => c.isoCode == isoCode);
-    countryCtrl.text = country.name;
-    if (phoneCtrl.text.isEmpty) {
-      phoneCtrl.text = '${country.dialCode} ';
-    }
+    countryCtrl.text = PhoneCountry.byIso(isoCode).name;
   }
 
   String? validateCountry(String? v) =>
       (v == null || v.isEmpty) ? 'Champ requis' : null;
+
+  /// Valide la partie locale du numéro (chiffres seulement, 6 à 12 chiffres).
+  String? validatePhone(String? v) {
+    final digits = (v ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return 'Numéro requis';
+    if (digits.length < 6 || digits.length > 12) {
+      return 'Numéro invalide';
+    }
+    return null;
+  }
+
+  /// Numéro complet au format international (ex. `+22670000000`).
+  String get fullPhone {
+    final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+    return '${selectedCountry.dialCode}$digits';
+  }
+
+  String? validateRequired(String? v) =>
+      (v == null || v.trim().isEmpty) ? 'Champ requis' : null;
+
+  String? validateEmail(String? v) {
+    final s = (v ?? '').trim();
+    if (s.isEmpty) return 'Email requis';
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s)) {
+      return 'Email invalide';
+    }
+    return null;
+  }
+
+  String? validatePassword(String? v) {
+    final s = v ?? '';
+    if (s.isEmpty) return 'Mot de passe requis';
+    if (s.length < 8) return 'Au moins 8 caractères';
+    return null;
+  }
+
+  String? validateConfirmPassword(String? v) =>
+      (v != passwordCtrl.text) ? 'Les mots de passe ne correspondent pas' : null;
+
+  /// Numéro d'étape (1-3) portant le champ backend fourni, ou `null` si inconnu.
+  int? _stepForField(String field) {
+    switch (field) {
+      case 'first_name':
+      case 'last_name':
+        return 1;
+      case 'email':
+      case 'phone':
+        return 2;
+      case 'password':
+      case 'pin':
+        return 3;
+    }
+    return null;
+  }
+
+  /// Ramène l'utilisateur à la première étape contenant un champ en erreur,
+  /// pour qu'il voie et corrige le champ fautif signalé par le serveur.
+  void _goToFirstInvalidStep(Iterable<String> fields) {
+    int? target;
+    for (final field in fields) {
+      final step = _stepForField(field);
+      if (step != null && (target == null || step < target)) {
+        target = step;
+      }
+    }
+    if (target != null && target != currentStep.value) {
+      currentStep.value = target;
+    }
+  }
 
   void onContinue() async {
     if (currentStep.value == 1 && stepOneFormKey.currentState!.validate()) {
@@ -97,7 +147,7 @@ class RegisterController extends GetxController {
         'first_name': firstNameCtrl.text.trim(),
         'last_name': lastNameCtrl.text.trim(),
         'email': emailCtrl.text.trim(),
-        'phone': phoneCtrl.text.trim(),
+        'phone': fullPhone,
         'password': passwordCtrl.text,
         'password_confirmation': confirmPasswordCtrl.text,
         'user_type': 'candidate',
@@ -107,12 +157,17 @@ class RegisterController extends GetxController {
           'profile_type': registrationProfile.value,
         'device_name': ApiConstants.authDeviceName,
       });
-      final phone = phoneCtrl.text.trim();
-      Get.offAllNamed(AppRoutes.otpVerification, arguments: {'phone': phone});
+      Get.offAllNamed(AppRoutes.otpVerification,
+          arguments: {'phone': fullPhone, 'email': emailCtrl.text.trim()});
       AppToast.success(
         'Compte créé',
-        'Vérifiez votre numéro avec le code reçu par SMS.',
+        'Vérifiez votre compte avec le code reçu par email.',
       );
+    } on ApiValidationException catch (e) {
+      // Détail par champ : on affiche le message précis et on ramène
+      // l'utilisateur à l'étape du champ fautif.
+      errorMsg.value = e.message;
+      _goToFirstInvalidStep(e.errors.keys);
     } catch (e) {
       errorMsg.value = userFacingError(e);
     } finally {

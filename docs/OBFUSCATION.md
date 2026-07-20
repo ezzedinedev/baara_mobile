@@ -1,4 +1,4 @@
-# Obfuscation & protection du code — OpporTune BF
+﻿# Obfuscation & protection du code — JobAway
 
 Ce document couvre la protection du code des **deux** projets :
 

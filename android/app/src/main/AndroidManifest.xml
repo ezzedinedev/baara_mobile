@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
-        android:label="OpporTune BF"
+        android:label="JobAway"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:networkSecurityConfig="@xml/network_security_config">
@@ -30,13 +30,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep link : schéma custom opportunebf:// (fonctionne sans
-                 vérification de domaine). Ex. opportunebf://profil/{id}. -->
+            <!-- Deep link : schéma custom jobaway:// (fonctionne sans
+                 vérification de domaine). Ex. jobaway://profil/{id}.
+                 Doit rester identique à ApiConstants.deepLinkScheme. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="opportunebf"/>
+                <data android:scheme="jobaway"/>
             </intent-filter>
             <!-- App Links HTTPS : ouvre l'app sur les liens web /profil/*.
                  autoVerify nécessite /.well-known/assetlinks.json sur le
@@ -46,7 +47,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="opportunebf.com"
+                      android:host="jobway.app"
                       android:pathPrefix="/profil"/>
             </intent-filter>
         </activity>

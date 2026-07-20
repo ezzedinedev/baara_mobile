@@ -1,6 +1,6 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/i_community_repository.dart';
 

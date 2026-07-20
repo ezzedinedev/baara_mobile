@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -8,17 +8,27 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:opportune_bf/app/core/services/location_service.dart';
-import 'package:opportune_bf/app/core/services/realtime_events.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/services/location_service.dart';
+import 'package:jobaway/app/core/services/realtime_events.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:jobaway/app/features/offers/data/models/job_proposal_model.dart';
+import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/i_messaging_repository.dart';
+import '../widgets/propose_date_sheet.dart';
 
 class MessagesController extends GetxController {
   final IMessagingRepository _repository;
-  MessagesController(this._repository);
+
+  /// Les boutons des messages structurés visent des entretiens et des offres
+  /// d'emploi : les endpoints vivent dans la feature `offers`.
+  final IOfferRepository _offerRepository;
+
+  MessagesController(this._repository, this._offerRepository);
 
   static const int _convPerPage = 20;
 
@@ -277,6 +287,110 @@ class MessagesController extends GetxController {
     } finally {
       isLoadingMessages.value = false;
     }
+  }
+
+  // ── Messages structurés (entretiens / offres d'emploi) ─────────────────
+  // Le backend joint un `meta_json` aux messages d'invitation, de report et
+  // d'offre. On rend ses `actions` sous forme de boutons, et on les rejoue sur
+  // les endpoints de la feature `offers`.
+
+  /// IDs des messages dont l'action est en cours (désactive les boutons).
+  final respondingMessageIds = <String>{}.obs;
+
+  bool isRespondingTo(String messageId) =>
+      respondingMessageIds.contains(messageId);
+
+  /// Rejoue une action de message structuré. `accept_new_date` et
+  /// `propose_other` sont les libellés d'affichage d'une contre-proposition :
+  /// côté API candidat ils correspondent à `accept` et `reschedule`.
+  Future<void> respondToStructuredAction(
+    BuildContext context,
+    Message message,
+    MessageAction action,
+  ) async {
+    final meta = message.meta;
+    final targetId = meta?.targetId;
+    if (meta == null || targetId == null || targetId.isEmpty) return;
+    if (respondingMessageIds.contains(message.id)) return;
+
+    // Reprogrammer / proposer une autre date : le backend exige une date future.
+    ProposedDate? proposal;
+    if (action.needsDate) {
+      proposal = await showProposeDateSheet(
+        context: context,
+        title: 'Proposer une autre date',
+      );
+      if (proposal == null) return;
+    }
+
+    respondingMessageIds.add(message.id);
+    try {
+      final ok = meta.isProposal
+          ? await _respondToProposal(targetId, action, proposal?.message)
+          : await _respondToInterview(targetId, action, proposal);
+
+      if (!ok) {
+        AppToast.error('Action impossible',
+            'Le serveur a refusé cette action. Réessayez plus tard.');
+        return;
+      }
+
+      AppHaptics.success();
+      // Le backend poste un message de confirmation dans la conversation et
+      // retire les `actions` du message d'origine : on recharge pour que les
+      // boutons disparaissent et que la réponse apparaisse.
+      final convId = activeConversationId.value;
+      if (convId != null) await loadMessages(convId);
+    } catch (e) {
+      AppToast.error('Action impossible', userFacingError(e));
+    } finally {
+      respondingMessageIds.remove(message.id);
+    }
+  }
+
+  Future<bool> _respondToInterview(
+    String interviewId,
+    MessageAction action,
+    ProposedDate? proposal,
+  ) {
+    final wire = switch (action) {
+      MessageAction.accept ||
+      MessageAction.acceptNewDate =>
+        InterviewAction.accept,
+      MessageAction.decline => InterviewAction.decline,
+      MessageAction.reschedule ||
+      MessageAction.proposeOther =>
+        InterviewAction.reschedule,
+      _ => null,
+    };
+    if (wire == null) return Future.value(false);
+
+    return _offerRepository.respondToInterview(
+      interviewId,
+      action: wire,
+      message: proposal?.message,
+      proposedDate: proposal?.date,
+    );
+  }
+
+  Future<bool> _respondToProposal(
+    String proposalId,
+    MessageAction action,
+    String? message,
+  ) {
+    final wire = switch (action) {
+      MessageAction.accept => JobProposalAction.accept,
+      MessageAction.negotiate => JobProposalAction.negotiate,
+      MessageAction.refuse => JobProposalAction.refuse,
+      _ => null,
+    };
+    if (wire == null) return Future.value(false);
+
+    return _offerRepository.respondToProposal(
+      proposalId,
+      action: wire,
+      message: message,
+    );
   }
 
   /// Recopie la présence de l'interlocuteur depuis la conversation chargée.

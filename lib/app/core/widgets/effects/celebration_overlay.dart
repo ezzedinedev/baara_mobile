@@ -1,8 +1,8 @@
-import 'package:confetti/confetti.dart';
+﻿import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
 
 /// Burst de **confetti de célébration** posé en plein écran via [Overlay], sans
 /// écran dédié. Réutilise le package `confetti` (déjà présent pour l'écran de
@@ -76,18 +76,16 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay> {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: IgnorePointer(
+        // Émetteur descendu dans le viewport : un blast explosif calé sur
+        // `topCenter` perd la moitié de ses particules hors cadre, au-dessus de
+        // l'écran.
         child: Align(
-          alignment: Alignment.topCenter,
+          alignment: const Alignment(0, -0.35),
           child: ConfettiWidget(
             confettiController: _controller,
             blastDirectionality: BlastDirectionality.explosive,
             shouldLoop: false,
-            colors: const [
-              AppColors.primary,
-              AppColors.celebrationGold,
-              AppColors.secondary,
-              AppColors.celebrationGreen,
-            ],
+            colors: AppColors.celebrationSurfaceConfetti,
             numberOfParticles: widget.particles,
             maxBlastForce: 18,
             minBlastForce: 6,

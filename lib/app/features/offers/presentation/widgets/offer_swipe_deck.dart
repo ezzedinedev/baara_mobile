@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/offer.dart';
 import '../controllers/offer_controller.dart';
@@ -205,7 +205,7 @@ class OfferSwipeDeck extends StatelessWidget {
     });
   }
 
-  void _showDetails(BuildContext context, Offer offer, int score) {
+  void _showDetails(BuildContext context, Offer offer, int? score) {
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
@@ -281,11 +281,13 @@ class OfferSwipeDeck extends StatelessWidget {
                   style: AppTextStyles.bodyMd
                       .copyWith(color: AppColors.bodyColor, height: 1.45)),
             ],
-            const SizedBox(height: 8),
-            Text('Compatibilité IA : $score%',
-                style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.primaryAccent,
-                    fontWeight: FontWeight.w700)),
+            if (score != null) ...[
+              const SizedBox(height: 8),
+              Text('Compatibilité IA : $score%',
+                  style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.primaryAccent,
+                      fontWeight: FontWeight.w700)),
+            ],
           ],
         ),
       ),
@@ -303,7 +305,7 @@ class _OfferDeckCard extends StatelessWidget {
   });
 
   final Offer offer;
-  final int matchScore;
+  final int? matchScore;
   final bool compact;
   final bool muted;
   final VoidCallback? onApply;
@@ -529,13 +531,18 @@ class _OfferDeckCard extends StatelessWidget {
   }
 }
 
+/// Badge de compatibilité. `score` nul = le backend n'a pas pu calculer le score
+/// (CV ou offre non indexés) : on n'affiche rien plutôt qu'un « 0 % » trompeur.
 class _CircularScoreBadge extends StatelessWidget {
   const _CircularScoreBadge({required this.score, required this.compact});
-  final int score;
+  final int? score;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final score = this.score;
+    if (score == null) return const SizedBox.shrink();
+
     final size = compact ? 44.0 : 56.0;
     final ratio = (score / 100).clamp(0.0, 1.0);
     final ringColor =

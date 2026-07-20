@@ -92,6 +92,51 @@ class ApiException implements Exception {
   String toString() => 'ApiException: $message (status: $statusCode)';
 }
 
+/// Erreur de validation (HTTP 422) portant le détail **par champ** renvoyé par
+/// Laravel (`{ message, errors: { champ: [messages] } }`). Contrairement à
+/// [ApiException], elle conserve la carte [errors] pour que l'UI puisse dire
+/// précisément quel champ est en cause et y ramener l'utilisateur.
+class ApiValidationException implements Exception {
+  const ApiValidationException({
+    required this.message,
+    required this.errors,
+    this.statusCode = 422,
+  });
+
+  /// Message déjà présentable : messages de champs joints par retour à la ligne.
+  final String message;
+
+  /// Erreurs par champ, ex. `{ 'phone': ['…'], 'email': ['…'] }`.
+  final Map<String, List<String>> errors;
+
+  final int statusCode;
+
+  /// Construit l'exception depuis un corps Laravel ; renvoie `null` si le corps
+  /// ne contient pas de map `errors` exploitable.
+  static ApiValidationException? tryFrom(Map<String, dynamic> body) {
+    final raw = body['errors'];
+    if (raw is! Map || raw.isEmpty) return null;
+
+    final errors = <String, List<String>>{};
+    final messages = <String>[];
+    raw.forEach((key, value) {
+      final list = value is List
+          ? value.map((e) => e.toString()).toList()
+          : <String>[value.toString()];
+      errors[key.toString()] = list;
+      if (list.isNotEmpty) messages.add(list.first);
+    });
+
+    final message = messages.isNotEmpty
+        ? messages.join('\n')
+        : (body['message']?.toString() ?? 'Données invalides');
+    return ApiValidationException(message: message, errors: errors);
+  }
+
+  @override
+  String toString() => message;
+}
+
 class ApiProvider {
   ApiProvider({
     http.Client? client,

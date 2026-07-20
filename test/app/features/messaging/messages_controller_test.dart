@@ -1,8 +1,10 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:opportune_bf/app/features/messaging/domain/entities/conversation.dart';
-import 'package:opportune_bf/app/features/messaging/domain/entities/message.dart';
-import 'package:opportune_bf/app/features/messaging/domain/repositories/i_messaging_repository.dart';
-import 'package:opportune_bf/app/features/messaging/presentation/controllers/messages_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:jobaway/app/features/messaging/domain/entities/conversation.dart';
+import 'package:jobaway/app/features/messaging/domain/entities/message.dart';
+import 'package:jobaway/app/features/messaging/domain/repositories/i_messaging_repository.dart';
+import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+
+import '../../../support/fake_offer_repository.dart';
 
 class _FakeMessagingRepository implements IMessagingRepository {
   List<Conversation> conversations = [];
@@ -116,7 +118,7 @@ void main() {
 
   setUp(() {
     fakeRepo = _FakeMessagingRepository();
-    controller = MessagesController(fakeRepo);
+    controller = MessagesController(fakeRepo, FakeOfferRepository());
   });
 
   group('MessagesController', () {

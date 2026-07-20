@@ -1,17 +1,17 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
 /// Gère les liens entrants (deep links) :
-/// - schéma custom `opportunebf://profil/{id}` (et `…/offres/{id}`)
+/// - schéma custom `jobaway://profil/{id}` (et `…/offres/{id}`)
 /// - liens web `https://<site>/profil/{id}` (App Links / Universal Links)
 ///
 /// Mappe l'URI vers une route interne et y navigue via GetX. Singleton initialisé
-/// une fois au démarrage de l'app (cf. racine `OpportuneBFApp`).
+/// une fois au démarrage de l'app (cf. racine `JobAwayBFApp`).
 class DeepLinkService {
   DeepLinkService._();
   static final DeepLinkService instance = DeepLinkService._();
@@ -60,7 +60,7 @@ class DeepLinkService {
   String? _routeFor(Uri uri) {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
 
-    // Schéma custom : opportunebf://profil/{id} → host='profil', segs=['{id}'].
+    // Schéma custom : jobaway://profil/{id} → host='profil', segs=['{id}'].
     if (uri.scheme == ApiConstants.deepLinkScheme) {
       if (uri.host == 'profil' && segs.isNotEmpty) {
         return AppRoutes.communityProfile.replaceFirst(':id', segs.first);

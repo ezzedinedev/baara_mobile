@@ -1,9 +1,9 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
 
 /// Effet de **burst** de micro-particules pour les moments de délice (réaction,
 /// like, ajout de favori). Léger, non bloquant, auto-nettoyé.

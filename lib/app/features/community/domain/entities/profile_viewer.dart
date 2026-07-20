@@ -1,4 +1,4 @@
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
+﻿import 'package:jobaway/app/core/constants/api_constants.dart';
 
 /// Membre ayant consulté le profil de l'utilisateur courant
 /// (« qui a vu mon profil »).

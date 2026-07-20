@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
-import 'package:opportune_bf/app/translations/app_translations.dart';
+import 'package:jobaway/app/core/theme/app_theme_controller.dart';
+import 'package:jobaway/app/translations/app_translations.dart';
 
 import '../../domain/entities/profile.dart';
 import 'profile_controller.dart';

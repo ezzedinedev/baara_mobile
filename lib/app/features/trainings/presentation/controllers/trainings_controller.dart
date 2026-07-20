@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../domain/entities/enrolled_training.dart';
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
 
@@ -53,10 +54,42 @@ class TrainingsController extends GetxController {
     }).toList();
   }
 
+  // ── Mes formations ─────────────────────────────────────────────────────
+  // Les formations suivies vivaient uniquement dans le repository : l'app ne
+  // les affichait nulle part. L'apprenant ne pouvait donc pas retrouver un
+  // parcours commencé, ni voir sa progression, sans refouiller le catalogue.
+  final enrolled = <EnrolledTraining>[].obs;
+  final isLoadingEnrolled = false.obs;
+
+  /// Parcours commencés mais pas terminés — ceux qu'on propose de reprendre.
+  List<EnrolledTraining> get inProgress =>
+      enrolled.where((e) => !e.isCompleted).toList();
+
   @override
   void onInit() {
     super.onInit();
     loadTrainings();
+    loadEnrolled();
+  }
+
+  Future<void> loadEnrolled() async {
+    if (isLoadingEnrolled.value) return;
+    isLoadingEnrolled.value = true;
+    try {
+      enrolled.assignAll(await _repository.getEnrolledTrainings());
+    } catch (_) {
+      // Section secondaire : son échec ne doit pas masquer le catalogue.
+      enrolled.clear();
+    } finally {
+      isLoadingEnrolled.value = false;
+    }
+  }
+
+  Future<void> refreshAll() async {
+    await Future.wait([
+      loadTrainings(refresh: true),
+      loadEnrolled(),
+    ]);
   }
 
   void updateSearch(String query) {

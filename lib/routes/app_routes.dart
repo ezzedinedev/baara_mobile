@@ -8,6 +8,7 @@ abstract class AppRoutes {
   static const register = '/inscription/step1';
   static const candidateLogin = '/connexion/candidat';
   static const otpVerification = '/verification';
+  static const emailVerification = '/verification-email';
   static const forgotPassword = '/mot-de-passe-oublie';
   static const forgotPasswordReset = '/mot-de-passe-oublie/reinitialiser';
   static const home = '/accueil';
@@ -30,6 +31,9 @@ abstract class AppRoutes {
   static const trainings = '/formations';
   static const trainingDetail = '/formations/:id';
   static const trainingPlayer = '/formations/:id/parcours';
+  // `:id` = identifiant du quiz. Le tirage, le chronometre et la correction sont
+  // cotes serveur (cf. QuizApiController).
+  static const trainingQuiz = '/formations/quiz/:id';
   static const messages = '/messages';
   static const conversation = '/messages/:id';
   static const community = '/communaute';

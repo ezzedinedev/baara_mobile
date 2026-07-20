@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -47,8 +47,8 @@ class FcmService extends GetxService {
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
 
-  static const String _androidChannelId = 'opportune_default';
-  static const String _androidChannelName = 'Notifications OpporTune';
+  static const String _androidChannelId = 'JobAway_default';
+  static const String _androidChannelName = 'Notifications JobAway';
   static const String _androidChannelDescription =
       'Messages, candidatures, formations.';
 

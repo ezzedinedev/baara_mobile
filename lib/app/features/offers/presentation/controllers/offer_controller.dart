@@ -1,16 +1,22 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:iconly/iconly.dart';
 
-import 'package:opportune_bf/app/core/services/offline_apply_queue.dart';
-import 'package:opportune_bf/app/core/utils/offline_error.dart';
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
-import 'package:opportune_bf/app/core/widgets/effects/celebration_overlay.dart';
+import 'package:jobaway/app/core/services/offline_apply_queue.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/utils/offline_error.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/common/app_toast.dart';
+import 'package:jobaway/app/core/widgets/common/confirm_sheet.dart';
+import 'package:jobaway/app/core/widgets/effects/celebration_overlay.dart';
+import 'package:jobaway/routes/app_routes.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
 import '../../domain/entities/sector_option.dart';
+import '../../domain/exceptions/missing_skills_exception.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 
 class OfferController extends GetxController {
@@ -33,7 +39,6 @@ class OfferController extends GetxController {
 
   // Candidatures (IDs des offres postulées)
   final appliedOfferIds = <String>{}.obs;
-  final isApplyingToOfferId = RxnString();
 
   // ── Recherche + filtres (appliqués CÔTÉ SERVEUR — parité web) ──────────
   // Chaque changement déclenche un rechargement depuis l'API (cf. workers
@@ -179,16 +184,19 @@ class OfferController extends GetxController {
     return offers[i];
   }
 
-  int scoreForOffset(int offset) {
+  int? scoreForOffset(int offset) {
     final o = offerAtOffset(offset);
-    return o == null ? 0 : scoreForOffer(o);
+    return o == null ? null : scoreForOffer(o);
   }
 
-  /// Score de compatibilite IA affiche sur la carte.
-  /// Source unique : `/ai/match/feed`. Si le backend ne renvoie pas de score
-  /// pour cette offre, on affiche 0 plutot qu'un score local invente.
-  int scoreForOffer(Offer offer) {
-    return _matchesByOfferId[offer.id]?.score ?? 0;
+  /// Score de compatibilité IA affiché sur la carte.
+  ///
+  /// Il est porté par l'offre elle-même (`match_score`, calculé par le backend
+  /// pour la page demandée) ; le feed `/ai/match/feed` ne sert plus que de
+  /// complément, car il ne couvre qu'un top-N. `null` = score inconnu → le badge
+  /// est masqué, au lieu d'afficher un « 0 % » qui se lisait comme un vrai score.
+  int? scoreForOffer(Offer offer) {
+    return offer.matchScore ?? _matchesByOfferId[offer.id]?.score;
   }
 
   String matchExplanationForOffer(Offer offer) {
@@ -231,6 +239,16 @@ class OfferController extends GetxController {
     if (isOfferAnimating.value || offers.isEmpty) return;
     final swiped = offerAtOffset(0);
 
+    // Un swipe droite envoie une vraie candidature, irréversible côté serveur :
+    // on confirme AVANT de laisser partir la carte, pour qu'un geste accidentel
+    // se rattrape par un simple « Annuler » (la carte revient au centre).
+    final needsConfirm =
+        toRight && swiped != null && !appliedOfferIds.contains(swiped.id);
+    if (needsConfirm && !await _confirmApply(swiped)) {
+      await _animateBackToCenter();
+      return;
+    }
+
     isOfferAnimating.value = true;
     offerDragDx.value = toRight ? 420 : -420;
     await Future<void>.delayed(const Duration(milliseconds: 210));
@@ -244,6 +262,27 @@ class OfferController extends GetxController {
     }
   }
 
+  /// Feuille de confirmation de candidature. Gèle le deck pendant l'affichage.
+  /// Sans contexte (aucune UI montée) on refuse : mieux vaut ne rien envoyer
+  /// que de postuler sans que l'utilisateur ait pu valider.
+  Future<bool> _confirmApply(Offer offer) async {
+    final context = Get.context;
+    if (context == null) return false;
+
+    isOfferAnimating.value = true;
+    final confirmed = await showConfirmSheet(
+      context: context,
+      icon: IconlyBold.heart,
+      iconColor: AppColors.primary,
+      title: 'Postuler chez ${offer.company} ?',
+      message: '${offer.title} · ${offer.location}\n'
+          'Votre profil et votre CV seront transmis au recruteur.',
+      confirmLabel: 'Postuler',
+    );
+    isOfferAnimating.value = false;
+    return confirmed ?? false;
+  }
+
   Future<void> _applySwiped(Offer offer) async {
     if (offer.id.isEmpty) return;
     if (appliedOfferIds.contains(offer.id)) {
@@ -252,12 +291,30 @@ class OfferController extends GetxController {
       return;
     }
     try {
-      await _repository.applyToOffer(offer.id);
+      final result = await _repository.applyToOffer(offer.id);
       appliedOfferIds.add(offer.id);
-      // Burst de confetti de célébration (sans écran dédié) en plus du toast.
+
+      // Match : écran de célébration plein écran (le seuil est décidé par le
+      // backend via `matching.match_threshold`, on ne le rejoue pas ici).
+      if (result.isMatch) {
+        AppHaptics.success();
+        await Get.toNamed<void>(AppRoutes.offerMatch, arguments: {
+          'offerTitle': offer.title,
+          'company': offer.company,
+          'score': result.score,
+        });
+        return;
+      }
+
+      // Pas de match : burst de confetti de célébration en plus du toast.
       showCelebration();
       AppToast.success(
           'Candidature envoyée', '${offer.company} · ${offer.title}');
+    } on MissingSkillsException catch (e) {
+      // Le swipe passe par la même API : sans compétences, la candidature serait
+      // écartée automatiquement. On le dit, on ne la compte pas comme envoyée.
+      AppHaptics.error();
+      AppToast.warning('Complétez vos compétences', e.message);
     } catch (e) {
       if (isOfflineError(e)) {
         await _queueOfflineApply(offer);
@@ -384,36 +441,6 @@ class OfferController extends GetxController {
       } else {
         savedOffers.add(offer);
       }
-    }
-  }
-
-  Future<bool> applyToOffer(String offerId) async {
-    if (appliedOfferIds.contains(offerId)) return true;
-    isApplyingToOfferId.value = offerId;
-    try {
-      await _repository.applyToOffer(offerId);
-      appliedOfferIds.add(offerId);
-      return true;
-    } catch (e) {
-      if (isOfflineError(e)) {
-        final offer = offers.firstWhereOrNull((o) => o.id == offerId);
-        if (offer != null) {
-          await _queueOfflineApply(offer);
-        } else {
-          await Get.find<OfflineApplyQueue>().enqueue(PendingApply(
-            offerId: offerId,
-            offerTitle: 'Offre',
-            company: '',
-            queuedAt: DateTime.now(),
-          ));
-          appliedOfferIds.add(offerId);
-        }
-        // Optimiste : l'UI considere l'offre postulee (renvoi differe).
-        return true;
-      }
-      return false;
-    } finally {
-      isApplyingToOfferId.value = null;
     }
   }
 

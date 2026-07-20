@@ -1,7 +1,7 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 
-import 'package:opportune_bf/app/core/utils/user_facing_error.dart';
-import 'package:opportune_bf/app/core/widgets/common/app_toast.dart';
+import 'package:jobaway/app/core/utils/user_facing_error.dart';
+import 'package:jobaway/app/core/widgets/common/app_toast.dart';
 
 import '../../domain/entities/saved_search.dart';
 import '../../domain/repositories/i_alerts_repository.dart';

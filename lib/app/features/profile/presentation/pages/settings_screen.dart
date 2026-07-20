@@ -1,20 +1,20 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconly/iconly.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:opportune_bf/app/core/theme/app_colors.dart';
-import 'package:opportune_bf/app/core/theme/app_dimens.dart';
-import 'package:opportune_bf/app/core/theme/app_motion.dart';
-import 'package:opportune_bf/app/core/theme/app_shapes.dart';
-import 'package:opportune_bf/app/core/theme/app_text_styles.dart';
-import 'package:opportune_bf/app/core/theme/app_theme_controller.dart';
-import 'package:opportune_bf/app/core/utils/haptics.dart';
-import 'package:opportune_bf/app/core/widgets/widgets.dart';
-import 'package:opportune_bf/app/features/notifications/presentation/widgets/notification_preferences_sheet.dart';
-import 'package:opportune_bf/routes/app_routes.dart';
+import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:jobaway/app/core/theme/app_dimens.dart';
+import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:jobaway/app/core/theme/app_shapes.dart';
+import 'package:jobaway/app/core/theme/app_text_styles.dart';
+import 'package:jobaway/app/core/theme/app_theme_controller.dart';
+import 'package:jobaway/app/core/utils/haptics.dart';
+import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:jobaway/app/features/notifications/presentation/widgets/notification_preferences_sheet.dart';
+import 'package:jobaway/routes/app_routes.dart';
 
-import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
 
@@ -111,6 +111,7 @@ class SettingsBody extends StatelessWidget {
               }),
             ],
           ),
+          const _EmailVerifyBanner(),
           const SectionLabel('Abonnement'),
           _Group(
             rows: [
@@ -263,7 +264,7 @@ class SettingsBody extends StatelessWidget {
                 icon: IconlyLight.info_circle,
                 color: AppColors.categoryBlue,
                 title: 'À propos',
-                subtitle: 'OpporTune BF',
+                subtitle: 'JobAway',
                 valueLabel: 'v1.0.0',
                 onTap: () => _showAbout(context),
               ),
@@ -276,7 +277,7 @@ class SettingsBody extends StatelessWidget {
                 icon: Icons.share_rounded,
                 color: AppColors.primary,
                 title: 'Partager l\'application',
-                subtitle: 'Invitez vos proches sur OpporTune',
+                subtitle: 'Invitez vos proches sur JobAway',
                 onTap: _shareApp,
               ),
               _HeaderRow(
@@ -626,10 +627,10 @@ class SettingsBody extends StatelessWidget {
   Future<void> _shareApp() async {
     AppHaptics.tap();
     await Share.share(
-      'Découvre OpporTune BF — la plateforme emploi, formations et '
+      'Découvre JobAway — la plateforme emploi, formations et '
       'opportunités d\'Afrique de l\'Ouest. Télécharge l\'app et trouve ta '
       'prochaine opportunité !',
-      subject: 'OpporTune BF',
+      subject: 'JobAway',
     );
   }
 
@@ -639,7 +640,7 @@ class SettingsBody extends StatelessWidget {
       context: context,
       icon: IconlyLight.info_circle,
       iconColor: AppColors.primaryAccent,
-      title: 'OpporTune BF',
+      title: 'JobAway',
       message:
           'Version 1.0.0\n\nLa plateforme emploi, formations et opportunités '
           'd\'Afrique de l\'Ouest.',
@@ -684,6 +685,86 @@ class SettingsBody extends StatelessWidget {
           : null;
       await controller?.logoutAll();
     }
+  }
+}
+
+/// Encart d'appel à l'action « vérifiez votre email ».
+///
+/// N'apparaît que si l'utilisateur a une adresse email non encore vérifiée.
+/// Réactif : dès que la vérification aboutit (retour de l'écran de code), le
+/// profil se rafraîchit et l'encart disparaît.
+class _EmailVerifyBanner extends StatelessWidget {
+  const _EmailVerifyBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<ProfileController>()) return const SizedBox.shrink();
+    final controller = Get.find<ProfileController>();
+
+    return Obx(() {
+      final profile = controller.profile.value;
+      final show = profile != null &&
+          profile.email.isNotEmpty &&
+          !profile.isEmailVerified;
+      if (!show) return const SizedBox.shrink();
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 22),
+        child: PressScale(
+          onTap: () async {
+            AppHaptics.tap();
+            final verified = await Get.toNamed<bool>(
+              AppRoutes.emailVerification,
+              arguments: {'email': profile.email},
+            );
+            if (verified == true) {
+              // Rafraîchit le profil : l'encart se retire de lui-même.
+              controller.loadProfile();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: ShapeDecoration(
+              color: AppColors.warningAccent.withValues(alpha: 0.10),
+              shape: AppShapes.cardBordered(
+                AppColors.warningAccent.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(IconlyBold.message,
+                    size: 22, color: AppColors.warningAccent),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Vérifiez votre email',
+                        style: AppTextStyles.titleMd.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.titleColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Confirmez ${profile.email} pour sécuriser votre compte.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.bodyColor),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(IconlyLight.arrow_right_2,
+                    size: 18, color: AppColors.warningAccent),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 

@@ -1,5 +1,5 @@
-import 'package:get/get.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+﻿import 'package:get/get.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 import '../../data/repositories/cv_editor_repository.dart';
 import '../controllers/parcours_editor_controller.dart';

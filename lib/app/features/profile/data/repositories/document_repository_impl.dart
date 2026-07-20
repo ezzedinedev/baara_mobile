@@ -1,7 +1,9 @@
+﻿import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 
-import 'package:opportune_bf/app/core/constants/api_constants.dart';
-import 'package:opportune_bf/app/core/network/api_provider.dart';
+import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:jobaway/app/core/network/api_provider.dart';
 
 import '../../domain/repositories/i_document_repository.dart';
 import '../models/candidate_document_model.dart';
@@ -56,5 +58,15 @@ class DocumentRepositoryImpl implements IDocumentRepository {
     if (response['success'] != true) {
       throw Exception(response['message'] ?? 'Suppression impossible.');
     }
+  }
+
+  @override
+  Future<Uint8List> download(String id) {
+    return _api.getBytes(
+      ApiConstants.profileDocumentDownload(id),
+      // Tous les documents ne sont pas des PDF (photos de diplômes, images) :
+      // on n'impose pas `Accept: application/pdf` comme pour le CV.
+      headers: const {'Accept': '*/*'},
+    );
   }
 }

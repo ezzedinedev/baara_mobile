@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   ApiConstants._();
@@ -13,12 +13,16 @@ class ApiConstants {
     defaultValue: '',
   );
 
+  // L'API v1 est servie par l'app Laravel elle-meme (routes/api.php monte
+  // /api/v1 sur l'hote principal). Il n'existe PAS de sous-domaine `api.` :
+  // APP_URL=https://jobway.app, le CORS n'autorise que jobway.app/app.jobway.app
+  // et nginx n'expose qu'un seul vhost.
   static const String productionBaseUrl = String.fromEnvironment(
     'PRODUCTION_API_BASE_URL',
-    defaultValue: 'https://api.opportunebf.com',
+    defaultValue: 'https://jobway.app',
   );
 
-  static const String authDeviceName = 'opportune-mobile';
+  static const String authDeviceName = 'JobAway-mobile';
 
   static String get _defaultHost {
     if (!kDebugMode) {
@@ -83,12 +87,15 @@ class ApiConstants {
   static String get baseUrl => '$resolvedHost/api/v1';
 
   // ── Liens publics (partage & deep links) ────────────────────────────────
-  /// Schéma custom des deep links de l'app (opportunebf://…).
-  static const String deepLinkScheme = 'opportunebf';
+  /// Schéma custom des deep links de l'app (jobaway://…).
+  /// Doit rester identique à AndroidManifest.xml (`android:scheme`) et à
+  /// Info.plist (`CFBundleURLSchemes`) : les trois sont lus séparément.
+  static const String deepLinkScheme = 'jobaway';
 
-  /// Base du site web public. Le web est servi sur le domaine racine ; en prod
-  /// l'API est sur le sous-domaine `api.` → on le retire pour obtenir le site.
-  /// En dev l'API et le web partagent le même hôte (Laravel :8000).
+  /// Base du site web public. L'API et le site partagent le même hôte
+  /// (jobway.app en prod, Laravel :8000 en dev). Le retrait d'un éventuel
+  /// préfixe `api.` reste par sécurité si un hôte dédié est fourni via
+  /// --dart-define.
   static String get siteBaseUrl {
     final uri = Uri.tryParse(resolvedHost);
     if (uri == null) return resolvedHost;
@@ -160,6 +167,9 @@ class ApiConstants {
   static const String resetPassword = '/auth/reset-password';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
+  // Verification de l'email (authentifie) : envoi + validation d'un code.
+  static const String emailSendVerification = '/auth/email/send-verification';
+  static const String emailVerify = '/auth/email/verify';
   static const String logoutAll = '/auth/logout-all';
   static const String authRefresh = '/auth/refresh';
   static const String profile = '/profile';
@@ -167,14 +177,27 @@ class ApiConstants {
   // Vidéo de présentation candidat (~30 s) : fichier sur disque, chemin en base.
   static const String profilePresentationVideo = '/profile/presentation-video';
   static const String profilePreferences = '/profile/preferences';
-  static const String profileCv = '/profile/cv';
   static const String profilePortfolio = '/profile/portfolio';
   static String profilePortfolioItem(String id) => '/profile/portfolio/$id';
+  // Sections de CV « legacy » (CvSection). Redondant avec le CV-builder, qui
+  // est la source utilisee par l'app — expose ici pour la parite avec le web.
+  static const String profileCv = '/profile/cv';
   static const String profileCvBuilder = '/profile/cv-builder';
+  // Rendu d'apercu cote serveur. L'app affiche l'apercu depuis `profileCvBuilder`
+  // (donnees brutes) ; cet endpoint reste disponible si un rendu serveur est voulu.
   static const String profileCvBuilderPreview = '/profile/cv-builder/preview';
   static const String profileCvBuilderDownload = '/profile/cv-builder/download';
+  // Apercu PDF : filigrane si le modele premium n'est pas debloque, alors que
+  // `download` refuse (402). Les deux flux sont volontairement distincts.
+  static const String profileCvBuilderPreviewPdf =
+      '/profile/cv-builder/preview-pdf';
   static const String profileCvBuilderSelectTemplate =
       '/profile/cv-builder/select-template';
+  // Catalogue des modeles de CV (source unique partagee avec le web) et achat
+  // des modeles premium. cf. CvBuilderApiController@templates / @purchaseTemplate.
+  static const String profileCvBuilderTemplates = '/profile/cv-builder/templates';
+  static String profileCvBuilderPurchaseTemplate(String template) =>
+      '/profile/cv-builder/templates/$template/purchase';
   // Assistant conversationnel CV-builder (miroir mobile du web
   // /mon-cv/assistant/message). cf. CvBuilderApiController@assistant.
   static const String profileCvBuilderAssistant =
@@ -186,6 +209,8 @@ class ApiConstants {
   static const String profileCvImportImprove =
       '/profile/cv-builder/import/improve';
   static const String profileCvImportApply = '/profile/cv-builder/import/apply';
+  // Telecharge en PDF le CV importe/ameliore AVANT de l'appliquer au profil :
+  // body {improved: {...}}. Repond des octets, pas du JSON.
   static const String profileCvImportDownload =
       '/profile/cv-builder/import/download';
 
@@ -195,16 +220,17 @@ class ApiConstants {
   static String profileDocumentDownload(String id) =>
       '/profile/documents/$id/download';
 
-  // Certificats de formation OpporTune obtenus
+  // Certificats de formation JobAway obtenus
   static const String profileCertificates = '/profile/certificates';
 
   static const String offers = '/offers';
   static const String offersFeatured = '/offers/featured/list';
   static const String offersSaved = '/offers/saved/list';
   static String offerSavePath(String id) => '/offers/$id/save';
-  static String offerMatch(String id) => '/offers/$id/match';
-  static String offerApply(String id) => '/offers/$id/apply';
-  static String offerSwipe(String id) => '/offers/$id/swipe';
+  // NB : les routes backend POST /offers/{id}/match|apply|swipe sont TOUTES des
+  // alias de OfferApiController@match, qui **crée une candidature**. Aucun
+  // helper n'est exposé ici volontairement : on candidate via [applications]
+  // (POST /applications), et il n'existe aucun endpoint de score par offre.
   static const String applications = '/applications';
   static String application(String id) => '/applications/$id';
   // Entretiens a venir pour le candidat connecte (widget "Mes entretiens").
@@ -227,19 +253,25 @@ class ApiConstants {
   static String jobProposal(String id) => '/applications/job-proposals/$id';
   static String jobProposalRespond(String id) =>
       '/applications/job-proposals/$id/respond';
-  // URL web absolue (hors /api/v1) pour telecharger le .ics d'un entretien.
-  // Authentification Sanctum ne s'applique pas — la route web utilise le
-  // middleware auth standard. On ouvre dans un browser tab.
-  static String interviewIcsWebUrl(String applicationId) =>
-      '$resolvedHost/candidatures/$applicationId/interview.ics';
+  // Le .ics d'un entretien est fourni prêt à l'emploi par le backend
+  // (`icsUrl` sur UpcomingInterview) — pas de helper d'URL à construire ici.
   static const String trainings = '/trainings';
-  // /trainings/enrolled (legacy) collisionnait avec /trainings/{training}.
-  // La vraie route backend est /trainings/enrolled/list.
+  // Formations suivies par le candidat. Renvoie un paginator d'INSCRIPTIONS
+  // (progression, certificat) avec la formation imbriquee en resume — pas une
+  // liste de formations. cf. TrainingApiController@enrolled.
   static const String trainingsEnrolled = '/trainings/enrolled/list';
   static String trainingEnroll(String id) => '/trainings/$id/enroll';
   static String trainingPay(String id) => '/trainings/$id/pay';
   static String trainingProgress(String id) => '/trainings/$id/progress';
   static String trainingReview(String id) => '/trainings/$id/review';
+
+  // Quiz : le tirage, la correction et la surveillance sont cotes serveur
+  // (les bonnes reponses ne descendent jamais dans l'app).
+  // cf. QuizApiController (index / start / submit / incident).
+  static String quizzesOfModule(String moduleId) => '/quizzes/module/$moduleId';
+  static String quizStart(String quizId) => '/quizzes/$quizId/start';
+  static String quizSubmit(String quizId) => '/quizzes/$quizId/submit';
+  static String quizIncident(String quizId) => '/quizzes/$quizId/incidents';
   static const String sectors = '/offers/sectors/list';
 
   // Dashboard candidat — miroir JSON de /espace-candidat (web).

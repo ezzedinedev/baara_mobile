@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:opportune_bf/app/data/models/ai_models.dart';
-import 'package:opportune_bf/app/features/ia/domain/repositories/i_ia_repository.dart';
-import 'package:opportune_bf/app/features/ia/presentation/controllers/chatbot_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:jobaway/app/data/models/ai_models.dart';
+import 'package:jobaway/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:jobaway/app/features/ia/presentation/controllers/chatbot_controller.dart';
 
 class _FakeIaRepository implements IIaRepository {
   AiChatResponse? chatResponse;

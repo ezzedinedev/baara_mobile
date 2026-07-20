@@ -1,16 +1,16 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:opportune_bf/app/features/offers/data/models/application_model.dart';
-import 'package:opportune_bf/app/features/offers/data/models/upcoming_interview_model.dart';
-import 'package:opportune_bf/app/features/offers/data/models/interview_detail_model.dart';
-import 'package:opportune_bf/app/features/offers/data/models/job_proposal_model.dart';
-import 'package:opportune_bf/app/features/offers/domain/entities/apply_result.dart';
-import 'package:opportune_bf/app/features/offers/domain/entities/offer.dart';
-import 'package:opportune_bf/app/features/offers/domain/entities/matched_offer.dart';
-import 'package:opportune_bf/app/features/offers/domain/entities/sector_option.dart';
-import 'package:opportune_bf/app/features/offers/domain/repositories/i_offer_repository.dart';
-import 'package:opportune_bf/app/features/offers/presentation/controllers/offer_detail_controller.dart';
-import 'package:opportune_bf/app/features/ia/domain/repositories/i_ia_repository.dart';
-import 'package:opportune_bf/app/data/models/ai_models.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:jobaway/app/features/offers/data/models/application_model.dart';
+import 'package:jobaway/app/features/offers/data/models/upcoming_interview_model.dart';
+import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:jobaway/app/features/offers/data/models/job_proposal_model.dart';
+import 'package:jobaway/app/features/offers/domain/entities/apply_result.dart';
+import 'package:jobaway/app/features/offers/domain/entities/offer.dart';
+import 'package:jobaway/app/features/offers/domain/entities/matched_offer.dart';
+import 'package:jobaway/app/features/offers/domain/entities/sector_option.dart';
+import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
+import 'package:jobaway/app/features/offers/presentation/controllers/offer_detail_controller.dart';
+import 'package:jobaway/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:jobaway/app/data/models/ai_models.dart';
 
 class _FakeOfferRepository implements IOfferRepository {
   Offer? offerById;
@@ -205,7 +205,7 @@ void main() {
       fakeOfferRepo.offerById = const Offer(
         id: '1',
         title: 'Dev Flutter',
-        company: 'Opportune',
+        company: 'JobAway',
         description: 'Desc',
         location: 'Ouaga',
         salary: '400 000 FCFA',

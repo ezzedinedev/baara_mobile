@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:opportune_bf/app/features/trainings/domain/entities/training.dart';
-import 'package:opportune_bf/app/features/trainings/presentation/widgets/training_card.dart';
+import 'package:jobaway/app/features/trainings/domain/entities/training.dart';
+import 'package:jobaway/app/features/trainings/presentation/widgets/training_card.dart';
 
 Training _training() => const Training(
       id: 't1',
       title: 'Bases de la comptabilité',
-      providerName: 'OpporTune Academy',
+      providerName: 'JobAway Academy',
       location: 'Ouagadougou',
       format: 'En ligne',
       level: 'Débutant',

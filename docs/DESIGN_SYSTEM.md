@@ -1,4 +1,4 @@
-# Design System — OpporTune BF (langage visuel 2026)
+﻿# Design System — JobAway (langage visuel 2026)
 
 Référence unique du système de design Flutter de l'application. Le but est de
 **verrouiller la cohérence** : tout écran doit puiser dans ces tokens et
