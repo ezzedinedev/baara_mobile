@@ -1,5 +1,6 @@
-﻿import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import '../../domain/entities/apply_result.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
@@ -19,35 +20,15 @@ class OfferRepositoryImpl implements IOfferRepository {
   OfferRepositoryImpl({required ApiProvider apiProvider})
       : _apiProvider = apiProvider;
 
-  /// Extrait une liste depuis les différentes formes d'enveloppe renvoyées
-  /// par l'API : liste directe, paginator Laravel (`data`), ou `{items: [...]}`
-  /// (forme utilisée par le endpoint /offers).
-  List<dynamic> _extractList(dynamic data) {
-    if (data is List) return data;
-    if (data is Map) {
-      if (data['items'] is List) return data['items'] as List;
-      if (data['data'] is List) return data['data'] as List;
-    }
-    return const [];
-  }
+  List<dynamic> _extractList(dynamic data) => ApiResponse.extractList(data);
 
-  // Conservé pour compat sémantique avec getOffers (alias).
   List<dynamic> _extractOfferList(dynamic data) => _extractList(data);
 
-  /// Pour un endpoint "show" : l'offre peut être sous `data` directement ou
-  /// sous `data.item`.
-  Map<String, dynamic>? _extractItem(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      if (data['item'] is Map<String, dynamic>) {
-        return data['item'] as Map<String, dynamic>;
-      }
-      return data;
-    }
-    return null;
-  }
+  Map<String, dynamic>? _extractItem(dynamic data) =>
+      ApiResponse.extractItem(data);
 
   @override
-  Future<List<Offer>> getOffers({
+  Future<OfferPage> getOffers({
     int page = 1,
     int perPage = 20,
     String? search,
@@ -71,144 +52,120 @@ class OfferRepositoryImpl implements IOfferRepository {
       if (isRemote == true) 'is_remote': '1',
       if (salaryMin != null && salaryMin > 0) 'salary_min': '$salaryMin',
       if (sort != null && sort.isNotEmpty) 'sort': sort,
-      // Demande le score de compatibilité pour chaque offre de la page. Sans ce
-      // drapeau, le backend sert la liste mise en cache, sans `match_score` :
-      // les cartes du swipe affichaient alors 0 % pour tout le monde.
       'match': '1',
     };
     final query = params.entries
         .map((e) =>
             '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
         .join('&');
-    try {
-      final response =
-          await _apiProvider.getJson('${ApiConstants.offers}?$query');
+    final response =
+        await _apiProvider.getJson('${ApiConstants.offers}?$query');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger les offres.');
 
-      if (response['success'] == true) {
-        return _extractOfferList(response['data'])
-            .map((json) => OfferModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final data = response['data'];
+    final items = _extractOfferList(data)
+        .map((json) => OfferModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    return OfferPage(
+      items: items,
+      currentPage: ApiResponse.currentPage(data, fallback: page),
+      hasMore: ApiResponse.hasMorePages(
+        data,
+        pageSize: perPage,
+        itemCount: items.length,
+      ),
+    );
   }
 
   @override
   Future<List<SectorOption>> getSectors() async {
-    try {
-      final response = await _apiProvider.getJson(ApiConstants.sectors);
-      if (response['success'] == true) {
-        return _extractList(response['data'])
-            .whereType<Map<String, dynamic>>()
-            .map(SectorOption.fromJson)
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final response = await _apiProvider.getJson(ApiConstants.sectors);
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger les secteurs.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(SectorOption.fromJson)
+        .toList();
   }
 
   @override
   Future<Offer?> getOfferById(String id) async {
-    try {
-      final response = await _apiProvider.getJson('${ApiConstants.offers}/$id');
-      if (response['success'] == true) {
-        final item = _extractItem(response['data']);
-        if (item != null) return OfferModel.fromJson(item);
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
+    final response = await _apiProvider.getJson('${ApiConstants.offers}/$id');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger cette offre.');
+    final item = _extractItem(response['data']);
+    if (item != null) return OfferModel.fromJson(item);
+    return null;
   }
 
   @override
   Future<List<Offer>> getFeaturedOffers() async {
-    try {
-      final response = await _apiProvider.getJson(ApiConstants.offersFeatured);
-      if (response['success'] == true) {
-        return _extractList(response['data'])
-            .map((json) => OfferModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final response = await _apiProvider.getJson(ApiConstants.offersFeatured);
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger les offres à la une.');
+    return _extractList(response['data'])
+        .map((json) => OfferModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   @override
   Future<List<MatchedOffer>> getMatchedOffers({int limit = 20}) async {
-    try {
-      final response = await _apiProvider
-          .getJson('${ApiConstants.aiMatchFeed}?limit=$limit');
-      if (response['success'] != true) return [];
-      final data = response['data'] as Map<String, dynamic>? ?? const {};
-      final offers = data['offers'] as List? ?? const [];
-      return offers
-          .whereType<Map<String, dynamic>>()
-          .map((j) {
-            final raw = (j['match_score'] as num?)?.toDouble() ?? 0;
-            final score = (raw <= 1 ? raw * 100 : raw).round().clamp(0, 100);
-            return MatchedOffer(
-              id: j['id']?.toString() ?? '',
-              title: j['title']?.toString() ?? '',
-              company: j['company_name']?.toString() ?? '',
-              location: j['location']?.toString() ?? '',
-              score: score,
-              explanation: j['match_explanation']?.toString() ?? '',
-            );
-          })
-          .where((m) => m.id.isNotEmpty)
-          .toList();
-    } catch (_) {
-      // On laisse remonter pour que le controller distingue échec vs vide.
-      rethrow;
-    }
+    final response =
+        await _apiProvider.getJson('${ApiConstants.aiMatchFeed}?limit=$limit');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger les recommandations.');
+    final data = response['data'] as Map<String, dynamic>? ?? const {};
+    final offers = data['offers'] as List? ?? const [];
+    return offers
+        .whereType<Map<String, dynamic>>()
+        .map((j) {
+          final raw = (j['match_score'] as num?)?.toDouble() ?? 0;
+          final score = (raw <= 1 ? raw * 100 : raw).round().clamp(0, 100);
+          return MatchedOffer(
+            id: j['id']?.toString() ?? '',
+            title: j['title']?.toString() ?? '',
+            company: j['company_name']?.toString() ?? '',
+            location: j['location']?.toString() ?? '',
+            score: score,
+            explanation: j['match_explanation']?.toString() ?? '',
+          );
+        })
+        .where((m) => m.id.isNotEmpty)
+        .toList();
   }
 
   @override
   Future<bool> saveOffer(String offerId) async {
-    try {
-      final response = await _apiProvider.postJson(
-        ApiConstants.offerSavePath(offerId),
-        {},
-      );
-      return response['success'] == true;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiProvider.postJson(
+      ApiConstants.offerSavePath(offerId),
+      {},
+    );
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible d\'enregistrer cette offre.');
+    return true;
   }
 
   @override
   Future<bool> unsaveOffer(String offerId) async {
-    try {
-      final response = await _apiProvider.deleteJson(
-        ApiConstants.offerSavePath(offerId),
-      );
-      return response['success'] == true;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiProvider.deleteJson(
+      ApiConstants.offerSavePath(offerId),
+    );
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de retirer cette offre des favoris.');
+    return true;
   }
 
   @override
   Future<List<Offer>> getSavedOffers() async {
-    try {
-      final response = await _apiProvider.getJson(ApiConstants.offersSaved);
-      if (response['success'] == true) {
-        return _extractList(response['data'])
-            .whereType<Map<String, dynamic>>()
-            .map(OfferModel.fromJson)
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final response = await _apiProvider.getJson(ApiConstants.offersSaved);
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos offres enregistrées.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(OfferModel.fromJson)
+        .toList();
   }
 
   @override
@@ -231,9 +188,6 @@ class OfferRepositoryImpl implements IOfferRepository {
       return ApplyResult(application: app, isMatch: isMatch, score: score);
     }
 
-    // Refus spécifique : le CV n'a aucune compétence, la candidature serait
-    // écartée automatiquement. On le remonte typé pour que l'écran propose
-    // d'aller compléter le CV, au lieu d'afficher une erreur de plus.
     final data = response['data'];
     if (data is Map && data['requires_skills'] == true) {
       throw MissingSkillsException(
@@ -242,7 +196,13 @@ class OfferRepositoryImpl implements IOfferRepository {
       );
     }
 
-    throw Exception(response['message'] ?? 'Failed to apply');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible d\'envoyer votre candidature.');
+    throw ApiException(
+      message: response['message']?.toString() ??
+          'Impossible d\'envoyer votre candidature.',
+      statusCode: response['statusCode'] as int?,
+    );
   }
 
   @override
@@ -251,72 +211,65 @@ class OfferRepositoryImpl implements IOfferRepository {
     final response = await _apiProvider.getJson(
       '${ApiConstants.applications}?page=$page&per_page=$perPage',
     );
-    if (response['success'] == true) {
-      return _extractList(response['data'])
-          .map(
-              (json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos candidatures.');
+    return _extractList(response['data'])
+        .map(
+            (json) => ApplicationModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   @override
   Future<ApplicationModel?> getApplicationDetail(String id) async {
     final response = await _apiProvider.getJson(ApiConstants.application(id));
-    if (response['success'] == true && response['data'] != null) {
-      final json = _extractItem(response['data']);
-      if (json != null) return ApplicationModel.fromJson(json);
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger cette candidature.');
+    final json = _extractItem(response['data']);
+    if (json != null) return ApplicationModel.fromJson(json);
     return null;
   }
 
   @override
   Future<bool> withdrawApplication(String id) async {
-    try {
-      final response =
-          await _apiProvider.deleteJson(ApiConstants.application(id));
-      return response['success'] == true;
-    } catch (e) {
-      return false;
-    }
+    final response =
+        await _apiProvider.deleteJson(ApiConstants.application(id));
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de retirer cette candidature.');
+    return true;
   }
 
   @override
   Future<List<UpcomingInterview>> getUpcomingInterviews() async {
     final response =
         await _apiProvider.getJson(ApiConstants.applicationsInterviewsUpcoming);
-    if (response['success'] == true) {
-      return _extractList(response['data'])
-          .whereType<Map<String, dynamic>>()
-          .map(UpcomingInterview.fromJson)
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos entretiens.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(UpcomingInterview.fromJson)
+        .toList();
   }
-
-  // ── Pipeline entretien (invitation → réponse) ──────────────────────────────
 
   @override
   Future<List<InterviewDetailModel>> getInterviews() async {
     final response =
         await _apiProvider.getJson(ApiConstants.applicationsInterviews);
-    if (response['success'] == true) {
-      return _extractList(response['data'])
-          .whereType<Map<String, dynamic>>()
-          .map(InterviewDetailModel.fromJson)
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos entretiens.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(InterviewDetailModel.fromJson)
+        .toList();
   }
 
   @override
   Future<InterviewDetailModel?> getInterviewDetail(String id) async {
     final response =
         await _apiProvider.getJson(ApiConstants.applicationInterview(id));
-    if (response['success'] == true && response['data'] != null) {
-      final json = _extractItem(response['data']);
-      if (json != null) return InterviewDetailModel.fromJson(json);
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger cet entretien.');
+    final json = _extractItem(response['data']);
+    if (json != null) return InterviewDetailModel.fromJson(json);
     return null;
   }
 
@@ -327,44 +280,40 @@ class OfferRepositoryImpl implements IOfferRepository {
     String? message,
     DateTime? proposedDate,
   }) async {
-    try {
-      final response = await _apiProvider.postJson(
-        ApiConstants.applicationInterviewRespond(id),
-        {
-          'action': action.wire,
-          if (message != null && message.trim().isNotEmpty)
-            'message': message.trim(),
-          if (proposedDate != null)
-            'proposed_date': proposedDate.toIso8601String(),
-        },
-      );
-      return response['success'] == true || response['ok'] == true;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiProvider.postJson(
+      ApiConstants.applicationInterviewRespond(id),
+      {
+        'action': action.wire,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+        if (proposedDate != null)
+          'proposed_date': proposedDate.toIso8601String(),
+      },
+    );
+    if (response['success'] == true || response['ok'] == true) return true;
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible d\'envoyer votre réponse.');
+    return false;
   }
-
-  // ── Offres d'emploi formelles ──────────────────────────────────────────────
 
   @override
   Future<List<JobProposalModel>> getJobProposals() async {
     final response = await _apiProvider.getJson(ApiConstants.jobProposals);
-    if (response['success'] == true) {
-      return _extractList(response['data'])
-          .whereType<Map<String, dynamic>>()
-          .map(JobProposalModel.fromJson)
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos offres d\'emploi.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(JobProposalModel.fromJson)
+        .toList();
   }
 
   @override
   Future<JobProposalModel?> getJobProposalDetail(String id) async {
     final response = await _apiProvider.getJson(ApiConstants.jobProposal(id));
-    if (response['success'] == true && response['data'] != null) {
-      final json = _extractItem(response['data']);
-      if (json != null) return JobProposalModel.fromJson(json);
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger cette proposition.');
+    final json = _extractItem(response['data']);
+    if (json != null) return JobProposalModel.fromJson(json);
     return null;
   }
 
@@ -374,18 +323,17 @@ class OfferRepositoryImpl implements IOfferRepository {
     required JobProposalAction action,
     String? message,
   }) async {
-    try {
-      final response = await _apiProvider.postJson(
-        ApiConstants.jobProposalRespond(id),
-        {
-          'action': action.wire,
-          if (message != null && message.trim().isNotEmpty)
-            'message': message.trim(),
-        },
-      );
-      return response['success'] == true || response['ok'] == true;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiProvider.postJson(
+      ApiConstants.jobProposalRespond(id),
+      {
+        'action': action.wire,
+        if (message != null && message.trim().isNotEmpty)
+          'message': message.trim(),
+      },
+    );
+    if (response['success'] == true || response['ok'] == true) return true;
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible d\'envoyer votre réponse.');
+    return false;
   }
 }

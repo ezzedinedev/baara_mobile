@@ -1,15 +1,15 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../controllers/portfolio_edit_controller.dart';
 import '../../../domain/entities/portfolio_item.dart';
@@ -253,7 +253,7 @@ class _TechEditorState extends State<_TechEditor> {
                                     AppHaptics.tap();
                                     widget.controller.removeTech(t);
                                   },
-                                  child: Icon(IconlyLight.close_square,
+                                  child: Icon(AppIcons.closeSquare,
                                       size: 16, color: AppColors.onPrimary),
                                 ),
                               ],
@@ -296,7 +296,7 @@ class _TechEditorState extends State<_TechEditor> {
                   color: AppColors.primary,
                   shape: AppShapes.squircle(AppRadius.sm),
                 ),
-                child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
+                child: const Icon(AppIcons.add, color: AppColors.onPrimary),
               ),
             ),
           ],
@@ -342,7 +342,7 @@ class _PhotosEditor extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(IconlyLight.camera,
+                  Icon(AppIcons.camera,
                       color: AppColors.primaryAccent, size: 22),
                 ],
               ),
@@ -383,7 +383,7 @@ class _Thumb extends StatelessWidget {
                 color: AppColors.onDark.withValues(alpha: 0.55),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(IconlyLight.close_square,
+              child: const Icon(AppIcons.closeSquare,
                   size: 14, color: AppColors.onPrimary),
             ),
           ),
@@ -428,13 +428,13 @@ class _SaveBar extends StatelessWidget {
                   shape: const StadiumBorder(),
                 ),
                 child: controller.isSaving.value
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(
+                        child: AppLoader(
+                          size: 18,
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.onPrimary),
+                          color: AppColors.onPrimary,
                         ),
                       )
                     : Text('Enregistrer',

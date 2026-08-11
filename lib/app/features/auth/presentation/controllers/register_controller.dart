@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/routes/app_routes.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/routes/app_routes.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class RegisterController extends GetxController {
@@ -152,9 +152,7 @@ class RegisterController extends GetxController {
         'password_confirmation': confirmPasswordCtrl.text,
         'user_type': 'candidate',
         if (registrationProfile.value.isNotEmpty)
-          'registration_profile': registrationProfile.value,
-        if (registrationProfile.value.isNotEmpty)
-          'profile_type': registrationProfile.value,
+          'candidate_kind': registrationProfile.value,
         'device_name': ApiConstants.authDeviceName,
       });
       Get.offAllNamed(AppRoutes.otpVerification,

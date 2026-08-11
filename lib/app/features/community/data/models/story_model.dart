@@ -1,4 +1,4 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import '../../domain/entities/story.dart';
 
 /// Parse une « bulle » d'auteur renvoyée par GET /stories.

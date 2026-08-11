@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/entities/network_user.dart';
 import '../controllers/community_controller.dart';
 import '../pages/suggestions_screen.dart';
@@ -167,7 +167,7 @@ class _SuggestionCard extends StatelessWidget {
                         Icon(
                           taglineIsAi
                               ? Icons.auto_awesome_rounded
-                              : IconlyBold.user_3,
+                              : AppIcons.networkFilled,
                           size: 11,
                           color: AppColors.primaryAccent,
                         ),

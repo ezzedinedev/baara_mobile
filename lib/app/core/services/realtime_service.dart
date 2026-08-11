@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -95,7 +95,7 @@ class RealtimeService extends GetxService {
     final url =
         '$scheme://${ApiConstants.reverbHost}:${ApiConstants.reverbPort}'
         '/app/${ApiConstants.reverbAppKey}'
-        '?protocol=7&client=JobAway-flutter&version=1.0.0&flash=false';
+        '?protocol=7&client=Baara-flutter&version=1.0.0&flash=false';
     try {
       final channel = WebSocketChannel.connect(Uri.parse(url));
       // IMPORTANT : on attend `ready` pour capter l'échec de connexion ICI.

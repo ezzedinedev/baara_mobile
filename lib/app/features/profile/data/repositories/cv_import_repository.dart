@@ -1,7 +1,8 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 /// Pilote le flux d'import de CV (miroir mobile du web /creer-mon-cv/importer) :
 /// analyze (upload PDF→texte+analyse) → improve (réécriture IA) → apply (persist).
@@ -55,17 +56,8 @@ class CvImportRepository {
   }
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ??
-            'Le service d\'import a renvoyé une erreur.',
-        statusCode: statusCode,
-      );
-    }
-    final data = response['data'];
-    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Le service d\'import a renvoyé une erreur.');
+    return ApiResponse.dataMap(response);
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 
 class WaveClipper extends CustomClipper<Path> {
@@ -80,7 +80,7 @@ class WavyHeaderLeadingButton extends StatelessWidget {
             ),
           ),
           child: const Icon(
-            IconlyLight.arrow_left_2,
+            AppIcons.back,
             color: AppColors.onPrimary,
             size: 26,
           ),

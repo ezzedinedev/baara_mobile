@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/messages_controller.dart';
 import '../../domain/entities/conversation.dart';
 
@@ -30,8 +30,17 @@ class MessagesScreen extends GetView<MessagesController> {
         ),
         body: Obx(() {
           if (controller.isLoadingConversations.value &&
-              controller.conversations.isEmpty) {
+              controller.conversations.isEmpty &&
+              controller.conversationsError.value.isEmpty) {
             return _buildSkeletons();
+          }
+
+          if (controller.conversationsError.value.isNotEmpty &&
+              controller.conversations.isEmpty) {
+            return ErrorStateView(
+              message: controller.conversationsError.value,
+              onRetry: () => controller.loadConversations(),
+            );
           }
 
           if (controller.conversations.isEmpty &&
@@ -136,6 +145,9 @@ class _ConversationTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
             borderRadius: AppShapes.squircleRadius(AppRadius.md)),
+        // Le poste ajoute une 3e ligne : sans ça le ListTile centre son contenu
+        // sur deux lignes et le sous-titre déborde.
+        isThreeLine: conversation.offerTitle != null,
         onTap: null,
         leading: _AvatarWithPresence(conversation: conversation),
         title: Row(
@@ -167,45 +179,66 @@ class _ConversationTile extends StatelessWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Text(
-                  conversation.lastMessage,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: conversation.unreadCount > 0
-                        ? AppColors.titleColor
-                        : AppColors.bodyColor,
-                    fontWeight: conversation.unreadCount > 0
-                        ? FontWeight.w700
-                        : FontWeight.w400,
+              // Poste concerné : seul élément qui distingue deux conversations
+              // avec le même employeur (une par candidature). Absent sur les DM
+              // directs et les conversations sans candidature liée.
+              if (conversation.offerTitle != null) ...[
+                Text(
+                  conversation.offerTitle!,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              if (conversation.unreadCount > 0)
-                Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  constraints: const BoxConstraints(minWidth: 20),
-                  height: 20,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    conversation.unreadCount > 99
-                        ? '99+'
-                        : conversation.unreadCount.toString(),
-                    style: AppTextStyles.labelSm.copyWith(
-                      fontSize: 11,
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w800,
+                const SizedBox(height: 2),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      conversation.lastMessage,
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: conversation.unreadCount > 0
+                            ? AppColors.titleColor
+                            : AppColors.bodyColor,
+                        fontWeight: conversation.unreadCount > 0
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
+                  if (conversation.unreadCount > 0)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      constraints: const BoxConstraints(minWidth: 20),
+                      height: 20,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        conversation.unreadCount > 99
+                            ? '99+'
+                            : conversation.unreadCount.toString(),
+                        style: AppTextStyles.labelSm.copyWith(
+                          fontSize: 11,
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
         ),

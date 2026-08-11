@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../controllers/profile_controller.dart';
 
@@ -78,7 +78,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       backgroundColor: AppColors.background,
       body: SankSheetScaffold(
         title: 'Modifier le profil',
-        titleIcon: IconlyLight.profile,
+        titleIcon: AppIcons.profile,
         onBack: Get.back,
         body: LayoutBuilder(
           builder: (context, constraints) {
@@ -99,46 +99,46 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       AuthTextField(
                         label: 'Prénoms',
                         controller: firstNameController,
-                        icon: IconlyLight.profile,
+                        icon: AppIcons.profile,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Nom',
                         controller: lastNameController,
-                        icon: IconlyLight.profile,
+                        icon: AppIcons.profile,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Numéro de téléphone',
                         controller: phoneController,
-                        icon: IconlyLight.call,
+                        icon: AppIcons.phone,
                         keyboardType: TextInputType.phone,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Email',
                         controller: emailController,
-                        icon: IconlyLight.message,
+                        icon: AppIcons.message,
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Profession',
                         controller: jobController,
-                        icon: IconlyLight.work,
+                        icon: AppIcons.work,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Ville',
                         controller: cityController,
-                        icon: IconlyLight.location,
+                        icon: AppIcons.location,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
                         label: 'Bio / À propos',
                         hint: 'Présentez-vous en quelques mots…',
                         controller: bioController,
-                        icon: IconlyLight.document,
+                        icon: AppIcons.document,
                         maxLines: 4,
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -267,7 +267,7 @@ class _ParcoursTile extends StatelessWidget {
                     color: AppColors.primaryAccent.withValues(alpha: 0.12),
                     borderRadius: AppShapes.squircleRadius(AppRadius.md),
                   ),
-                  child: Icon(IconlyLight.work, color: AppColors.primaryAccent),
+                  child: Icon(AppIcons.work, color: AppColors.primaryAccent),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -288,7 +288,7 @@ class _ParcoursTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(IconlyLight.arrow_right_2,
+                Icon(AppIcons.arrowRight,
                     color: AppColors.outlineVariant),
               ],
             ),

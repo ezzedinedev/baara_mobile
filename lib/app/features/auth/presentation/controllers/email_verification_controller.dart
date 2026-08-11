@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/repositories/i_auth_repository.dart';
 
@@ -22,6 +22,8 @@ class EmailVerificationController extends GetxController {
   final isLoading = false.obs;
   final isResending = false.obs;
   final errorMsg = ''.obs;
+  final deliveryPhase = AuthDeliveryPhase.idle.obs;
+  final sendError = ''.obs;
 
   /// Email affiché (transmis via Get.arguments), purement informatif.
   String email = '';
@@ -45,7 +47,14 @@ class EmailVerificationController extends GetxController {
     if (resendCountdown.value > 0 && !initial) return;
     try {
       if (!initial) isResending.value = true;
-      await _authRepository.sendEmailVerification();
+      deliveryPhase.value = AuthDeliveryPhase.sending;
+      sendError.value = '';
+      final api = _authRepository.sendEmailVerification();
+      await Future.wait([
+        api,
+        if (initial) Future<void>.delayed(const Duration(milliseconds: 800)),
+      ]);
+      deliveryPhase.value = AuthDeliveryPhase.sent;
       _startCountdown();
       if (!initial) {
         AppToast.success(
@@ -54,6 +63,8 @@ class EmailVerificationController extends GetxController {
         );
       }
     } catch (e) {
+      sendError.value = userFacingError(e);
+      deliveryPhase.value = AuthDeliveryPhase.failed;
       // À l'arrivée, un échec d'envoi (SMTP…) est signalé sans bloquer la saisie
       // d'un code éventuellement déjà reçu.
       if (initial) {

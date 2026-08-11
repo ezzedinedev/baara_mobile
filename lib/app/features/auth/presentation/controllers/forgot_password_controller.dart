@@ -1,8 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class ForgotPasswordController extends GetxController {
@@ -59,6 +59,8 @@ class ForgotPasswordController extends GetxController {
   final step = 1.obs;
   final isLoading = false.obs;
   final errorMsg = ''.obs;
+  final deliveryPhase = AuthDeliveryPhase.sent.obs;
+  final sendError = ''.obs;
   int _otpAttempts = 0;
   bool _otpCooldown = false;
   static const int _maxOtpAttempts = 3;
@@ -75,18 +77,27 @@ class ForgotPasswordController extends GetxController {
     try {
       isLoading.value = true;
       errorMsg.value = '';
-      await _authRepository.forgotPassword(
+      deliveryPhase.value = AuthDeliveryPhase.sending;
+      sendError.value = '';
+      final api = _authRepository.forgotPassword(
         email: isEmail ? emailCtrl.text.trim() : null,
         phone: isEmail ? null : fullPhone,
       );
+      await Future.wait([
+        api,
+        Future<void>.delayed(const Duration(milliseconds: 750)),
+      ]);
       step.value = 2;
       _otpAttempts = 0;
+      deliveryPhase.value = AuthDeliveryPhase.sent;
       AppToast.success(
         'Code envoyé',
         'Un code de réinitialisation a été envoyé par email.',
       );
     } catch (e) {
       errorMsg.value = userFacingError(e);
+      deliveryPhase.value = AuthDeliveryPhase.failed;
+      sendError.value = errorMsg.value;
     } finally {
       isLoading.value = false;
     }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
@@ -37,7 +37,7 @@ class AppSearchBar extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            IconlyLight.search,
+            AppIcons.search,
             color: AppColors.bodyColor,
             size: 20,
           ),
@@ -77,7 +77,7 @@ class AppSearchBar extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: Icon(
-                    IconlyLight.close_square,
+                    AppIcons.closeSquare,
                     size: 18,
                     color: AppColors.bodyColor,
                   ),

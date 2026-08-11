@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../domain/entities/enrolled_training.dart';
 import '../controllers/trainings_controller.dart';
@@ -71,7 +71,7 @@ class _TrainingsScreenState extends State<TrainingsScreen> {
         subtitle: 'Parcours pour renforcer votre employabilité.',
         headerActions: [
           AppIconButton(
-            icon: IconlyLight.filter,
+            icon: AppIcons.filter,
             onTap: () {
               AppHaptics.tap();
               openTrainingsFilter(context, controller);
@@ -346,8 +346,8 @@ class _EnrolledCard extends StatelessWidget {
                 const Spacer(),
                 Icon(
                   item.isCompleted
-                      ? IconlyBold.tick_square
-                      : IconlyLight.play,
+                      ? AppIcons.tickSquare
+                      : AppIcons.play,
                   size: 16,
                   color: item.isCompleted
                       ? AppColors.successAccent

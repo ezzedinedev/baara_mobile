@@ -1,6 +1,6 @@
-﻿<#
+<#
 .SYNOPSIS
-    Builds obfuscated release artifacts for JobAway (Flutter).
+    Builds obfuscated release artifacts for Baara (Flutter).
 
 .DESCRIPTION
     Runs `flutter build` for APK and App Bundle (and optionally iOS) with Dart
@@ -51,7 +51,7 @@ $symbolsDir = Join-Path $ProjectRoot "build/symbols/$version"
 New-Item -ItemType Directory -Force -Path $symbolsDir | Out-Null
 
 Write-Host "=========================================================" -ForegroundColor Cyan
-Write-Host " JobAway - Obfuscated release build" -ForegroundColor Cyan
+Write-Host " Baara - Obfuscated release build" -ForegroundColor Cyan
 Write-Host " Version  : $version" -ForegroundColor Cyan
 Write-Host " Targets  : $($Targets -join ', ')" -ForegroundColor Cyan
 Write-Host " Symbols  : $symbolsDir" -ForegroundColor Cyan

@@ -1,8 +1,9 @@
-﻿import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/features/messaging/domain/entities/conversation.dart';
-import 'package:jobaway/app/features/messaging/domain/entities/message.dart';
-import 'package:jobaway/app/features/messaging/domain/repositories/i_messaging_repository.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:baara/app/features/messaging/domain/entities/conversation.dart';
+import 'package:baara/app/features/messaging/domain/entities/message.dart';
+import 'package:baara/app/features/messaging/domain/repositories/i_messaging_repository.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
 
 import '../../../support/fake_offer_repository.dart';
 
@@ -41,11 +42,6 @@ class _FakeMessagingRepository implements IMessagingRepository {
   Future<void> declineConversation(String conversationId) async {
     conversations.removeWhere((c) => c.id == conversationId);
   }
-
-  @override
-  Future<bool> setVoiceNotesAllowed(
-          String conversationId, bool allowed) async =>
-      true;
 
   @override
   Future<MessagesPage> getMessages(
@@ -172,6 +168,33 @@ void main() {
 
       expect(controller.activeMessages.last.text, 'Reply');
       expect(controller.activeMessages.last.isMine, true);
+    });
+    test('applyIncomingMessage patches conversation preview without reload',
+        () {
+      controller.conversations.assignAll([
+        Conversation(
+          id: '1',
+          title: 'Alice',
+          lastMessage: 'Ancien',
+          lastMessageTime: DateTime(2026, 1, 1),
+          unreadCount: 0,
+          isOnline: false,
+        ),
+      ]);
+
+      controller.applyIncomingMessage(
+        conversationId: '1',
+        message: Message(
+          id: 'm-new',
+          text: 'Salut !',
+          sentAt: DateTime(2026, 6, 1),
+          isMine: false,
+          senderName: 'Alice',
+        ),
+      );
+
+      expect(controller.conversations.first.lastMessage, 'Salut !');
+      expect(controller.conversations.first.unreadCount, 1);
     });
   });
 }

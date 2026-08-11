@@ -1,13 +1,13 @@
-﻿import 'package:chewie/chewie.dart';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/profile_controller.dart';
 
 /// Carte « Vidéo de présentation » (candidat). Lecture à la demande d'une
@@ -57,29 +57,18 @@ class PresentationVideoCard extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, ProfileController controller) {
-    showDialog<void>(
+  void _confirmDelete(BuildContext context, ProfileController controller) async {
+    final ok = await showConfirmSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la vidéo ?'),
-        content: const Text(
-            'Votre vidéo de présentation sera définitivement supprimée.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              controller.deletePresentationVideo();
-            },
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
+      icon: AppIcons.delete,
+      iconColor: AppColors.errorAccent,
+      title: 'Supprimer la vidéo ?',
+      message:
+          'Votre vidéo de présentation sera définitivement supprimée.',
+      confirmLabel: 'Supprimer',
+      isDestructive: true,
     );
+    if (ok == true) controller.deletePresentationVideo();
   }
 }
 
@@ -95,7 +84,7 @@ class _EmptyState extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(IconlyLight.video, color: AppColors.primaryAccent, size: 22),
+            Icon(AppIcons.video, color: AppColors.primaryAccent, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -115,10 +104,13 @@ class _EmptyState extends StatelessWidget {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                    child: AppLoader(
+                      size: 16,
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    )
                   )
-                : const Icon(IconlyLight.upload, size: 18),
+                : const Icon(AppIcons.upload, size: 18),
             label: Text(busy ? 'Envoi…' : 'Ajouter une vidéo'),
           ),
         ),
@@ -154,7 +146,7 @@ class _LoadedState extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: busy ? null : onReplace,
-                icon: const Icon(IconlyLight.upload, size: 18),
+                icon: const Icon(AppIcons.upload, size: 18),
                 label: const Text('Remplacer'),
               ),
             ),
@@ -166,7 +158,7 @@ class _LoadedState extends StatelessWidget {
                   foregroundColor: AppColors.error,
                   side: BorderSide(color: AppColors.error.withValues(alpha: .5)),
                 ),
-                icon: const Icon(IconlyLight.delete, size: 18),
+                icon: const Icon(AppIcons.delete, size: 18),
                 label: const Text('Supprimer'),
               ),
             ),
@@ -263,7 +255,7 @@ class _VideoPlayerBoxState extends State<_VideoPlayerBox> {
         height: 200,
         color: AppColors.surfaceContainer,
         alignment: Alignment.center,
-        child: const CircularProgressIndicator(strokeWidth: 2),
+        child: const AppLoader(size: 24, strokeWidth: 2),
       );
     }
     // Hauteur bornée pour les vidéos portrait (sinon écran entier).

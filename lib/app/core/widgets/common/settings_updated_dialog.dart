@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
@@ -58,7 +58,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
         borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: AppColors.ambientShadow.first.color,
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),
@@ -75,9 +75,9 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
+                color: AppColors.onDark.withValues(alpha: 0.05),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: AppColors.onDark.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
@@ -85,9 +85,9 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                 alignment: Alignment.center,
                 children: [
                   Icon(
-                    IconlyLight.setting,
+                    AppIcons.settings,
                     size: 64,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: AppColors.onDark.withValues(alpha: 0.8),
                   ),
                   Positioned(
                     bottom: 24,
@@ -98,10 +98,10 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        IconlyLight.tick_square,
+                      child: Icon(
+                        AppIcons.tickSquare,
                         size: 20,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                   ),
@@ -116,7 +116,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
             child: Text(
               'Préférences enregistrées',
               style: AppTextStyles.displayMd.copyWith(
-                color: Colors.white,
+                color: AppColors.onDark,
                 fontWeight: FontWeight.w900,
                 fontSize: 30,
               ),
@@ -132,7 +132,7 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
                 'Vos changements sont appliqués immédiatement. Vous pourrez les ajuster à tout moment.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMd.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: AppColors.onDark.withValues(alpha: 0.6),
                   height: 1.5,
                   fontSize: 15,
                 ),
@@ -145,13 +145,15 @@ class _SettingsUpdatedDialogState extends State<SettingsUpdatedDialog>
             width: double.infinity,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.08),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.onDark.withValues(alpha: 0.08),
+                foregroundColor: AppColors.onDark,
                 padding: const EdgeInsets.symmetric(vertical: 22),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                   side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.1), width: 1),
+                    color: AppColors.onDark.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
                 ),
               ),
               onPressed: () {

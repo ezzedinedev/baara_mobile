@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/parcours_editor_controller.dart';
 
@@ -90,7 +90,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                 children: [
                   _SectionTitle(
-                    icon: IconlyBold.work,
+                    icon: AppIcons.workFilled,
                     color: AppColors.categoryPurple,
                     title: 'Expériences',
                   ),
@@ -116,7 +116,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                   ),
                   const SizedBox(height: 26),
                   _SectionTitle(
-                    icon: IconlyBold.bookmark,
+                    icon: AppIcons.bookmarkFilled,
                     color: AppColors.categoryBlue,
                     title: 'Formations',
                   ),
@@ -170,13 +170,13 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
       context,
       title: 'Nouvelle expérience',
       fields: const [
-        _FieldSpec('title', 'Poste', IconlyLight.work, required: true),
-        _FieldSpec('company', 'Entreprise', IconlyLight.work, required: true),
-        _FieldSpec('location', 'Ville', IconlyLight.location),
-        _FieldSpec('start_date', 'Début (ex : 2020)', IconlyLight.calendar),
+        _FieldSpec('title', 'Poste', AppIcons.work, required: true),
+        _FieldSpec('company', 'Entreprise', AppIcons.work, required: true),
+        _FieldSpec('location', 'Ville', AppIcons.location),
+        _FieldSpec('start_date', 'Début (ex : 2020)', AppIcons.calendar),
         _FieldSpec(
-            'end_date', 'Fin (ex : 2023 / Présent)', IconlyLight.calendar),
-        _FieldSpec('description', 'Missions', IconlyLight.document,
+            'end_date', 'Fin (ex : 2023 / Présent)', AppIcons.calendar),
+        _FieldSpec('description', 'Missions', AppIcons.document,
             multiline: true),
       ],
     );
@@ -191,13 +191,13 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
       context,
       title: 'Nouvelle formation',
       fields: const [
-        _FieldSpec('degree', 'Diplôme', IconlyLight.star, required: true),
-        _FieldSpec('institution', 'École / Université', IconlyLight.work,
+        _FieldSpec('degree', 'Diplôme', AppIcons.star, required: true),
+        _FieldSpec('institution', 'École / Université', AppIcons.work,
             required: true),
-        _FieldSpec('location', 'Ville', IconlyLight.location),
-        _FieldSpec('start_date', 'Début (ex : 2018)', IconlyLight.calendar),
-        _FieldSpec('end_date', 'Fin (ex : 2021)', IconlyLight.calendar),
-        _FieldSpec('field_of_study', 'Domaine', IconlyLight.document),
+        _FieldSpec('location', 'Ville', AppIcons.location),
+        _FieldSpec('start_date', 'Début (ex : 2018)', AppIcons.calendar),
+        _FieldSpec('end_date', 'Fin (ex : 2021)', AppIcons.calendar),
+        _FieldSpec('field_of_study', 'Domaine', AppIcons.document),
       ],
     );
     if (data != null) {
@@ -401,7 +401,7 @@ class _EntryCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: Icon(IconlyLight.delete, color: AppColors.errorAccent),
+            icon: Icon(AppIcons.delete, color: AppColors.errorAccent),
             onPressed: () {
               AppHaptics.tap();
               onDelete();
@@ -438,7 +438,7 @@ class _AddButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(IconlyLight.plus, color: AppColors.primaryAccent, size: 20),
+            Icon(AppIcons.add, color: AppColors.primaryAccent, size: 20),
             const SizedBox(width: 8),
             Text(label,
                 style: AppTextStyles.titleMd.copyWith(

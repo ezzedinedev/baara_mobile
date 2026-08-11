@@ -1,17 +1,16 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/services/onboarding_service.dart';
+import 'package:baara/routes/app_routes.dart';
 
 /// Gère les liens entrants (deep links) :
-/// - schéma custom `jobaway://profil/{id}` (et `…/offres/{id}`)
+/// - schéma custom `baara://profil/{id}` (et `…/offres/{id}`)
 /// - liens web `https://<site>/profil/{id}` (App Links / Universal Links)
-///
-/// Mappe l'URI vers une route interne et y navigue via GetX. Singleton initialisé
-/// une fois au démarrage de l'app (cf. racine `JobAwayBFApp`).
 class DeepLinkService {
   DeepLinkService._();
   static final DeepLinkService instance = DeepLinkService._();
@@ -24,15 +23,11 @@ class DeepLinkService {
     if (_started) return;
     _started = true;
 
-    // Lien d'ouverture à froid (app lancée par le lien).
     try {
       final initial = await _appLinks.getInitialLink();
       if (initial != null) _handle(initial, cold: true);
-    } catch (_) {
-      // Pas de lien initial / plateforme non supportée : on ignore.
-    }
+    } catch (_) {}
 
-    // Liens reçus pendant que l'app tourne (warm).
     _sub = _appLinks.uriLinkStream.listen(
       (uri) => _handle(uri, cold: false),
       onError: (_) {},
@@ -45,22 +40,33 @@ class DeepLinkService {
     _started = false;
   }
 
-  void _handle(Uri uri, {required bool cold}) {
+  Future<void> _handle(Uri uri, {required bool cold}) async {
     final route = _routeFor(uri);
     if (route == null) return;
-    // À froid, on laisse le GetMaterialApp et la route initiale se monter
-    // avant de pousser la destination du lien.
+
+    if (Get.isRegistered<OnboardingService>()) {
+      final onboarding = Get.find<OnboardingService>();
+      if (!await onboarding.isCompleted()) {
+        await onboarding.stashPendingRoute(route);
+        const tokenStore = AuthTokenStore();
+        final token = await tokenStore.readTokenOrNull();
+        if (token != null && token.isNotEmpty &&
+            Get.currentRoute != AppRoutes.onboarding) {
+          Get.offAllNamed(AppRoutes.onboarding);
+        }
+        return;
+      }
+    }
+
     final delay = cold
         ? const Duration(milliseconds: 350)
         : const Duration(milliseconds: 50);
     Future<void>.delayed(delay, () => Get.toNamed<void>(route));
   }
 
-  /// Traduit un URI entrant en route interne, ou `null` s'il n'est pas géré.
   String? _routeFor(Uri uri) {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
 
-    // Schéma custom : jobaway://profil/{id} → host='profil', segs=['{id}'].
     if (uri.scheme == ApiConstants.deepLinkScheme) {
       if (uri.host == 'profil' && segs.isNotEmpty) {
         return AppRoutes.communityProfile.replaceFirst(':id', segs.first);
@@ -82,7 +88,6 @@ class DeepLinkService {
       return null;
     }
 
-    // Liens web (http/https) : /profil/{id} ou /communaute/membre/{id}.
     if (segs.length >= 2 && segs[0] == 'profil') {
       return AppRoutes.communityProfile.replaceFirst(':id', segs[1]);
     }
@@ -103,3 +108,4 @@ class DeepLinkService {
     return null;
   }
 }
+

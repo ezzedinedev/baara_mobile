@@ -1,14 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../../../ia/domain/entities/chat_message.dart';
 import '../../controllers/cv_assistant_controller.dart';
@@ -16,39 +17,49 @@ import '../../controllers/cv_assistant_controller.dart';
 /// Chat assistant CV — l'utilisateur décrit son parcours en langage naturel
 /// et l'IA rédige/améliore le CV. Style aligné sur la charte (header dégradé,
 /// bulles arrondies, micro-interactions discrètes).
-class CvAssistantChatScreen extends GetView<CvAssistantController> {
+class CvAssistantChatScreen extends StatefulWidget {
   const CvAssistantChatScreen({super.key});
 
   @override
+  State<CvAssistantChatScreen> createState() => _CvAssistantChatScreenState();
+}
+
+class _CvAssistantChatScreenState extends State<CvAssistantChatScreen> {
+  final _inputCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _inputCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final inputCtrl = TextEditingController();
+    final controller = Get.find<CvAssistantController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _Header(),
+          const _Header(),
           Expanded(
             child: Obx(() {
               final hasOnlyWelcome = controller.messages.length <= 1;
               return ListView.builder(
                 controller: controller.scrollController,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: 24),
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
                 itemCount: controller.messages.length +
                     (controller.isSending.value ? 1 : 0) +
                     (hasOnlyWelcome ? 1 : 0),
                 itemBuilder: (context, index) {
-                  // Bulles existantes
                   if (index < controller.messages.length) {
                     return _ChatBubble(message: controller.messages[index]);
                   }
-                  // Indicateur de frappe
                   if (controller.isSending.value &&
                       index == controller.messages.length) {
                     return const _TypingIndicator();
                   }
-                  // Chips de suggestion (uniquement au démarrage)
                   return _StarterPrompts(
                     onTap: (p) {
                       AppHaptics.tap();
@@ -59,7 +70,24 @@ class CvAssistantChatScreen extends GetView<CvAssistantController> {
               );
             }),
           ),
-          _InputBar(inputCtrl: inputCtrl),
+          Obx(() {
+            if (controller.latestCvDraft.value == null) {
+              return const SizedBox.shrink();
+            }
+            return CvStickyActionBar(
+              primaryLabel: "Voir l'aperçu du CV",
+              onPrimary: () {
+                AppToast.success(
+                  'CV synchronisé',
+                  'Vos dernières modifications sont prêtes à l\'aperçu.',
+                );
+                Get.toNamed(AppRoutes.profileCvPreview);
+              },
+              secondaryLabel: 'Éditeur manuel',
+              onSecondary: () => Get.toNamed(AppRoutes.profileCvManual),
+            );
+          }),
+          _InputBar(inputCtrl: _inputCtrl),
         ],
       ),
     );
@@ -67,6 +95,8 @@ class CvAssistantChatScreen extends GetView<CvAssistantController> {
 }
 
 class _Header extends StatelessWidget {
+  const _Header();
+
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
@@ -77,21 +107,15 @@ class _Header extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
           child: Row(
             children: [
-              IconButton(
-                icon: const Icon(IconlyLight.arrow_left_2,
-                    color: AppColors.onPrimary),
-                onPressed: () {
-                  AppHaptics.tap();
-                  Get.back();
-                },
-              ),
+              AppBackButton(onDark: true, onTap: () => Get.back<void>()),
+              const SizedBox(width: AppSpacing.sm),
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.onPrimary.withValues(alpha: 0.2),
                 child:
-                    const Icon(IconlyBold.document, color: AppColors.onPrimary),
+                    const Icon(AppIcons.document, color: AppColors.onPrimary),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +211,7 @@ class _ChatBubble extends StatelessWidget {
                 const CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.primary,
-                  child: Icon(IconlyBold.document,
+                  child: Icon(AppIcons.document,
                       size: 16, color: AppColors.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -198,8 +222,6 @@ class _ChatBubble extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: bubbleColor,
-                    // Rayons asymétriques de bulle de chat : cas légitime,
-                    // forme spécifique au contexte conversationnel.
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
                       topRight: const Radius.circular(20),
@@ -258,16 +280,19 @@ class _InputBar extends StatelessWidget {
       inputCtrl.clear();
     }
 
-    // La barre d'input est de la « chrome » (fixe en bas de l'écran).
-    // Le Scaffold racine fournit l'ancêtre Material requis par le TextField.
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         boxShadow: AppColors.lightShadow,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 24),
+            AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xl),
         child: SafeArea(
           top: false,
           child: Row(
@@ -296,25 +321,37 @@ class _InputBar extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Obx(
-                () => PressScale(
-                  onTap: controller.isSending.value ? null : submit,
-                  curve: AppMotion.spring,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: controller.isSending.value
-                          ? AppColors.surfaceLow
-                          : AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      IconlyBold.send,
-                      color: controller.isSending.value
-                          ? AppColors.hintColor
-                          : AppColors.onPrimary,
-                      size: 20,
+                () => Semantics(
+                  button: true,
+                  label: 'Envoyer le message',
+                  child: PressScale(
+                    onTap: controller.isSending.value ? null : submit,
+                    curve: AppMotion.spring,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: controller.isSending.value
+                            ? AppColors.surfaceLow
+                            : AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: controller.isSending.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: AppLoader(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              AppIcons.send,
+                              color: AppColors.onPrimary,
+                              size: 20,
+                            ),
                     ),
                   ),
                 ),

@@ -1,5 +1,6 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 /// Édition manuelle du CV : chargement (GET cv-builder) et sauvegarde groupée
 /// des champs (PUT cv-builder avec `{fields: {...}}`).
@@ -26,16 +27,7 @@ class CvEditorRepository {
   }
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ?? 'Sauvegarde impossible.',
-        statusCode: statusCode,
-      );
-    }
-    final data = response['data'];
-    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    ApiResponse.ensureSuccess(response, fallback: 'Sauvegarde impossible.');
+    return ApiResponse.dataMap(response);
   }
 }

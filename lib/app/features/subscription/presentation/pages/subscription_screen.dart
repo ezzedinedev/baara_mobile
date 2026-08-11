@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 /// Écran « Mon abonnement » — une VITRINE honnête : par défaut l'utilisateur est
 /// sur le forfait GRATUIT. On affiche le forfait actuel et ses avantages, puis
@@ -39,7 +39,7 @@ class SubscriptionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SankSheetScaffold(
       title: 'Mon abonnement',
-      titleIcon: IconlyLight.star,
+      titleIcon: AppIcons.star,
       body: AnimationLimiter(
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -115,7 +115,7 @@ class _CurrentPlanCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               _Badge(
                 label: 'Gratuit',
-                icon: IconlyBold.tick_square,
+                icon: AppIcons.tickSquare,
                 foreground: AppColors.successAccent,
                 background: AppColors.successSoft,
               ),
@@ -183,7 +183,7 @@ class _PremiumCard extends StatelessWidget {
                       borderRadius: AppShapes.squircleRadius(AppRadius.sm),
                     ),
                     child: Icon(
-                      IconlyBold.star,
+                      AppIcons.starFilled,
                       size: 22,
                       color: AppColors.onPrimary,
                     ),
@@ -212,7 +212,7 @@ class _PremiumCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   _Badge(
                     label: 'Premium',
-                    icon: IconlyBold.star,
+                    icon: AppIcons.starFilled,
                     foreground: AppColors.primaryAccent,
                     background: AppColors.surfaceCard,
                   ),
@@ -232,7 +232,7 @@ class _PremiumCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    IconlyLight.info_circle,
+                    AppIcons.info,
                     size: 14,
                     color: AppColors.hintColor,
                   ),
@@ -287,7 +287,7 @@ class _ComingSoonButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                IconlyLight.time_circle,
+                AppIcons.time,
                 size: 18,
                 color: AppColors.primaryAccent,
               ),
@@ -322,7 +322,7 @@ class _BenefitRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(IconlyBold.tick_square, size: 20, color: color),
+        Icon(AppIcons.tickSquare, size: 20, color: color),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Text(

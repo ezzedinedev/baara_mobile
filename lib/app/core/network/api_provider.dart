@@ -342,8 +342,8 @@ class ApiProvider {
 
         _lastWorkingBaseUrl = baseUrl;
         return _parseResponse(response);
-      } catch (e) {
-        lastError = e as Exception;
+      } on Exception catch (e) {
+        lastError = e;
       }
     }
     throw ApiException(

@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../domain/entities/enrolled_training.dart';
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
+import '../../../../core/utils/user_facing_error.dart';
 
 class TrainingsController extends GetxController {
   final ITrainingRepository _repository;
@@ -114,7 +115,7 @@ class TrainingsController extends GetxController {
         hasNextPage.value = false;
       }
     } catch (e) {
-      errorMessage.value = "Erreur de chargement des formations";
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
     }

@@ -1,4 +1,4 @@
-﻿# Obfuscation & protection du code — JobAway
+# Obfuscation & protection du code — Baara
 
 Ce document couvre la protection du code des **deux** projets :
 

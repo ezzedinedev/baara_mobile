@@ -1,7 +1,7 @@
-﻿import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/features/ia/data/repositories/ia_repository_impl.dart';
-import 'package:jobaway/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:get/get.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/features/ia/data/repositories/ia_repository_impl.dart';
+import 'package:baara/app/features/ia/domain/repositories/i_ia_repository.dart';
 import '../../data/repositories/offer_repository_impl.dart';
 import '../../domain/repositories/i_offer_repository.dart';
 import '../controllers/offer_detail_controller.dart';

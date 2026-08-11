@@ -1,18 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/map_navigation.dart';
-import 'package:jobaway/app/core/utils/relative_time.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/map_navigation.dart';
+import 'package:baara/app/core/utils/relative_time.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../../community/domain/entities/profile_viewer.dart';
 import '../../../offers/data/models/application_model.dart';
@@ -21,6 +21,7 @@ import '../../../offers/data/models/upcoming_interview_model.dart';
 import '../../../offers/domain/entities/matched_offer.dart';
 import '../../../offers/domain/entities/offer.dart';
 import '../../../offers/presentation/widgets/offer_logo_hero.dart';
+import '../../../home/presentation/controllers/home_controller.dart';
 import '../controllers/suivi_controller.dart';
 
 /// Hub « Suivi » — l'équivalent repensé du « Boards » d'Edomatch. Un seul écran,
@@ -28,16 +29,44 @@ import '../controllers/suivi_controller.dart';
 /// l'app : qui a vu mon profil, mes candidatures, mes matchs IA, mes entretiens
 /// et mes offres favorites. Aucune donnée nouvelle inventée — tout vient des
 /// controllers existants via [SuiviController].
-class SuiviScreen extends StatelessWidget {
+class SuiviScreen extends StatefulWidget {
   const SuiviScreen({super.key});
 
   static const _tabs = <({String label, IconData icon})>[
-    (label: 'Visiteurs', icon: IconlyLight.show),
-    (label: 'Candidatures', icon: IconlyLight.paper),
-    (label: 'Matchs', icon: IconlyLight.activity),
-    (label: 'Entretiens', icon: IconlyLight.calendar),
-    (label: 'Favoris', icon: IconlyLight.bookmark),
+    (label: 'Visiteurs', icon: AppIcons.show),
+    (label: 'Candidatures', icon: AppIcons.paper),
+    (label: 'Matchs', icon: AppIcons.activity),
+    (label: 'Entretiens', icon: AppIcons.calendar),
+    (label: 'Favoris', icon: AppIcons.bookmark),
   ];
+
+  @override
+  State<SuiviScreen> createState() => _SuiviScreenState();
+}
+
+class _SuiviScreenState extends State<SuiviScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  String? _highlightApplicationId;
+
+  @override
+  void initState() {
+    super.initState();
+    final home = Get.find<HomeController>();
+    final initialTab = (home.consumeSuiviSubTab() ?? 0).clamp(0, 4);
+    _highlightApplicationId = home.consumeHighlightApplicationId();
+    _tabController = TabController(
+      length: SuiviScreen._tabs.length,
+      vsync: this,
+      initialIndex: initialTab,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,57 +76,55 @@ class SuiviScreen extends StatelessWidget {
       color: AppColors.background,
       child: SafeArea(
         bottom: false,
-        child: DefaultTabController(
-          length: _tabs.length,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // En-tête plat (cohérent avec SankTabShell) : titre + sous-titre.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.pageH,
-                  AppSpacing.md,
-                  AppSpacing.pageH,
-                  AppSpacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Suivi',
-                      style: AppTextStyles.displayMd.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Ton parcours : visites, candidatures, matchs et entretiens.',
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.bodyColor,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.pageH,
+                AppSpacing.md,
+                AppSpacing.pageH,
+                AppSpacing.md,
               ),
-              // Barre d'onglets scrollable — souligné vert sur l'onglet actif,
-              // à la Edomatch (mais branché sur le design system).
-              _SuiviTabBar(tabs: _tabs),
-              const SizedBox(height: AppSpacing.xs),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _VisitorsTab(suivi: suivi),
-                    _ApplicationsTab(suivi: suivi),
-                    _MatchesTab(suivi: suivi),
-                    _InterviewsTab(suivi: suivi),
-                    _FavoritesTab(suivi: suivi),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Suivi',
+                    style: AppTextStyles.displayMd.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ton parcours : visites, candidatures, matchs et entretiens.',
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.bodyColor,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            _SuiviTabBar(tabs: SuiviScreen._tabs, controller: _tabController),
+            const SizedBox(height: AppSpacing.xs),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _VisitorsTab(suivi: suivi),
+                  _ApplicationsTab(
+                    suivi: suivi,
+                    highlightApplicationId: _highlightApplicationId,
+                  ),
+                  _MatchesTab(suivi: suivi),
+                  _InterviewsTab(suivi: suivi),
+                  _FavoritesTab(suivi: suivi),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -105,13 +132,18 @@ class SuiviScreen extends StatelessWidget {
 }
 
 /// TabBar maison : scrollable, indicateur souligné fin, libellés + icônes.
-class _SuiviTabBar extends StatelessWidget {
-  const _SuiviTabBar({required this.tabs});
+class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const _SuiviTabBar({required this.tabs, required this.controller});
   final List<({String label, IconData icon})> tabs;
+  final TabController controller;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(48);
 
   @override
   Widget build(BuildContext context) {
     return TabBar(
+      controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH - 4),
@@ -248,13 +280,53 @@ class _VisitorTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Onglet 2 — Candidatures (Entreprises intéressées + Emplois postulés)
 // ─────────────────────────────────────────────────────────────────────────────
-class _ApplicationsTab extends StatelessWidget {
-  const _ApplicationsTab({required this.suivi});
+class _ApplicationsTab extends StatefulWidget {
+  const _ApplicationsTab({
+    required this.suivi,
+    this.highlightApplicationId,
+  });
   final SuiviController suivi;
+  final String? highlightApplicationId;
+
+  @override
+  State<_ApplicationsTab> createState() => _ApplicationsTabState();
+}
+
+class _ApplicationsTabState extends State<_ApplicationsTab> {
+  final _scrollController = ScrollController();
+  final _highlightKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.highlightApplicationId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlight());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToHighlight() {
+    final ctx = _highlightKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+        alignment: 0.25,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final suivi = widget.suivi;
     final apps = suivi.applications;
+    final highlightId = widget.highlightApplicationId;
     return Obx(() {
       if (apps.isLoading.value && apps.applications.isEmpty) {
         return const _SuiviSkeleton(kind: _SkKind.offer);
@@ -280,21 +352,32 @@ class _ApplicationsTab extends StatelessWidget {
         );
       }
       return _RefreshList(
+        controller: _scrollController,
         onRefresh: apps.load,
         children: [
           _SectionTitle('Entreprises intéressées'),
           const SizedBox(height: AppSpacing.md),
           if (interested.isEmpty)
             _InlineEmpty(
-              icon: IconlyLight.work,
+              icon: AppIcons.work,
               message: 'Aucune entreprise intéressée pour l\'instant.',
             )
           else
-            for (final a in interested) _ApplicationMiniCard(app: a),
+            for (final a in interested)
+              _ApplicationMiniCard(
+                app: a,
+                highlighted: a.id == highlightId,
+                highlightKey: a.id == highlightId ? _highlightKey : null,
+              ),
           const SizedBox(height: AppSpacing.xl),
           _SectionTitle('Emplois auxquels j\'ai postulé'),
           const SizedBox(height: AppSpacing.md),
-          for (final a in all) _ApplicationMiniCard(app: a),
+          for (final a in all)
+            _ApplicationMiniCard(
+              app: a,
+              highlighted: a.id == highlightId,
+              highlightKey: a.id == highlightId ? _highlightKey : null,
+            ),
         ],
       );
     });
@@ -302,8 +385,14 @@ class _ApplicationsTab extends StatelessWidget {
 }
 
 class _ApplicationMiniCard extends StatelessWidget {
-  const _ApplicationMiniCard({required this.app});
+  const _ApplicationMiniCard({
+    required this.app,
+    this.highlighted = false,
+    this.highlightKey,
+  });
   final ApplicationModel app;
+  final bool highlighted;
+  final Key? highlightKey;
 
   @override
   Widget build(BuildContext context) {
@@ -315,6 +404,8 @@ class _ApplicationMiniCard extends StatelessWidget {
             .round();
 
     return _CardShell(
+      key: highlightKey,
+      highlighted: highlighted,
       onTap: () {
         AppHaptics.tap();
         Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', app.offerId));
@@ -363,7 +454,7 @@ class _ApplicationMiniCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              Icon(IconlyLight.calendar, size: 14, color: AppColors.hintColor),
+              Icon(AppIcons.calendar, size: 14, color: AppColors.hintColor),
               const SizedBox(width: 4),
               Text(_formatDate(app.appliedAt),
                   style: AppTextStyles.bodySm
@@ -435,7 +526,7 @@ class _MatchMiniCard extends StatelessWidget {
             children: [
               MatchScorePill(score: offer.score, dense: true),
               const Spacer(),
-              Icon(IconlyLight.arrow_right_2,
+              Icon(AppIcons.arrowRight,
                   size: 18, color: AppColors.hintColor),
             ],
           ),
@@ -474,7 +565,7 @@ class _MatchMiniCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Icon(IconlyLight.location,
+                Icon(AppIcons.location,
                     size: 14, color: AppColors.hintColor),
                 const SizedBox(width: 4),
                 Flexible(
@@ -605,7 +696,7 @@ class _InterviewInvitationCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
-                  Icon(IconlyLight.calendar,
+                  Icon(AppIcons.calendar,
                       size: 14, color: AppColors.hintColor),
                   const SizedBox(width: 4),
                   Expanded(
@@ -675,7 +766,7 @@ class _InterviewMiniCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Icon(IconlyLight.calendar,
+                Icon(AppIcons.calendar,
                     size: 15, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(
@@ -692,7 +783,7 @@ class _InterviewMiniCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(IconlyLight.location,
+                Icon(AppIcons.location,
                     size: 15, color: AppColors.hintColor),
                 const SizedBox(width: 6),
                 Expanded(
@@ -723,7 +814,7 @@ class _InterviewMiniCard extends StatelessWidget {
                 if (canCalendar)
                   Expanded(
                     child: _InterviewAction(
-                      icon: IconlyLight.calendar,
+                      icon: AppIcons.calendar,
                       label: 'Calendrier',
                       onTap: () {
                         AppHaptics.tap();
@@ -859,7 +950,7 @@ class _FavoriteOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(IconlyBold.bookmark,
+              Icon(AppIcons.bookmarkFilled,
                   size: 20, color: AppColors.primaryAccent),
             ],
           ),
@@ -878,7 +969,7 @@ class _FavoriteOfferCard extends StatelessWidget {
           Row(
             children: [
               if (offer.location.isNotEmpty) ...[
-                Icon(IconlyLight.location,
+                Icon(AppIcons.location,
                     size: 14, color: AppColors.hintColor),
                 const SizedBox(width: 4),
                 Flexible(
@@ -934,9 +1025,14 @@ class _MetaChip extends StatelessWidget {
 
 /// Liste rafraîchissable avec animations staggered (entrée des cartes).
 class _RefreshList extends StatelessWidget {
-  const _RefreshList({required this.onRefresh, required this.children});
+  const _RefreshList({
+    required this.onRefresh,
+    required this.children,
+    this.controller,
+  });
   final Future<void> Function() onRefresh;
   final List<Widget> children;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -945,6 +1041,7 @@ class _RefreshList extends StatelessWidget {
       onRefresh: onRefresh,
       child: AnimationLimiter(
         child: ListView(
+          controller: controller,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.pageH, AppSpacing.md, AppSpacing.pageH, 120),
@@ -976,9 +1073,15 @@ class _SectionTitle extends StatelessWidget {
 
 /// Carte blanche standard du hub (squircle + ombres en couches + accent option).
 class _CardShell extends StatelessWidget {
-  const _CardShell({required this.child, this.onTap});
+  const _CardShell({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.highlighted = false,
+  });
   final Widget child;
   final VoidCallback? onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -987,14 +1090,19 @@ class _CardShell extends StatelessWidget {
       child: TouchBloom(
         onTap: onTap,
         borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-        child: Container(
+        child: AnimatedContainer(
+          duration: AppMotion.base,
           padding: const EdgeInsets.all(AppSpacing.lg),
-          // Profondeur par ombres en couches uniquement (pas de liseré/contour :
-          // le double bordure + ombre faisait « bricolé »).
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-            boxShadow: [...AppColors.lightShadow, ...AppColors.ambientShadow],
+          decoration: ShapeDecoration(
+            color: highlighted
+                ? AppColors.primaryAccent.withValues(alpha: 0.06)
+                : AppColors.surfaceCard,
+            shape: AppShapes.cardBordered(
+              highlighted
+                  ? AppColors.primaryAccent.withValues(alpha: 0.45)
+                  : AppColors.outlineVariant,
+            ),
+            shadows: [...AppColors.lightShadow, ...AppColors.ambientShadow],
           ),
           child: child,
         ),
@@ -1276,13 +1384,13 @@ class _StatusStyle {
 _StatusStyle _statusStyle(ApplicationStatus status) {
   switch (status) {
     case ApplicationStatus.newApp:
-      return _StatusStyle('Envoyée', AppColors.primaryAccent, IconlyLight.send);
+      return _StatusStyle('Envoyée', AppColors.primaryAccent, AppIcons.send);
     case ApplicationStatus.shortlisted:
       return _StatusStyle(
-          'Présélectionné', AppColors.successAccent, IconlyBold.star);
+          'Présélectionné', AppColors.successAccent, AppIcons.starFilled);
     case ApplicationStatus.interview:
       return _StatusStyle(
-          'Entretien', AppColors.warningAccent, IconlyLight.calendar);
+          'Entretien', AppColors.warningAccent, AppIcons.calendar);
     case ApplicationStatus.rejected:
       return _StatusStyle('Non retenue', AppColors.errorAccent,
           Icons.do_not_disturb_on_rounded);

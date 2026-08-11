@@ -1,9 +1,13 @@
-﻿import 'dart:async';
+import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import '../../../firebase_options.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../routes/app_routes.dart';
 import '../../features/messaging/presentation/controllers/messages_controller.dart';
@@ -17,9 +21,12 @@ import 'auth_token_store.dart';
 /// au reste du runtime app — on se contente de logger.
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-  // Pas de Firebase.initializeApp() ici : firebase_messaging le gere.
-  // On laisse Android afficher le banner systeme (le payload backend doit
-  // contenir une `notification` clef pour ca, pas seulement `data`).
+  WidgetsFlutterBinding.ensureInitialized();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   if (kDebugMode) {
     debugPrint('[FCM background] ${message.messageId} ${message.data}');
   }
@@ -47,8 +54,11 @@ class FcmService extends GetxService {
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
 
-  static const String _androidChannelId = 'JobAway_default';
-  static const String _androidChannelName = 'Notifications JobAway';
+  /// État permission push système (null = pas encore lu).
+  final pushPermissionGranted = RxnBool();
+
+  static const String _androidChannelId = 'baara_default';
+  static const String _androidChannelName = 'Notifications Baara';
   static const String _androidChannelDescription =
       'Messages, candidatures, formations.';
 
@@ -83,7 +93,24 @@ class FcmService extends GetxService {
     if (initial != null) {
       _handleNotificationTap(initial);
     }
+
+    await refreshPermissionStatus();
   }
+
+  /// Relit le statut permission (sans popup).
+  Future<void> refreshPermissionStatus() async {
+    try {
+      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      pushPermissionGranted.value =
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus == AuthorizationStatus.provisional;
+    } catch (_) {
+      pushPermissionGranted.value = null;
+    }
+  }
+
+  /// Ouvre les réglages système de l'app (Android / iOS).
+  Future<void> openNotificationSettings() => openAppSettings();
 
   /// Active FCM apres un login reussi : demande la permission systeme
   /// (Android 13+ / iOS) puis pousse le token au backend.
@@ -100,8 +127,10 @@ class FcmService extends GetxService {
     );
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
       if (kDebugMode) debugPrint('[FCM] permission refusee par l user');
+      pushPermissionGranted.value = false;
       return;
     }
+    pushPermissionGranted.value = true;
     await _registerToken(messaging);
   }
 
@@ -195,10 +224,11 @@ class FcmService extends GetxService {
         targetId.isNotEmpty &&
         Get.isRegistered<MessagesController>()) {
       final ctrl = Get.find<MessagesController>();
-      ctrl.loadConversations();
       if (ctrl.activeConversationId.value == targetId) {
         ctrl.loadMessages(targetId);
         suppressBanner = true;
+      } else {
+        ctrl.applyIncomingMessage(conversationId: targetId);
       }
     }
 
@@ -236,23 +266,29 @@ class FcmService extends GetxService {
 
   void _routeFromPayload(Map<String, dynamic> data) {
     final id = data['notifiable_id']?.toString();
-    if (id == null || id.isEmpty) return;
     final shortType = _shortenType(data['notifiable_type']?.toString());
-    switch (shortType) {
-      case 'conversation':
-        Get.toNamed(AppRoutes.home);
-        break;
-      case 'application':
-        Get.toNamed(AppRoutes.myApplications);
-        break;
-      case 'joboffer':
-        Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', id));
-        break;
-      case 'trainingoffer':
-      case 'training':
-        Get.toNamed(AppRoutes.trainingDetail.replaceFirst(':id', id));
-        break;
+    if (id != null && id.isNotEmpty) {
+      switch (shortType) {
+        case 'conversation':
+          Get.toNamed(AppRoutes.conversation.replaceFirst(':id', id));
+          return;
+        case 'application':
+          Get.offAllNamed(AppRoutes.home, arguments: {
+            'tab': 3,
+            'suiviTab': 1,
+            'applicationId': id,
+          });
+          return;
+        case 'joboffer':
+          Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', id));
+          return;
+        case 'trainingoffer':
+        case 'training':
+          Get.toNamed(AppRoutes.trainingDetail.replaceFirst(':id', id));
+          return;
+      }
     }
+    Get.toNamed(AppRoutes.notifications);
   }
 
   String _serializePayload(Map<String, dynamic> data) {

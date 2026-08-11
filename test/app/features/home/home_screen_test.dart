@@ -1,6 +1,6 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/features/home/presentation/controllers/home_controller.dart';
+import 'package:baara/app/features/home/presentation/controllers/home_controller.dart';
 
 void main() {
   late HomeController controller;
@@ -25,8 +25,4 @@ void main() {
     expect(controller.currentTabIndex.value, 4);
   });
 
-  test('activeConversationId can be set for FCM compatibility', () {
-    controller.activeConversationId.value = 'conv-42';
-    expect(controller.activeConversationId.value, 'conv-42');
-  });
 }

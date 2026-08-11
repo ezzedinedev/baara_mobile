@@ -1,9 +1,10 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 import '../../domain/repositories/i_document_repository.dart';
 import '../models/candidate_document_model.dart';
@@ -17,15 +18,12 @@ class DocumentRepositoryImpl implements IDocumentRepository {
   @override
   Future<List<CandidateDocument>> list() async {
     final response = await _api.getJson(ApiConstants.profileDocuments);
-    if (response['success'] == true) {
-      final data = response['data'];
-      final List<dynamic> items = data is List ? data : (data?['data'] ?? []);
-      return items
-          .whereType<Map<String, dynamic>>()
-          .map(CandidateDocument.fromJson)
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos documents.');
+    return ApiResponse.extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(CandidateDocument.fromJson)
+        .toList();
   }
 
   @override
@@ -45,19 +43,16 @@ class DocumentRepositoryImpl implements IDocumentRepository {
         http.MultipartFile.fromBytes('document', bytes, filename: filename),
       ],
     );
-    if (response['success'] == true && response['data'] != null) {
-      return CandidateDocument.fromJson(
-          response['data'] as Map<String, dynamic>);
-    }
-    throw Exception(response['message'] ?? "Échec de l'envoi du document.");
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Échec de l\'envoi du document.');
+    return CandidateDocument.fromJson(ApiResponse.dataMap(response));
   }
 
   @override
   Future<void> delete(String id) async {
     final response = await _api.deleteJson(ApiConstants.profileDocument(id));
-    if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Suppression impossible.');
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de supprimer ce document.');
   }
 
   @override

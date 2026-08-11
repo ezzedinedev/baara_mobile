@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/chatbot_controller.dart';
 import '../../domain/entities/chat_message.dart';
 
@@ -83,7 +83,7 @@ class ChatbotScreen extends GetView<ChatbotController> {
     final ctx = Get.context!;
     final confirmed = await showConfirmSheet(
       context: ctx,
-      icon: IconlyLight.delete,
+      icon: AppIcons.delete,
       iconColor: AppColors.errorAccent,
       title: 'Effacer la discussion ?',
       message: 'Cela supprimera l\'historique local de cette session.',
@@ -127,7 +127,7 @@ class _ChatHeader extends StatelessWidget {
                     color: AppColors.onPrimary.withValues(alpha: 0.18),
                     shape: AppShapes.squircle(AppRadius.sm),
                   ),
-                  child: const Icon(IconlyBold.discovery,
+                  child: const Icon(AppIcons.discovery,
                       color: AppColors.onPrimary, size: 22),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -167,7 +167,7 @@ class _ChatHeader extends StatelessWidget {
                 ),
                 AppIconButton(
                   onBrandHeader: true,
-                  icon: IconlyLight.delete,
+                  icon: AppIcons.delete,
                   tooltip: 'Effacer la discussion',
                   onTap: onReset,
                 ),
@@ -253,7 +253,7 @@ class _ChatInput extends StatelessWidget {
                     shadows: sending ? null : AppColors.lightShadow,
                   ),
                   child: Icon(
-                    IconlyBold.send,
+                    AppIcons.send,
                     color: sending ? AppColors.hintColor : AppColors.onPrimary,
                     size: 20,
                   ),
@@ -301,7 +301,7 @@ class _SuggestionChips extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(IconlyLight.chat,
+                        Icon(AppIcons.chat,
                             size: 15, color: AppColors.primaryAccent),
                         const SizedBox(width: 6),
                         Text(
@@ -359,7 +359,7 @@ class _ChatBubble extends StatelessWidget {
                     color: AppColors.primary,
                     shape: AppShapes.squircle(AppRadius.xs),
                   ),
-                  child: const Icon(IconlyBold.discovery,
+                  child: const Icon(AppIcons.discovery,
                       size: 16, color: AppColors.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -450,7 +450,7 @@ class _CtaButton extends StatelessWidget {
                     AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(IconlyLight.arrow_right_2,
+              const Icon(AppIcons.arrowRight,
                   size: 14, color: AppColors.onPrimary),
             ],
           ),
@@ -499,7 +499,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
               color: AppColors.primary,
               shape: AppShapes.squircle(AppRadius.xs),
             ),
-            child: const Icon(IconlyBold.discovery,
+            child: const Icon(AppIcons.discovery,
                 size: 16, color: AppColors.onPrimary),
           ),
           const SizedBox(width: AppSpacing.sm),

@@ -1,6 +1,6 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 #
-# Builds obfuscated release artifacts for JobAway (Flutter).
+# Builds obfuscated release artifacts for Baara (Flutter).
 #
 # Runs `flutter build` for APK and App Bundle (and optionally iOS) with Dart
 # obfuscation enabled. Debug symbols are written to build/symbols/<version> so
@@ -35,7 +35,7 @@ SYMBOLS_DIR="$PROJECT_ROOT/build/symbols/$VERSION"
 mkdir -p "$SYMBOLS_DIR"
 
 echo "========================================================="
-echo " JobAway - Obfuscated release build"
+echo " Baara - Obfuscated release build"
 echo " Version  : $VERSION"
 echo " Targets  : ${TARGETS[*]}"
 echo " Symbols  : $SYMBOLS_DIR"

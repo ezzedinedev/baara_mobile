@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/jobaway_mark.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/baara_mark.dart';
 import '../controllers/splash_controller.dart';
 
 /// Splash sobre et performant : un seul [AnimationController] pour l'entrée
@@ -137,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                     Opacity(
                       opacity: footerIn,
                       child: Text(
-                        'Burkina Faso · Emploi · Formation',
+                        'Baara.bf · Burkina Faso',
                         style: AppTextStyles.labelSm.copyWith(
                           color: AppColors.primaryMedium,
                           letterSpacing: 1.4,
@@ -209,9 +209,32 @@ class _BreathingLogo extends StatelessWidget {
             ),
           );
         },
-        // Le symbole officiel seul (sans le wordmark) : vectoriel, donc net
-        // quelle que soit la densité d'écran.
-        child: const JobAwayMark(size: 132),
+        // Le lockup officiel (symbole + wordmark) : image PNG de marque
+        // haute fidélité.
+        child: const _LogoLockup(),
+      ),
+    );
+  }
+}
+
+/// Affiche le logo complet (Pictogramme + Texte) de Baara.
+class _LogoLockup extends StatelessWidget {
+  const _LogoLockup();
+
+  // Noms de fichiers en minuscules pour correspondre aux assets réels
+  static const String _logoDark = 'assets/images/logo/baara_logo.png';
+  static const String _logoLight = 'assets/images/logo/baara_logo_light.png';
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 230,
+      child: Image.asset(
+        Get.isDarkMode ? _logoLight : _logoDark,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        // Repli sur le symbole vectoriel si le PNG est manquant.
+        errorBuilder: (context, error, stackTrace) => const BaaraMark(size: 132),
       ),
     );
   }
@@ -392,33 +415,40 @@ class _ProgressBarState extends State<_ProgressBar>
                         ),
                       ),
                       // Reflet qui balaie la partie remplie.
-                      RepaintBoundary(
-                        child: AnimatedBuilder(
-                          animation: _shimmer,
-                          builder: (context, _) {
-                            final pos =
-                                _shimmer.value * (filledWidth + 60) - 60;
-                            return Positioned(
-                              left: pos,
-                              top: 0,
-                              bottom: 0,
-                              width: 60,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.onPrimary
-                                          .withValues(alpha: 0.0),
-                                      AppColors.onPrimary
-                                          .withValues(alpha: 0.45),
-                                      AppColors.onPrimary
-                                          .withValues(alpha: 0.0),
-                                    ],
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: filledWidth,
+                        child: ClipRect(
+                          child: AnimatedBuilder(
+                            animation: _shimmer,
+                            builder: (context, _) {
+                              final pos =
+                                  _shimmer.value * (filledWidth + 60) - 60;
+                              return Transform.translate(
+                                offset: Offset(pos, 0),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: 60,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.onPrimary
+                                              .withValues(alpha: 0.0),
+                                          AppColors.onPrimary
+                                              .withValues(alpha: 0.45),
+                                          AppColors.onPrimary
+                                              .withValues(alpha: 0.0),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],

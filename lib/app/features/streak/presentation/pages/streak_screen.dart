@@ -1,16 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/common/app_animations.dart';
-import 'package:jobaway/app/core/widgets/common/sank_sheet_scaffold.dart';
-import 'package:jobaway/app/core/widgets/effects/gyro_tilt.dart';
-import 'package:jobaway/app/core/widgets/effects/sheen_sweep.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/streak_controller.dart';
 
@@ -35,32 +32,38 @@ class StreakScreen extends StatelessWidget {
     return SankSheetScaffold(
       title: 'Ma série',
       titleIcon: Icons.local_fire_department_rounded,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.pageH,
-          AppSpacing.xl,
-          AppSpacing.pageH,
-          AppSpacing.xxl,
-        ),
-        child: AnimationLimiter(
-          child: Column(
-            children: AnimationConfiguration.toStaggeredList(
-              duration: AppMotion.medium,
-              childAnimationBuilder: (w) => SlideAnimation(
-                verticalOffset: AppMotion.listSlideOffset,
-                curve: AppMotion.emphasizedDecelerate,
-                child: FadeInAnimation(child: w),
+      body: AppRefreshIndicator(
+        color: AppColors.primaryAccent,
+        onRefresh: streak.reloadFromCache,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pageH,
+            AppSpacing.xl,
+            AppSpacing.pageH,
+            AppSpacing.xxl,
+          ),
+          child: AnimationLimiter(
+            child: Column(
+              children: AnimationConfiguration.toStaggeredList(
+                duration: AppMotion.medium,
+                childAnimationBuilder: (w) => SlideAnimation(
+                  verticalOffset: AppMotion.listSlideOffset,
+                  curve: AppMotion.emphasizedDecelerate,
+                  child: FadeInAnimation(child: w),
+                ),
+                children: [
+                  _StreakHero(streak: streak),
+                  const SizedBox(height: AppSpacing.xxl),
+                  _WeekCalendar(streak: streak, dayLabels: _dayLabels),
+                  const SizedBox(height: AppSpacing.xl),
+                  _StatsRow(streak: streak),
+                  const SizedBox(height: AppSpacing.xl),
+                  _TodayBanner(streak: streak),
+                ],
               ),
-              children: [
-                _StreakHero(streak: streak),
-                const SizedBox(height: AppSpacing.xxl),
-                _WeekCalendar(streak: streak, dayLabels: _dayLabels),
-                const SizedBox(height: AppSpacing.xl),
-                _StatsRow(streak: streak),
-                const SizedBox(height: AppSpacing.xl),
-                _TodayBanner(streak: streak),
-              ],
             ),
           ),
         ),

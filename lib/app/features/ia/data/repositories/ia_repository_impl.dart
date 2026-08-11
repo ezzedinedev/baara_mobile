@@ -1,6 +1,7 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/data/models/ai_models.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/data/models/ai_models.dart';
 import '../../domain/repositories/i_ia_repository.dart';
 
 class IaRepositoryImpl implements IIaRepository {
@@ -45,10 +46,13 @@ class IaRepositoryImpl implements IIaRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> cvAdaptApply(String offerId) async {
+  Future<Map<String, dynamic>> cvAdaptApply(
+      Map<String, dynamic> suggestions) async {
+    // Le backend valide `suggestions => required|array`. On envoyait
+    // `offer_id` : chaque appel repartait en 422 « Données invalides ».
     final response = await _apiProvider.postJson(
       ApiConstants.aiCvAdaptApply,
-      {'offer_id': offerId},
+      {'suggestions': suggestions},
     );
     return _unwrapMap(response);
   }
@@ -143,17 +147,7 @@ class IaRepositoryImpl implements IIaRepository {
   }
 
   dynamic _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ?? 'Réponse API IA invalide.',
-        statusCode: statusCode,
-      );
-    }
-
+    ApiResponse.ensureSuccess(response, fallback: 'Réponse API IA invalide.');
     return response['data'];
   }
 

@@ -1,3 +1,5 @@
+import '../../../../core/utils/profile_completion.dart';
+
 /// Entité représentant l'expérience professionnelle.
 class Experience {
   final String id;
@@ -140,20 +142,7 @@ class Profile {
 
   String get fullName => '$firstName $lastName';
 
-  /// Taux de complétion du profil (0–100), calculé sur les champs clés remplis.
-  /// Sert à l'anneau de progression autour de l'avatar.
-  int get completionPercent {
-    final checks = <bool>[
-      (avatarUrl ?? '').trim().isNotEmpty,
-      (headline ?? '').trim().isNotEmpty,
-      city.trim().isNotEmpty,
-      phone.trim().isNotEmpty,
-      (bio ?? '').trim().isNotEmpty,
-      skills.isNotEmpty,
-      experiences.isNotEmpty,
-      educations.isNotEmpty,
-    ];
-    final filled = checks.where((c) => c).length;
-    return ((filled / checks.length) * 100).round().clamp(0, 100);
-  }
+  /// Taux de complétion (0–100). Priorité au flag backend si complet.
+  int completionPercent({bool hasDocuments = false}) =>
+      profileCompletionPercent(this, hasDocuments: hasDocuments);
 }

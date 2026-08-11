@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../controllers/cv_import_controller.dart';
 
@@ -34,11 +34,20 @@ class CvImportScreen extends GetView<CvImportController> {
             child: Obx(() {
               switch (controller.step.value) {
                 case CvImportStep.analyzing:
-                  return const _Busy(label: 'Analyse de votre CV en cours…');
+                  return const CvImportProcessingSkeleton(
+                    label: 'Analyse de votre CV en cours…',
+                    activeStep: 0,
+                  );
                 case CvImportStep.improving:
-                  return const _Busy(label: "Amélioration par l'IA en cours…");
+                  return const CvImportProcessingSkeleton(
+                    label: "Amélioration par l'IA en cours…",
+                    activeStep: 1,
+                  );
                 case CvImportStep.applying:
-                  return const _Busy(label: 'Application à votre CV…');
+                  return const CvImportProcessingSkeleton(
+                    label: 'Application à votre profil…',
+                    activeStep: 2,
+                  );
                 case CvImportStep.review:
                   return _ReviewStep(controller: controller);
                 case CvImportStep.improved:
@@ -81,21 +90,21 @@ class _PickStep extends StatelessWidget {
               ),
             );
           }),
-          const SizedBox(height: 28),
-          Text('Comment ça marche ?', style: AppTextStyles.titleMd),
+          const SizedBox(height: AppSpacing.xxl),
+          SectionLabel('Comment ça marche ?'),
           const SizedBox(height: AppSpacing.lg),
           RevealOnMount(
             delay: const Duration(milliseconds: 60),
             child: const _HowItWorksStep(
                 number: 1, label: 'Importez votre CV (PDF, DOCX, TXT)'),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.md),
           RevealOnMount(
             delay: const Duration(milliseconds: 120),
             child: const _HowItWorksStep(
                 number: 2, label: "L'IA analyse et l'améliore"),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.md),
           RevealOnMount(
             delay: const Duration(milliseconds: 180),
             child: const _HowItWorksStep(
@@ -118,90 +127,99 @@ class _ReviewStep extends StatelessWidget {
     final scoreColor = score >= 75
         ? AppColors.successAccent
         : (score >= 45 ? AppColors.warningAccent : AppColors.errorAccent);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _FileChip(name: controller.filename.value ?? 'Votre CV'),
-          const SizedBox(height: AppSpacing.xl),
-          DecoratedBox(
-            decoration: ShapeDecoration(
-              color: AppColors.surfaceCard,
-              shape: AppShapes.cardBordered(AppColors.outlineVariant),
-              shadows: [
-                ...AppColors.lightShadow,
-                ...AppColors.ambientShadow,
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.md,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              child: Row(
-                children: [
-                  ScoreRing(
-                    value: score,
-                    color: scoreColor,
-                    size: 76,
-                    strokeWidth: 8,
-                    valueFontSize: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _FileChip(name: controller.filename.value ?? 'Votre CV'),
+                const SizedBox(height: AppSpacing.xl),
+                DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: AppColors.surfaceCard,
+                    shape: AppShapes.cardBordered(AppColors.outlineVariant),
+                    shadows: [
+                      ...AppColors.lightShadow,
+                      ...AppColors.ambientShadow,
+                    ],
                   ),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Row(
                       children: [
-                        Text('Score de votre CV',
-                            style: AppTextStyles.titleMd
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          "Notre IA peut le réécrire pour le rendre plus clair, mieux structuré et compatible ATS.",
-                          style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.bodyColor, height: 1.4),
+                        ScoreRing(
+                          value: score,
+                          color: scoreColor,
+                          size: 76,
+                          strokeWidth: 8,
+                          valueFontSize: 24,
+                        ),
+                        const SizedBox(width: AppSpacing.lg),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Score de votre CV',
+                                  style: AppTextStyles.titleMd
+                                      .copyWith(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                "Notre IA peut le réécrire pour le rendre plus clair, mieux structuré et compatible ATS.",
+                                style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.bodyColor, height: 1.4),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          if ((controller.summary.value ?? '').isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
-                borderRadius: AppShapes.squircleRadius(AppRadius.md),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Text(
-                  controller.summary.value!,
-                  style: AppTextStyles.bodySm
-                      .copyWith(color: AppColors.bodyColor, height: 1.5),
                 ),
-              ),
+                if ((controller.summary.value ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLow,
+                      borderRadius: AppShapes.squircleRadius(AppRadius.md),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(
+                        controller.summary.value!,
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.bodyColor, height: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
+                Obx(() {
+                  final err = controller.errorMessage.value;
+                  if (err == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: _ErrorBanner(message: err),
+                  );
+                }),
+              ],
             ),
-          ],
-          Obx(() {
-            final err = controller.errorMessage.value;
-            if (err == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.lg),
-              child: _ErrorBanner(message: err),
-            );
-          }),
-          const SizedBox(height: 24),
-          _PrimaryButton(
-            label: "Améliorer avec l'IA",
-            icon: IconlyBold.discovery,
-            onPressed: controller.improve,
           ),
-          const SizedBox(height: 10),
-          _TextButton(
-              label: 'Choisir un autre fichier', onPressed: controller.reset),
-        ],
-      ),
+        ),
+        CvStickyActionBar(
+          primaryLabel: "Améliorer avec l'IA",
+          onPrimary: controller.improve,
+          secondaryLabel: 'Choisir un autre fichier',
+          onSecondary: controller.reset,
+        ),
+      ],
     );
   }
 }
@@ -213,68 +231,78 @@ class _ImprovedStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DecoratedBox(
-            decoration: ShapeDecoration(
-              color: AppColors.successSoft,
-              shape: AppShapes.cardBordered(
-                AppColors.successAccent.withValues(alpha: 0.25),
-              ),
-              shadows: [...AppColors.ambientShadow],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.md,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome_rounded,
-                      color: AppColors.successAccent, size: 28),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: AppColors.successSoft,
+                    shape: AppShapes.cardBordered(
+                      AppColors.successAccent.withValues(alpha: 0.25),
+                    ),
+                    shadows: [...AppColors.ambientShadow],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Row(
                       children: [
-                        Text('Votre CV a été amélioré',
-                            style: AppTextStyles.titleMd
-                                .copyWith(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          "L'IA a réécrit et structuré le contenu. Appliquez-le pour mettre à jour votre profil.",
-                          style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.bodyColor, height: 1.4),
+                        Icon(Icons.auto_awesome_rounded,
+                            color: AppColors.successAccent, size: 28),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Votre CV a été amélioré',
+                                  style: AppTextStyles.titleMd
+                                      .copyWith(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                "L'IA a réécrit et structuré le contenu. Appliquez-le pour mettre à jour votre profil.",
+                                style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.bodyColor, height: 1.4),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                Obx(() {
+                  final err = controller.errorMessage.value;
+                  if (err == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: _ErrorBanner(message: err),
+                  );
+                }),
+              ],
             ),
           ),
-          Obx(() {
-            final err = controller.errorMessage.value;
-            if (err == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.lg),
-              child: _ErrorBanner(message: err),
-            );
-          }),
-          const SizedBox(height: 24),
-          _PrimaryButton(
-            label: 'Appliquer à mon CV',
-            icon: IconlyBold.tick_square,
-            onPressed: () async {
-              final ok = await controller.apply();
-              if (ok) {
-                AppToast.success(
-                    'CV mis à jour', 'Votre profil a été enrichi.');
-              }
-            },
-          ),
-        ],
-      ),
+        ),
+        CvStickyActionBar(
+          primaryLabel: 'Appliquer à mon CV',
+          onPrimary: () async {
+            final ok = await controller.apply();
+            if (ok) {
+              AppToast.success(
+                  'CV mis à jour', 'Votre profil a été enrichi.');
+            }
+          },
+        ),
+      ],
     );
   }
 }
@@ -284,68 +312,56 @@ class _DoneStep extends StatelessWidget {
   const _DoneStep();
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: const BoxDecoration(
-                  color: AppColors.primaryLight, shape: BoxShape.circle),
-              child: const Icon(IconlyLight.tick_square,
-                  size: 44, color: AppColors.primaryDark),
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xxl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: AppColors.successSoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.successAccent.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Icon(AppIcons.tickSquare,
+                        size: 44, color: AppColors.successAccent),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Text('CV mis à jour !',
+                      style: AppTextStyles.titleLg
+                          .copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Votre CV importé a été appliqué à votre profil Baara.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMd
+                        .copyWith(color: AppColors.bodyColor, height: 1.45),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            Text('CV mis à jour !',
-                style: AppTextStyles.titleLg
-                    .copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Votre CV importé a été appliqué à votre profil JobAway.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMd
-                  .copyWith(color: AppColors.bodyColor, height: 1.45),
-            ),
-            const SizedBox(height: 28),
-            _PrimaryButton(
-              label: "Voir l'aperçu",
-              icon: IconlyBold.show,
-              onPressed: () => Get.offNamed(AppRoutes.profileCvPreview),
-            ),
-            const SizedBox(height: 10),
-            _TextButton(label: 'Terminer', onPressed: () => Get.back<void>()),
-          ],
+          ),
         ),
-      ),
+        CvStickyActionBar(
+          primaryLabel: "Voir l'aperçu",
+          onPrimary: () => Get.offNamed(AppRoutes.profileCvPreview),
+          secondaryLabel: 'Terminer',
+          onSecondary: () => Get.back<void>(),
+        ),
+      ],
     );
   }
 }
 
 // ── Widgets partagés ────────────────────────────────────────────────────
-class _Busy extends StatelessWidget {
-  const _Busy({required this.label});
-  final String label;
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(AppColors.primaryAccent)),
-          const SizedBox(height: 18),
-          Text(label,
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor)),
-        ],
-      ),
-    );
-  }
-}
-
 class _FileChip extends StatelessWidget {
   const _FileChip({required this.name});
   final String name;
@@ -360,7 +376,7 @@ class _FileChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            Icon(IconlyBold.document, color: AppColors.primaryAccent, size: 20),
+            Icon(AppIcons.document, color: AppColors.primaryAccent, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -409,55 +425,6 @@ class _ErrorBanner extends StatelessWidget {
   }
 }
 
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton(
-      {required this.label, required this.icon, required this.onPressed});
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      onPressed: () {
-        AppHaptics.tap();
-        onPressed();
-      },
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: const StadiumBorder(),
-      ),
-      icon: Icon(icon, size: 18, color: AppColors.onPrimary),
-      label: Text(
-        label,
-        style: AppTextStyles.titleMd
-            .copyWith(color: AppColors.onPrimary, fontWeight: FontWeight.w800),
-      ),
-    );
-  }
-}
-
-class _TextButton extends StatelessWidget {
-  const _TextButton({required this.label, required this.onPressed});
-  final String label;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        AppHaptics.tap();
-        onPressed();
-      },
-      child: Text(
-        label,
-        style: AppTextStyles.labelMd
-            .copyWith(color: AppColors.bodyColor, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
 /// Grande zone d'upload tappable avec bordure pointillée simulée.
 class _UploadZone extends StatelessWidget {
   const _UploadZone({required this.onTap});
@@ -500,7 +467,7 @@ class _UploadZoneContent extends StatelessWidget {
             color: AppColors.surfaceIconSoft,
             shape: BoxShape.circle,
           ),
-          child: Icon(IconlyLight.upload,
+          child: Icon(AppIcons.upload,
               color: AppColors.primaryAccent, size: 32),
         ),
         const SizedBox(height: 18),
@@ -531,8 +498,10 @@ class _HowItWorksStep extends StatelessWidget {
           width: 32,
           height: 32,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-              color: AppColors.primary, shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
           child: Text(
             '$number',
             style: AppTextStyles.labelSm.copyWith(color: AppColors.onPrimary),

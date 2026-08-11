@@ -1,5 +1,5 @@
-﻿import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:get/get.dart';
+import 'package:baara/app/core/network/api_provider.dart';
 
 import '../../data/repositories/training_repository_impl.dart';
 import '../../domain/repositories/i_training_repository.dart';

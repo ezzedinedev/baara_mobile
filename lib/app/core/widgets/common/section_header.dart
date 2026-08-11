@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
@@ -60,7 +60,7 @@ class SectionHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 2),
                     Icon(
-                      IconlyLight.arrow_right_2,
+                      AppIcons.arrowRight,
                       size: 18,
                       color: AppColors.primaryAccent,
                     ),

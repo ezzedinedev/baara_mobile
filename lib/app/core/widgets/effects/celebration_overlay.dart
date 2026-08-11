@@ -1,8 +1,8 @@
-﻿import 'package:confetti/confetti.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
 
 /// Burst de **confetti de célébration** posé en plein écran via [Overlay], sans
 /// écran dédié. Réutilise le package `confetti` (déjà présent pour l'écran de

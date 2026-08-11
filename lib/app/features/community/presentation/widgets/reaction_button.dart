@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:flutter/material.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
-import 'package:jobaway/app/core/widgets/effects/burst_effect.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/widgets/effects/burst_effect.dart';
 import '../../domain/entities/post.dart';
 
 /// Bouton de réaction du fil :
@@ -186,19 +186,19 @@ class _ReactionButtonState extends State<ReactionButton>
     switch (type) {
       case 'like':
         return Icon(Icons.thumb_up_rounded,
-            size: size, color: const Color(0xFF2563EB));
+            size: size, color: AppColors.categoryBlue);
       case 'love':
         return Icon(Icons.favorite_rounded,
-            size: size, color: const Color(0xFFE11D48));
+            size: size, color: AppColors.errorAccent);
       case 'bravo':
         return Icon(Icons.emoji_events_rounded,
-            size: size, color: const Color(0xFFD97706));
+            size: size, color: AppColors.warningAccent);
       case 'instructif':
         return Icon(Icons.lightbulb_rounded,
-            size: size, color: const Color(0xFF7C3AED));
+            size: size, color: AppColors.categoryPurple);
       default:
         return Icon(Icons.thumb_up_rounded,
-            size: size, color: const Color(0xFF2563EB));
+            size: size, color: AppColors.categoryBlue);
     }
   }
 
@@ -246,7 +246,7 @@ class _ReactionButtonState extends State<ReactionButton>
               ),
               child: active
                   ? _reactionIcon(widget.myReaction!, size: 17)
-                  : Icon(IconlyLight.heart, size: 18, color: color),
+                  : Icon(AppIcons.heart, size: 18, color: color),
             ),
             const SizedBox(width: 7),
             Flexible(

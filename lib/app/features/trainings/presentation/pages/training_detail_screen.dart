@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../domain/entities/training.dart';
 import '../controllers/training_detail_controller.dart';
@@ -291,7 +291,7 @@ class _CourseHeroBanner extends StatelessWidget {
                   ),
                 ),
                 child: const Icon(
-                  IconlyLight.play,
+                  AppIcons.play,
                   color: AppColors.onPrimary,
                   size: 40,
                 ),
@@ -666,10 +666,10 @@ class _LessonRow extends StatelessWidget {
                 ),
                 child: Icon(
                   lesson.isCompleted
-                      ? IconlyLight.tick_square
+                      ? AppIcons.tickSquare
                       : isLocked
-                          ? IconlyLight.lock
-                          : IconlyLight.play,
+                          ? AppIcons.lock
+                          : AppIcons.play,
                   color: stateColor,
                   size: 22,
                 ),
@@ -718,9 +718,9 @@ class _LessonRow extends StatelessWidget {
                   ),
                 )
               else if (isLocked)
-                Icon(IconlyLight.lock, size: 16, color: AppColors.hintColor)
+                Icon(AppIcons.lock, size: 16, color: AppColors.hintColor)
               else
-                Icon(IconlyLight.arrow_right_2,
+                Icon(AppIcons.arrowRight,
                     size: 20, color: AppColors.hintColor),
             ],
           ),
@@ -744,7 +744,7 @@ class _DescriptionTab extends StatelessWidget {
         const SizedBox(height: 16),
         _DetailSection(
           title: 'Description',
-          icon: IconlyLight.paper,
+          icon: AppIcons.paper,
           color: AppColors.categoryBlue,
           child: Text(
             training.description.isEmpty
@@ -763,7 +763,7 @@ class _DescriptionTab extends StatelessWidget {
         const SizedBox(height: 14),
         _BulletSection(
           title: 'Objectifs',
-          icon: IconlyLight.danger,
+          icon: AppIcons.danger,
           color: AppColors.successDark,
           items: training.objectives.isEmpty
               ? const ['Objectifs non précisés.']
@@ -805,7 +805,7 @@ class _ReviewPrompt extends StatelessWidget {
       if (!controller.isEnrolled) return const SizedBox.shrink();
       return _DetailSection(
         title: 'Avis',
-        icon: IconlyBold.star,
+        icon: AppIcons.starFilled,
         color: AppColors.warningAccent,
         child: Row(
           children: [
@@ -821,7 +821,7 @@ class _ReviewPrompt extends StatelessWidget {
             TextButton.icon(
               onPressed: () => _showReviewDialog(context, controller),
               icon: Icon(
-                IconlyLight.edit,
+                AppIcons.edit,
                 size: 16,
                 color: AppColors.primaryAccent,
               ),
@@ -843,64 +843,11 @@ class _ReviewPrompt extends StatelessWidget {
     BuildContext context,
     TrainingDetailController controller,
   ) async {
-    var rating = 5;
-    final commentCtrl = TextEditingController();
-    final ok = await Get.dialog<bool>(
-      StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: AppColors.surfaceCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-          ),
-          title: Text(
-            'Votre avis',
-            style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (var i = 1; i <= 5; i++)
-                    IconButton(
-                      onPressed: () => setState(() => rating = i),
-                      icon: Icon(
-                        i <= rating ? IconlyBold.star : IconlyLight.star,
-                        color: AppColors.warningAccent,
-                      ),
-                    ),
-                ],
-              ),
-              TextField(
-                controller: commentCtrl,
-                minLines: 3,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  hintText: 'Commentaire optionnel',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back<bool>(result: false),
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () => Get.back<bool>(result: true),
-              child: const Text('Envoyer'),
-            ),
-          ],
-        ),
-      ),
-    );
-    final comment = commentCtrl.text;
-    commentCtrl.dispose();
-    if (ok != true) return;
+    final result = await showTrainingReviewSheet(context: context);
+    if (result == null) return;
     final sent = await controller.submitReview(
-      rating: rating,
-      comment: comment,
+      rating: result.rating,
+      comment: result.comment,
     );
     if (sent) {
       AppToast.success('Avis envoyé');
@@ -985,31 +932,31 @@ class _MetaGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_MetaEntry>[
       _MetaEntry(
-        icon: IconlyLight.paper,
+        icon: AppIcons.paper,
         color: AppColors.categoryCyan,
         title: 'Modules',
         value: '${training.modules.length} module(s)',
       ),
       _MetaEntry(
-        icon: IconlyLight.time_circle,
+        icon: AppIcons.time,
         color: AppColors.categoryPink,
         title: 'Durée',
         value: training.durationLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.calendar,
+        icon: AppIcons.calendar,
         color: AppColors.secondary,
         title: 'Début',
         value: training.startDateLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.time_square,
+        icon: AppIcons.timeSquare,
         color: AppColors.warningAccent,
         title: 'Limite',
         value: training.deadlineLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.location,
+        icon: AppIcons.location,
         color: AppColors.categoryBlue,
         title: 'Lieu',
         value: training.location,
@@ -1021,25 +968,25 @@ class _MetaGrid extends StatelessWidget {
         value: training.languageLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.wallet,
+        icon: AppIcons.wallet,
         color: AppColors.categoryOrange,
         title: 'Prix',
         value: training.priceLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.shield_done,
+        icon: AppIcons.shieldDone,
         color: AppColors.successDark,
         title: 'Certificat',
         value: training.certificationLabel,
       ),
       _MetaEntry(
-        icon: IconlyLight.profile,
+        icon: AppIcons.profile,
         color: AppColors.primaryMedium,
         title: 'Inscrits',
         value: '${training.enrolledCount}',
       ),
       _MetaEntry(
-        icon: IconlyBold.star,
+        icon: AppIcons.starFilled,
         color: AppColors.warningAccent,
         title: 'Note',
         value: training.rating.toStringAsFixed(1),
@@ -1370,7 +1317,7 @@ class _MinimalBackBar extends StatelessWidget {
               AppHaptics.tap();
               Navigator.of(context).maybePop();
             },
-            icon: const Icon(IconlyLight.arrow_left_2),
+            icon: const Icon(AppIcons.back),
             color: AppColors.titleColor,
           ),
         ],

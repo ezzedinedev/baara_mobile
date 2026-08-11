@@ -1,8 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/onboarding_service.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class OtpVerificationController extends GetxController {
@@ -14,6 +14,8 @@ class OtpVerificationController extends GetxController {
   final isLoading = false.obs;
   final isResending = false.obs;
   final errorMsg = ''.obs;
+  final deliveryPhase = AuthDeliveryPhase.idle.obs;
+  final sendError = ''.obs;
 
   /// Numéro rattaché au compte : sert de **clé API** (le serveur indexe les
   /// codes OTP sur le téléphone), pas de canal de livraison.
@@ -23,8 +25,22 @@ class OtpVerificationController extends GetxController {
   /// Utilisé pour l'affichage et les messages, pas pour les appels API.
   String email = '';
 
-  /// Destination affichée à l'utilisateur (email de préférence).
+  /// Email affiché à l'utilisateur (canal de livraison du code OTP).
   String get codeDestination => email.isNotEmpty ? email : phone;
+
+  /// Libellé principal pour l'écran OTP (toujours orienté email si connu).
+  String get deliveryExplanation {
+    if (email.isNotEmpty) {
+      return 'Un code à 6 chiffres a été envoyé par email à $email.';
+    }
+    return 'Un code à 6 chiffres vous a été envoyé par email.';
+  }
+
+  /// Précision sur le rôle du téléphone (clé API côté serveur).
+  String? get phoneSecurityNote {
+    if (phone.isEmpty || email.isEmpty) return null;
+    return 'Votre numéro ($phone) sert uniquement à sécuriser votre compte — le code arrive toujours par email.';
+  }
 
   @override
   void onInit() {
@@ -44,13 +60,18 @@ class OtpVerificationController extends GetxController {
     if (phone.isEmpty) return;
     try {
       if (!initial) isResending.value = true;
+      deliveryPhase.value = AuthDeliveryPhase.sending;
+      sendError.value = '';
       await _authRepository.resendOtp(phone);
+      deliveryPhase.value = AuthDeliveryPhase.sent;
       if (!initial) {
         AppToast.success(
             'Code envoyé', 'Un nouveau code a été envoyé à $codeDestination.');
       }
     } catch (e) {
-      if (!initial) AppToast.error('Échec', userFacingError(e));
+      sendError.value = userFacingError(e);
+      deliveryPhase.value = AuthDeliveryPhase.failed;
+      if (!initial) AppToast.error('Échec', sendError.value);
     } finally {
       isResending.value = false;
     }
@@ -76,8 +97,9 @@ class OtpVerificationController extends GetxController {
       isLoading.value = true;
       errorMsg.value = '';
       await _authRepository.verifyOtp(phone: phone, otp: code);
-      Get.offAllNamed(AppRoutes.candidateLogin);
-      AppToast.success('Compte vérifié', 'Connectez-vous pour continuer.');
+      final onboarding = Get.find<OnboardingService>();
+      await onboarding.navigateAfterAuth();
+      AppToast.success('Compte vérifié', 'Bienvenue sur Baara.bf !');
     } catch (e) {
       errorMsg.value = userFacingError(e);
     } finally {

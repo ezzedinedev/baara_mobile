@@ -1,7 +1,7 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
 
 import '../../data/repositories/cv_editor_repository.dart';
 

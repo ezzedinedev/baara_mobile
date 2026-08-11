@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart' show AppRadius;
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
@@ -182,7 +182,7 @@ class _TrainingPaymentScreenState extends State<TrainingPaymentScreen> {
                   label: 'Numéro de téléphone',
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
-                  icon: IconlyLight.call,
+                  icon: AppIcons.phone,
                   hint: 'Ex : 70 00 00 00',
                 ),
                 if (_error != null) ...[
@@ -198,7 +198,7 @@ class _TrainingPaymentScreenState extends State<TrainingPaymentScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      Icon(IconlyLight.shield_done,
+                      Icon(AppIcons.shieldDone,
                           size: 15, color: AppColors.hintColor),
                       const SizedBox(width: 6),
                       Expanded(
@@ -360,7 +360,7 @@ class _OperatorTile extends StatelessWidget {
                   operator.asset,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.medium,
-                  errorBuilder: (_, __, ___) => Icon(IconlyBold.wallet,
+                  errorBuilder: (_, __, ___) => Icon(AppIcons.wallet,
                       color: AppColors.primaryAccent, size: 22),
                 ),
               ),
@@ -399,7 +399,7 @@ class _RadioDot extends StatelessWidget {
         color: selected ? AppColors.primary : Colors.transparent,
       ),
       child: selected
-          ? const Icon(IconlyLight.tick_square,
+          ? const Icon(AppIcons.tickSquare,
               size: 14, color: AppColors.onPrimary)
           : null,
     );

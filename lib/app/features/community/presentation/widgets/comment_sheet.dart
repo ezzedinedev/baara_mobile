@@ -1,18 +1,14 @@
-﻿import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/relative_time.dart';
-import 'package:jobaway/app/core/widgets/common/brand_avatar.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
-import 'package:jobaway/app/core/widgets/common/emoji_picker_panel.dart';
-import 'package:jobaway/app/core/widgets/effects/burst_effect.dart';
-import 'package:jobaway/app/core/widgets/skeletons/message_tile_skeleton.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/relative_time.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/entities/community_comment.dart';
 import '../../domain/entities/post.dart';
 import '../controllers/community_controller.dart';
@@ -201,22 +197,15 @@ class _CommentSheetState extends State<_CommentSheet> {
   }
 
   Future<void> _deleteComment(String commentId) async {
-    final confirmed = await showAdaptiveDialog<bool>(
+    final confirmed = await showConfirmSheet(
       context: context,
-      builder: (ctx) => AlertDialog.adaptive(
-        title: const Text('Supprimer'),
-        content: const Text('Supprimer ce commentaire\u00a0?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annuler')),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Supprimer',
-                style: TextStyle(color: AppColors.errorAccent)),
-          ),
-        ],
-      ),
+      icon: AppIcons.delete,
+      iconColor: AppColors.errorAccent,
+      title: 'Supprimer le commentaire',
+      message: 'Ce commentaire sera retiré définitivement.',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      isDestructive: true,
     );
     if (confirmed != true || !mounted) return;
     final ok = await widget.controller.removeComment(widget.post.id, commentId);
@@ -239,28 +228,20 @@ class _CommentSheetState extends State<_CommentSheet> {
         builder: (context, scrollController) {
           return Column(
             children: [
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
+              const SheetHandle(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+                    AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
                 child: Row(
                   children: [
                     Text('Commentaires',
                         style: AppTextStyles.titleLg
                             .copyWith(color: AppColors.titleColor)),
                     const Spacer(),
-                    IconButton(
-                      icon: Icon(IconlyLight.close_square,
-                          color: AppColors.hintColor),
-                      onPressed: () => Navigator.pop(context),
+                    AppIconButton(
+                      icon: AppIcons.closeSquare,
+                      tooltip: 'Fermer',
+                      onTap: () => Navigator.pop(context),
                     ),
                   ],
                 ),
@@ -286,28 +267,21 @@ class _CommentSheetState extends State<_CommentSheet> {
       );
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_error!, style: AppTextStyles.bodyMd),
-            const SizedBox(height: AppSpacing.md),
-            TextButton(onPressed: _load, child: const Text('Réessayer')),
-          ],
-        ),
+      return ErrorStateView(
+        message: _error!,
+        compact: true,
+        illustration: const ErrorIllustration(),
+        onRetry: _load,
       );
     }
     if (_comments.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(IconlyLight.message, size: 44, color: AppColors.hintColor),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Soyez le premier à commenter',
-                style:
-                    AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor)),
-          ],
+        child: EmptyState(
+          icon: AppIcons.message,
+          title: 'Aucun commentaire',
+          subtitle: 'Soyez le premier à réagir à cette publication.',
+          actionLabel: 'Actualiser',
+          onAction: () => _load(),
         ),
       );
     }
@@ -391,13 +365,13 @@ class _CommentSheetState extends State<_CommentSheet> {
                           const Spacer(),
                           GestureDetector(
                             onTap: () => _startEdit(c),
-                            child: Icon(IconlyLight.edit,
+                            child: Icon(AppIcons.edit,
                                 size: 15, color: AppColors.hintColor),
                           ),
                           const SizedBox(width: 12),
                           GestureDetector(
                             onTap: () => _deleteComment(c.id),
-                            child: Icon(IconlyLight.delete,
+                            child: Icon(AppIcons.delete,
                                 size: 16, color: AppColors.hintColor),
                           ),
                         ],
@@ -490,13 +464,10 @@ class _CommentSheetState extends State<_CommentSheet> {
             TextButton(
               onPressed: _savingEdit ? null : () => _saveEdit(c),
               child: _savingEdit
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primaryAccent,
-                      ),
+                      child: AppLoader(strokeWidth: 2),
                     )
                   : Text('Enregistrer',
                       style: AppTextStyles.labelMd.copyWith(
@@ -591,10 +562,12 @@ class _CommentSheetState extends State<_CommentSheet> {
                     child: _sending
                         ? const Padding(
                             padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.onPrimary),
+                            child: AppLoader(
+                              color: AppColors.onPrimary,
+                              strokeWidth: 2,
+                            ),
                           )
-                        : const Icon(IconlyLight.send,
+                        : const Icon(AppIcons.send,
                             color: AppColors.onPrimary, size: 19),
                   ),
                 ),
@@ -669,7 +642,7 @@ class _CommentLikeButtonState extends State<_CommentLikeButton>
                 CurvedAnimation(parent: _anim, curve: Curves.easeOut),
               ),
               child: Icon(
-                liked ? IconlyBold.heart : IconlyLight.heart,
+                liked ? AppIcons.heartFilled : AppIcons.heart,
                 key: _iconKey,
                 size: 16,
                 color: color,

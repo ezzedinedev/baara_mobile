@@ -18,7 +18,7 @@ class QuizProctoringService {
 
   static final QuizProctoringService instance = QuizProctoringService._();
 
-  static const MethodChannel _channel = MethodChannel('jobaway/quiz_proctoring');
+  static const MethodChannel _channel = MethodChannel('baara/quiz_proctoring');
 
   VoidCallback? _onScreenshot;
   bool _listening = false;

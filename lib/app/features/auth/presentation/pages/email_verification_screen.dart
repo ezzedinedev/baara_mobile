@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/email_verification_controller.dart';
 
 /// Saisie du code reçu par email pour vérifier l'adresse de l'utilisateur.
-/// Rend `true` (via Get.back) une fois l'email confirmé.
 class EmailVerificationScreen extends GetView<EmailVerificationController> {
   const EmailVerificationScreen({super.key});
 
@@ -25,7 +24,7 @@ class EmailVerificationScreen extends GetView<EmailVerificationController> {
             WavyAuthHeader(
               height: 200,
               showLeading: true,
-              foregroundIcon: IconlyLight.message,
+              foregroundIcon: AppIcons.message,
               title: 'Vérifier l\'email',
               onLeadingTap: () => Get.back<void>(),
             ),
@@ -55,7 +54,12 @@ class EmailVerificationScreen extends GetView<EmailVerificationController> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
+                  Obx(() => AuthDeliveryStatus(
+                        phase: controller.deliveryPhase.value,
+                        destination: controller.email,
+                        errorMessage: controller.sendError.value,
+                      )),
                   RevealOnMount(
                     delay: const Duration(milliseconds: 120),
                     child: AuthOtpField(

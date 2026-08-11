@@ -1,22 +1,22 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/map_navigation.dart';
-import 'package:jobaway/app/core/services/offline_apply_queue.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/map_navigation.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 
 import '../../data/models/application_model.dart';
 import '../../data/models/interview_detail_model.dart';
@@ -104,7 +104,7 @@ class _ViewModeToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _ToggleSegment(
-            icon: IconlyLight.document,
+            icon: AppIcons.document,
             selected: !pipeline,
             onTap: () => onChanged(false),
           ),
@@ -180,13 +180,22 @@ class _ApplicationsListView extends StatelessWidget {
           controller.interviews.isEmpty &&
           controller.jobProposals.isEmpty &&
           controller.upcomingInterviews.isEmpty) {
-        return EmptyState(
-          illustration: const EmptyApplicationsIllustration(),
-          title: 'Aucune candidature',
-          subtitle:
-              'Vous n\'avez pas encore postulé. Explorez les offres et tentez votre chance !',
-          actionLabel: 'Voir les offres',
-          onAction: () => Get.toNamed(AppRoutes.offers),
+        return AppRefreshIndicator(
+          color: AppColors.primaryAccent,
+          onRefresh: controller.load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              EmptyState(
+                illustration: const EmptyApplicationsIllustration(),
+                title: 'Aucune candidature',
+                subtitle:
+                    'Vous n\'avez pas encore postulé. Explorez les offres et tentez votre chance !',
+                actionLabel: 'Voir les offres',
+                onAction: () => Get.toNamed(AppRoutes.offers),
+              ),
+            ],
+          ),
         );
       }
       final apps = controller.applications;
@@ -252,7 +261,7 @@ class _InterviewInvitationsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(
-          icon: IconlyLight.calendar,
+          icon: AppIcons.calendar,
           title: 'Invitations entretien',
         ),
         const SizedBox(height: 10),
@@ -267,7 +276,7 @@ class _InterviewInvitationsSection extends StatelessWidget {
             children: [
               if ((interview.location ?? '').isNotEmpty)
                 _MetaLine(
-                  icon: IconlyLight.location,
+                  icon: AppIcons.location,
                   label: interview.location!,
                 ),
               if ((interview.instructions ?? '').isNotEmpty) ...[
@@ -295,7 +304,7 @@ class _InterviewInvitationsSection extends StatelessWidget {
                   if (interview.actions.contains(InterviewAction.accept))
                     _SmallActionButton(
                       label: 'Accepter',
-                      icon: IconlyLight.tick_square,
+                      icon: AppIcons.tickSquare,
                       color: AppColors.successAccent,
                       onTap: () => controller.respondToInterview(
                         interview,
@@ -305,7 +314,7 @@ class _InterviewInvitationsSection extends StatelessWidget {
                   if (interview.actions.contains(InterviewAction.reschedule))
                     _SmallActionButton(
                       label: 'Reproposer',
-                      icon: IconlyLight.time_circle,
+                      icon: AppIcons.time,
                       color: AppColors.primaryAccent,
                       onTap: () => _rescheduleInterview(interview),
                     ),
@@ -355,19 +364,26 @@ class _InterviewInvitationsSection extends StatelessWidget {
       }
     }
 
-    Get.dialog<void>(
-      AlertDialog(
-        backgroundColor: AppColors.surfaceCard,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-        ),
-        title: Text(
-          'Convocation entretien',
-          style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
-        ),
-        content: Column(
+    final ctx = Get.context;
+    if (ctx == null) return;
+    showModalBottomSheet<void>(
+      context: ctx,
+      backgroundColor: AppColors.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SheetHandle(),
+            const SizedBox(height: 12),
+            Text(
+              'Convocation entretien',
+              style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
             Center(child: content),
             const SizedBox(height: 12),
             Text(
@@ -375,14 +391,16 @@ class _InterviewInvitationsSection extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
             ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Fermer'),
+              ),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back<void>(),
-            child: const Text('Fermer'),
-          ),
-        ],
       ),
     );
   }
@@ -475,7 +493,7 @@ class _JobProposalsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(
-          icon: IconlyLight.work,
+          icon: AppIcons.work,
           title: 'Propositions d\'emploi',
         ),
         const SizedBox(height: 10),
@@ -490,7 +508,7 @@ class _JobProposalsSection extends StatelessWidget {
             children: [
               if (proposal.startDate != null)
                 _MetaLine(
-                  icon: IconlyLight.calendar,
+                  icon: AppIcons.calendar,
                   label: 'Début le ${_formatDate(proposal.startDate!)}',
                 ),
               if ((proposal.benefits ?? '').isNotEmpty) ...[
@@ -509,7 +527,7 @@ class _JobProposalsSection extends StatelessWidget {
                   if (proposal.actions.contains(JobProposalAction.accept))
                     _SmallActionButton(
                       label: 'Accepter',
-                      icon: IconlyLight.tick_square,
+                      icon: AppIcons.tickSquare,
                       color: AppColors.successAccent,
                       onTap: () => controller.respondToProposal(
                         proposal,
@@ -519,7 +537,7 @@ class _JobProposalsSection extends StatelessWidget {
                   if (proposal.actions.contains(JobProposalAction.negotiate))
                     _SmallActionButton(
                       label: 'Négocier',
-                      icon: IconlyLight.edit,
+                      icon: AppIcons.edit,
                       color: AppColors.primaryAccent,
                       onTap: () => _negotiateProposal(proposal),
                     ),
@@ -731,48 +749,14 @@ Future<String?> _askMessage({
   required String hint,
   required bool required,
 }) async {
-  final controller = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-  final result = await Get.dialog<String?>(
-    AlertDialog(
-      backgroundColor: AppColors.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-      ),
-      title: Text(
-        title,
-        style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
-      ),
-      content: Form(
-        key: formKey,
-        child: TextFormField(
-          controller: controller,
-          minLines: 3,
-          maxLines: 5,
-          decoration: InputDecoration(hintText: hint),
-          validator: (value) =>
-              required && (value == null || value.trim().isEmpty)
-                  ? 'Message requis'
-                  : null,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back<String?>(result: null),
-          child: const Text('Annuler'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (formKey.currentState?.validate() != true) return;
-            Get.back<String?>(result: controller.text.trim());
-          },
-          child: const Text('Envoyer'),
-        ),
-      ],
-    ),
+  final ctx = Get.context;
+  if (ctx == null) return null;
+  return showMessageInputSheet(
+    context: ctx,
+    title: title,
+    hint: hint,
+    required: required,
   );
-  controller.dispose();
-  return result;
 }
 
 /// Section "Prochains entretiens" — alimentée par
@@ -788,7 +772,7 @@ class _UpcomingInterviewsSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(IconlyLight.calendar,
+            Icon(AppIcons.calendar,
                 size: 18, color: AppColors.warningAccent),
             const SizedBox(width: 8),
             Text('Prochains entretiens',
@@ -951,7 +935,7 @@ class _InterviewCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(IconlyLight.calendar,
+                Icon(AppIcons.calendar,
                     size: 15, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(
@@ -968,7 +952,7 @@ class _InterviewCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(IconlyLight.location,
+                Icon(AppIcons.location,
                     size: 15, color: AppColors.hintColor),
                 const SizedBox(width: 6),
                 Expanded(
@@ -999,7 +983,7 @@ class _InterviewCard extends StatelessWidget {
                 if (canCalendar)
                   Expanded(
                     child: _InterviewAction(
-                      icon: IconlyLight.calendar,
+                      icon: AppIcons.calendar,
                       label: 'Calendrier',
                       onTap: () {
                         AppHaptics.tap();
@@ -1063,13 +1047,13 @@ class _StatusStyle {
 _StatusStyle _statusStyle(ApplicationStatus status) {
   switch (status) {
     case ApplicationStatus.newApp:
-      return _StatusStyle('Envoyée', AppColors.primaryAccent, IconlyLight.send);
+      return _StatusStyle('Envoyée', AppColors.primaryAccent, AppIcons.send);
     case ApplicationStatus.shortlisted:
       return _StatusStyle(
-          'Présélectionné', AppColors.successAccent, IconlyBold.star);
+          'Présélectionné', AppColors.successAccent, AppIcons.starFilled);
     case ApplicationStatus.interview:
       return _StatusStyle(
-          'Entretien', AppColors.warningAccent, IconlyLight.calendar);
+          'Entretien', AppColors.warningAccent, AppIcons.calendar);
     case ApplicationStatus.rejected:
       return _StatusStyle('Non retenue', AppColors.errorAccent,
           Icons.do_not_disturb_on_rounded);
@@ -1094,42 +1078,16 @@ class _DismissibleApplication extends StatelessWidget {
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
         AppHaptics.tap();
-        final ok = await Get.dialog<bool>(
-          AlertDialog(
-            backgroundColor: AppColors.surfaceCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-            ),
-            title: Text(
-              'Retirer la candidature',
-              style:
-                  AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800),
-            ),
-            content: Text(
+        final ctx = context;
+        final ok = await showConfirmSheet(
+          context: ctx,
+          icon: AppIcons.delete,
+          iconColor: AppColors.errorAccent,
+          title: 'Retirer la candidature',
+          message:
               'Confirmez-vous le retrait de votre candidature à « ${app.offer?.title ?? 'cette offre'} » ? Cette action est irréversible.',
-              style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(result: false),
-                child: Text(
-                  'Annuler',
-                  style: AppTextStyles.labelMd
-                      .copyWith(color: AppColors.hintColor),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Get.back(result: true),
-                child: Text(
-                  'Retirer',
-                  style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.errorAccent,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          confirmLabel: 'Retirer',
+          isDestructive: true,
         );
         return ok ?? false;
       },
@@ -1142,7 +1100,7 @@ class _DismissibleApplication extends StatelessWidget {
           color: AppColors.errorSoft,
           shape: AppShapes.squircle(AppRadius.lg),
         ),
-        child: Icon(IconlyLight.delete, color: AppColors.errorAccent, size: 22),
+        child: Icon(AppIcons.delete, color: AppColors.errorAccent, size: 22),
       ),
       child: _ApplicationCard(app: app),
     );
@@ -1223,10 +1181,12 @@ class _ApplicationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
+            ApplicationProgressTimeline(status: app.status, compact: true),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 if (location.isNotEmpty) ...[
-                  Icon(IconlyLight.location,
+                  Icon(AppIcons.location,
                       size: 14, color: AppColors.hintColor),
                   const SizedBox(width: 4),
                   Flexible(
@@ -1238,7 +1198,7 @@ class _ApplicationCard extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.md),
                 ],
-                Icon(IconlyLight.calendar,
+                Icon(AppIcons.calendar,
                     size: 14, color: AppColors.hintColor),
                 const SizedBox(width: 4),
                 Text(_formatDate(app.appliedAt),
@@ -1261,7 +1221,7 @@ class _ApplicationCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(IconlyLight.info_circle,
+                    Icon(AppIcons.info,
                         size: 15, color: AppColors.errorAccent),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(

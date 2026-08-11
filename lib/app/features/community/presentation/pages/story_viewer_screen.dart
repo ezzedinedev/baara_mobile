@@ -1,20 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/brand_avatar.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
-import 'package:jobaway/app/core/widgets/common/confirm_sheet.dart';
-import 'package:jobaway/app/core/widgets/common/glass_surface.dart';
-import 'package:jobaway/app/core/widgets/common/sheet_handle.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/story_controller.dart';
 import '../widgets/rich_post_text.dart';
 import '../../domain/entities/story.dart';
@@ -151,7 +146,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
     _pause();
     final ok = await showConfirmSheet(
       context: context,
-      icon: IconlyLight.delete,
+      icon: AppIcons.delete,
       iconColor: AppColors.errorAccent,
       title: 'Supprimer la story ?',
       message: 'Elle ne sera plus visible par personne.',
@@ -368,11 +363,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
           ),
           if (_story.isMine)
             _RoundAction(
-              icon: IconlyLight.delete,
+              icon: AppIcons.delete,
               onTap: _confirmDelete,
             ),
           _RoundAction(
-              icon: IconlyLight.close_square, onTap: () => Get.back<void>()),
+              icon: AppIcons.closeSquare, onTap: () => Get.back<void>()),
         ],
       ),
     );
@@ -448,7 +443,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
               if (viewers.isNotEmpty)
                 _StackedAvatars(viewers: viewers.take(3).toList())
               else
-                const Icon(IconlyLight.show,
+                const Icon(AppIcons.show,
                     size: 18, color: AppColors.onPrimary),
               const SizedBox(width: 10),
               Text(
@@ -508,13 +503,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
           ),
           const SizedBox(width: 8),
           _RoundAction(
-            icon: IconlyLight.heart,
+            icon: AppIcons.heart,
             onTap: () {
               setState(() => _showReactions = !_showReactions);
               _showReactions ? _pause() : _resume();
             },
           ),
-          _RoundAction(icon: IconlyLight.send, onTap: _sendReply),
+          _RoundAction(icon: AppIcons.send, onTap: _sendReply),
         ],
       ),
     );
@@ -832,9 +827,11 @@ class _StoryContentState extends State<_StoryContent>
     if (_isVideo) {
       final c = _video;
       if (c == null || !c.value.isInitialized) {
-        return const Center(
-          child: CircularProgressIndicator(
-              color: AppColors.onPrimary, strokeWidth: 2),
+        return ColoredBox(
+          color: AppColors.onDark,
+          child: const Center(
+            child: AppLoader(color: AppColors.onPrimary, strokeWidth: 2),
+          ),
         );
       }
       return FittedBox(
@@ -861,12 +858,21 @@ class _StoryContentState extends State<_StoryContent>
         height: double.infinity,
         loadingBuilder: (_, child, p) => p == null
             ? child
-            : const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.onPrimary, strokeWidth: 2)),
-        errorBuilder: (_, __, ___) => const Center(
-          child:
-              Icon(Icons.broken_image_rounded, color: Colors.white38, size: 48),
+            : ColoredBox(
+                color: AppColors.onDark,
+                child: const Center(
+                  child: AppLoader(color: AppColors.onPrimary, strokeWidth: 2),
+                ),
+              ),
+        errorBuilder: (_, __, ___) => ColoredBox(
+          color: AppColors.onDark,
+          child: Center(
+            child: Icon(
+              Icons.broken_image_rounded,
+              color: AppColors.onPrimary.withValues(alpha: 0.38),
+              size: 48,
+            ),
+          ),
         ),
       ),
     );

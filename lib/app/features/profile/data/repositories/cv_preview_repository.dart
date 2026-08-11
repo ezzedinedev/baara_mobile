@@ -1,7 +1,8 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 import '../../domain/entities/cv_template.dart';
 
@@ -51,10 +52,12 @@ class CvPreviewRepository {
 
   /// Marque un modèle comme "le CV" de l'utilisateur.
   Future<void> selectTemplate(String template) async {
-    await _apiProvider.postJson(
+    final response = await _apiProvider.postJson(
       ApiConstants.profileCvBuilderSelectTemplate,
       {'template': template},
     );
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de sélectionner ce modèle.');
   }
 
   /// PDF d'aperçu : toujours disponible, filigrané côté serveur si le modèle
@@ -74,16 +77,7 @@ class CvPreviewRepository {
   }
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ?? 'Aperçu indisponible.',
-        statusCode: statusCode,
-      );
-    }
-    final data = response['data'];
-    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    ApiResponse.ensureSuccess(response, fallback: 'Aperçu indisponible.');
+    return ApiResponse.dataMap(response);
   }
 }

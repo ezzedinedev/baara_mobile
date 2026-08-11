@@ -1,13 +1,13 @@
-﻿# JobAway — Application mobile
+# Baara — Application mobile
 
-Client Flutter **candidat** pour la plateforme [JobAway](https://JobAwaybf.com) : offres d'emploi, candidatures, formations, messagerie temps réel, communauté et assistants IA.
+Client Flutter **candidat** pour la plateforme [Baara](https://baara.bf) : offres d'emploi, candidatures, formations, messagerie temps réel, communauté et assistants IA.
 
 Le backend Laravel (`projet_de_l-emploi`) et la base MySQL ne sont **pas** dans ce dépôt — voir `database_tables.md` pour le schéma documenté.
 
 ## Prérequis
 
 - Flutter SDK `>=3.3.0` (voir `pubspec.yaml`)
-- Backend Laravel accessible (local ou `https://api.JobAwaybf.com`)
+- Backend Laravel accessible (local ou `https://api.baara.bf`)
 - Pour le temps réel : daemon Laravel Reverb
 
 ## Démarrage rapide

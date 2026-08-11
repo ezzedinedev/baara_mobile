@@ -1,15 +1,15 @@
-﻿import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/offer_detail_controller.dart';
 import '../widgets/offer_boost_badge.dart';
 import '../../domain/entities/offer.dart';
@@ -35,29 +35,49 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
           );
         }
 
-        return Stack(
-          children: [
-            CustomScrollView(
-              // Permet l'étirement du hero en overscroll (zoom élastique).
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                _buildSliverAppBar(offer),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.xxl, AppSpacing.xxl, AppSpacing.xxl, 0),
-                    // Chorégraphie : les sections montent en cascade
-                    // (emphasizedDecelerate via RevealOnMount), une fois le hero
-                    // posé. Délais échelonnés pour une entrée vivante mais calme.
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RevealOnMount(
-                          offsetY: 16,
-                          child: _buildMainInfo(offer),
-                        ),
+        return _OfferDetailLoaded(offer: offer);
+      }),
+    );
+  }
+}
+
+/// Contenu scrollable une fois l'offre chargée — évite de reconstruire tout
+/// le détail quand seuls les états CTA / favori changent.
+class _OfferDetailLoaded extends GetView<OfferDetailController> {
+  const _OfferDetailLoaded({required this.offer});
+  final Offer offer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        AppRefreshIndicator(
+          color: AppColors.primaryAccent,
+          onRefresh: () async {
+            final id = Get.parameters['id'];
+            if (id != null) await controller.fetchOfferDetail(id);
+          },
+          child: CustomScrollView(
+          // Permet l'étirement du hero en overscroll (zoom élastique).
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            _buildSliverAppBar(offer),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xxl, AppSpacing.xxl, AppSpacing.xxl, 0),
+                // Chorégraphie : les sections montent en cascade
+                // (emphasizedDecelerate via RevealOnMount), une fois le hero
+                // posé. Délais échelonnés pour une entrée vivante mais calme.
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RevealOnMount(
+                      offsetY: 16,
+                      child: _buildMainInfo(offer),
+                    ),
                         const SizedBox(height: AppSpacing.xxl),
                         RevealOnMount(
                           delay: AppMotion.stagger,
@@ -78,7 +98,7 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionTitle(
-                                  'À propos de l\'offre', IconlyLight.document),
+                                  'À propos de l\'offre', AppIcons.document),
                               const SizedBox(height: AppSpacing.md),
                               Text(
                                 offer.description,
@@ -97,7 +117,7 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildSectionTitle('Compétences requises',
-                                    IconlyLight.activity),
+                                    AppIcons.activity),
                                 const SizedBox(height: AppSpacing.lg),
                                 Wrap(
                                   spacing: AppSpacing.sm,
@@ -118,10 +138,9 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                 ),
               ],
             ),
-            _buildBottomAction(),
-          ],
-        );
-      }),
+          ),
+        _buildBottomAction(),
+      ],
     );
   }
 
@@ -146,8 +165,8 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
             () => IconButton(
               icon: Icon(
                 controller.isSaved.value
-                    ? IconlyBold.bookmark
-                    : IconlyLight.bookmark,
+                    ? AppIcons.bookmarkFilled
+                    : AppIcons.bookmark,
                 color: AppColors.onPrimary,
               ),
               tooltip: controller.isSaved.value
@@ -316,11 +335,11 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
             // (pas encore de CV) → on n'affiche rien plutôt qu'un faux 0 %.
             if (offer.matchScore != null)
               MatchScorePill(score: offer.matchScore!),
-            _InfoPill(icon: IconlyLight.location, label: offer.location),
+            _InfoPill(icon: AppIcons.location, label: offer.location),
             if (offer.contractType.isNotEmpty)
-              _InfoPill(icon: IconlyLight.work, label: offer.contractType),
+              _InfoPill(icon: AppIcons.work, label: offer.contractType),
             if (offer.isRemote)
-              _InfoPill(icon: IconlyLight.location, label: 'Télétravail'),
+              _InfoPill(icon: AppIcons.location, label: 'Télétravail'),
           ],
         ),
       ],
@@ -328,34 +347,54 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
   }
 
   /// Grille d'infos clés (salaire / expérience / échéance) en cartes douces.
+  ///
+  /// La rémunération prend toute la largeur : à trois colonnes elle n'avait
+  /// qu'un tiers de l'écran et une fourchette se tronquait systématiquement.
+  /// Expérience et échéance, elles, tiennent en deux colonnes.
   Widget _buildKeyInfoGrid(Offer offer) {
-    final tiles = <Widget>[
-      if (offer.salary.isNotEmpty)
-        _KeyInfoTile(
-          icon: IconlyLight.wallet,
-          label: 'Rémunération',
-          value: offer.salary,
-        ),
+    final secondary = <Widget>[
       if ((offer.experienceLabel ?? '').isNotEmpty)
         _KeyInfoTile(
-          icon: IconlyLight.chart,
+          icon: AppIcons.chart,
           label: 'Expérience',
           value: offer.experienceLabel!,
         ),
       if ((offer.deadlineLabel ?? '').isNotEmpty)
         _KeyInfoTile(
-          icon: IconlyLight.calendar,
+          icon: AppIcons.calendar,
           label: 'Échéance',
           value: offer.deadlineLabel!,
         ),
     ];
-    if (tiles.isEmpty) return const SizedBox.shrink();
-    return Row(
+    final hasSalary = offer.salary.isNotEmpty;
+    if (!hasSalary && secondary.isEmpty) return const SizedBox.shrink();
+
+    return Column(
       children: [
-        for (var i = 0; i < tiles.length; i++) ...[
-          if (i > 0) const SizedBox(width: AppSpacing.md),
-          Expanded(child: tiles[i]),
-        ],
+        if (hasSalary)
+          _KeyInfoTile(
+            icon: AppIcons.wallet,
+            label: 'Rémunération',
+            value: offer.salary,
+            wide: true,
+          ),
+        if (hasSalary && secondary.isNotEmpty)
+          const SizedBox(height: AppSpacing.md),
+        if (secondary.isNotEmpty)
+          // IntrinsicHeight + stretch : sans ça, deux cartes de hauteurs
+          // différentes (« Non précisé » sur 1 ligne vs « Pas de date limite »
+          // sur 2) sont centrées verticalement et paraissent désalignées.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < secondary.length; i++) ...[
+                  if (i > 0) const SizedBox(width: AppSpacing.md),
+                  Expanded(child: secondary[i]),
+                ],
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -415,25 +454,19 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
             runSpacing: 10,
             children: [
               _AiActionChip(
-                icon: IconlyLight.document,
+                icon: AppIcons.document,
                 label: 'Adapter CV',
                 onTap: () async {
                   final data = await controller.adaptCv();
                   if (data != null) _showAiResult('CV adapté', data);
                 },
               ),
+              // Pas de « Lettre IA » ici : la table `applications` n'a aucune
+              // colonne de lettre de motivation et `applyToOffer` n'en envoie
+              // pas. La lettre générée n'était rattachable à rien — un
+              // cul-de-sac dans un bloc dédié à la candidature.
               _AiActionChip(
-                icon: IconlyLight.paper,
-                label: 'Lettre IA',
-                onTap: () async {
-                  final letter = await controller.generateCoverLetter();
-                  if (letter != null) {
-                    _showTextResult('Lettre de motivation', letter.fullText);
-                  }
-                },
-              ),
-              _AiActionChip(
-                icon: IconlyLight.send,
+                icon: AppIcons.send,
                 label: 'Adapter + postuler',
                 onTap: controller.adaptCvAndApply,
               ),
@@ -444,28 +477,25 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
     );
   }
 
-  void _showTextResult(String title, String text) {
-    _showResultSheet(
-      title: title,
-      child: SelectableText(
-        text.trim().isEmpty ? 'Aucun contenu renvoyé.' : text.trim(),
-        style: AppTextStyles.bodyMd.copyWith(
-          color: AppColors.bodyColor,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-
   void _showAiResult(String title, Map<String, dynamic> data) {
     // Le CV adapté est une réponse STRUCTURÉE (match_score, suggestions.bio,
     // .objective, .experiences, gaps). L'aplatir en « clé: valeur » affichait
     // les sous-objets via leur .toString() Dart → le dump « {bio: {current:
     // null, suggested: …}} ». On rend chaque section proprement.
-    _showResultSheet(title: title, child: _CvAdaptView(data: data));
+    _showResultSheet(
+      title: title,
+      child: _CvAdaptView(data: data),
+      // Adapter son CV n'a d'intérêt que pour postuler : sans ce CTA il fallait
+      // fermer la feuille et retrouver « Adapter + postuler » dans la liste.
+      action: _ApplyWithAdaptedCvButton(controller: controller),
+    );
   }
 
-  void _showResultSheet({required String title, required Widget child}) {
+  void _showResultSheet({
+    required String title,
+    required Widget child,
+    Widget? action,
+  }) {
     Get.bottomSheet<void>(
       SafeArea(
         child: Container(
@@ -488,6 +518,10 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
               ),
               const SizedBox(height: 14),
               Flexible(child: SingleChildScrollView(child: child)),
+              if (action != null) ...[
+                const SizedBox(height: 16),
+                action,
+              ],
             ],
           ),
         ),
@@ -558,8 +592,8 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                       applied ? 'CANDIDATURE ENVOYÉE' : 'POSTULER MAINTENANT',
                   isLoading: controller.isApplying.value,
                   trailing: applied
-                      ? IconlyBold.tick_square
-                      : IconlyLight.arrow_right_2,
+                      ? AppIcons.tickSquare
+                      : AppIcons.arrowRight,
                   onPressed: applied
                       ? null
                       : () => _applyWithOptionalScreening(
@@ -662,7 +696,7 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
                   ],
                   AuthCtaButton(
                     label: 'Envoyer ma candidature',
-                    trailing: IconlyLight.send,
+                    trailing: AppIcons.send,
                     onPressed: () {
                       if (formKey.currentState?.validate() != true) return;
                       for (final entry in textControllers.entries) {
@@ -689,18 +723,110 @@ class OfferDetailScreen extends GetView<OfferDetailController> {
 }
 
 /// Carte d'info clé compacte pour la grille de la fiche offre.
+/// CTA de la feuille « CV adapté » : enchaîne directement sur la candidature.
+///
+/// Réutilise `adaptCvAndApply()` — le backend refait l'adaptation et attache le
+/// CV à la candidature (`cv_snapshot_json`), donc pas de risque de postuler
+/// avec l'ancienne version. Disparaît une fois la candidature envoyée.
+class _ApplyWithAdaptedCvButton extends StatelessWidget {
+  const _ApplyWithAdaptedCvButton({required this.controller});
+
+  final OfferDetailController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.hasApplied.value) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle_rounded,
+                size: 18, color: AppColors.primaryAccent),
+            const SizedBox(width: 8),
+            Text(
+              'Candidature déjà envoyée',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.bodyColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        );
+      }
+      final busy = controller.isAiActionLoading.value;
+      return SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: busy
+              ? null
+              : () async {
+                  AppHaptics.tap();
+                  await controller.adaptCvAndApply();
+                  if (controller.hasApplied.value) Get.back<void>();
+                },
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
+          icon: busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: AppLoader(
+                    size: 16,
+                    strokeWidth: 2,
+                    color: AppColors.onPrimary,
+                  ),
+                )
+              : const Icon(AppIcons.send, size: 18),
+          label: Text(
+            busy ? 'Envoi…' : 'Postuler avec ce CV',
+            style: AppTextStyles.titleMd.copyWith(
+              color: AppColors.onPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
 class _KeyInfoTile extends StatelessWidget {
   const _KeyInfoTile({
     required this.icon,
     required this.label,
     required this.value,
+    this.wide = false,
   });
   final IconData icon;
   final String label;
   final String value;
 
+  /// Carte pleine largeur : l'icône passe à gauche du texte plutôt qu'au-dessus,
+  /// ce qui laisse toute la ligne à la valeur (fourchette de salaire).
+  final bool wide;
+
   @override
   Widget build(BuildContext context) {
+    final labelText = Text(
+      label,
+      style: AppTextStyles.labelSm.copyWith(color: AppColors.hintColor),
+    );
+    final valueText = Text(
+      value,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.titleMd.copyWith(
+        fontWeight: FontWeight.w800,
+        height: 1.25,
+      ),
+    );
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: ShapeDecoration(
@@ -710,27 +836,31 @@ class _KeyInfoTile extends StatelessWidget {
         ),
         shadows: AppColors.lightShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: AppColors.primaryAccent),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            label,
-            style: AppTextStyles.labelSm.copyWith(color: AppColors.hintColor),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.titleMd.copyWith(
-              fontWeight: FontWeight.w800,
-              height: 1.25,
+      child: wide
+          ? Row(
+              children: [
+                Icon(icon, size: 20, color: AppColors.primaryAccent),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [labelText, const SizedBox(height: 2), valueText],
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: AppColors.primaryAccent),
+                const SizedBox(height: AppSpacing.sm),
+                labelText,
+                const SizedBox(height: 2),
+                valueText,
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -831,7 +961,7 @@ class _SkillChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(IconlyLight.tick_square,
+          Icon(AppIcons.tickSquare,
               size: 14, color: AppColors.primaryAccent),
           const SizedBox(width: 6),
           Text(
@@ -1151,7 +1281,7 @@ class _AdaptGaps extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(IconlyLight.arrow_right_2,
+                Icon(AppIcons.arrowRight,
                     size: 16, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(

@@ -1,5 +1,6 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 /// Repository de l'assistant conversationnel CV-builder.
 ///
@@ -36,18 +37,8 @@ class CvAssistantRepository {
   }
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message:
-            response['message']?.toString() ?? 'Réponse assistant CV invalide.',
-        statusCode: statusCode,
-      );
-    }
-    final data = response['data'];
-    if (data is Map<String, dynamic>) return data;
-    return <String, dynamic>{};
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Réponse assistant CV invalide.');
+    return ApiResponse.dataMap(response);
   }
 }

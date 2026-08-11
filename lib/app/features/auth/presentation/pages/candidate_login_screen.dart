@@ -1,14 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/candidate_login_controller.dart';
 
 class CandidateLoginScreen extends GetView<CandidateLoginController> {
@@ -36,8 +38,8 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                     WavyAuthHeader(
                       height: 200,
                       showLeading: true,
-                      foregroundIcon: IconlyLight.login,
-                      title: 'JobAway',
+                      foregroundIcon: AppIcons.profile,
+                      title: 'Baara.bf',
                       onLeadingTap: () => Get.back(),
                     ),
                     Padding(
@@ -63,7 +65,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                             RevealOnMount(
                               delay: const Duration(milliseconds: 60),
                               child: Text(
-                                'Accédez à vos offres, messages et candidatures.',
+                                'Connexion candidat — offres, messages et candidatures.',
                                 style: AppTextStyles.bodyMd.copyWith(
                                   color: AppColors.bodyColor,
                                   height: 1.45,
@@ -96,7 +98,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                       key: const ValueKey('login-email'),
                                       label: 'Email',
                                       hint: 'nom@exemple.com',
-                                      icon: IconlyLight.message,
+                                      icon: AppIcons.message,
                                       controller: controller.emailCtrl,
                                       keyboardType: TextInputType.emailAddress,
                                       validator: controller.validateEmail,
@@ -106,7 +108,7 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                             AuthTextField(
                               label: 'Mot de passe',
                               hint: 'Votre mot de passe',
-                              icon: IconlyLight.lock,
+                              icon: AppIcons.lock,
                               controller: controller.passwordCtrl,
                               obscureText: true,
                               validator: controller.validatePassword,
@@ -174,6 +176,29 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: TextButton(
+                                onPressed: () async {
+                                  AppHaptics.tap();
+                                  final uri = Uri.tryParse(
+                                      ApiConstants.companyPortalWebUrl);
+                                  if (uri != null) {
+                                    await launchUrl(uri,
+                                        mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                                child: Text(
+                                  'Vous êtes employeur ? Connectez-vous sur baara.bf',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.hintColor,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
                                   ),
                                 ),
                               ),
@@ -247,9 +272,9 @@ class _LoginModeToggle extends StatelessWidget {
               ),
               Row(
                 children: [
-                  _seg('Email', IconlyLight.message, !isPhone,
+                  _seg('Email', AppIcons.message, !isPhone,
                       () => onChanged('email')),
-                  _seg('Téléphone', IconlyLight.call, isPhone,
+                  _seg('Téléphone', AppIcons.phone, isPhone,
                       () => onChanged('phone')),
                 ],
               ),

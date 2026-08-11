@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart'
+import 'package:flutter/material.dart'
     show
         BuildContext,
         Column,
@@ -60,7 +60,7 @@ class AuthHeader extends StatelessWidget {
           center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 22),
-        JobAwayLogo(
+        BaaraLogo(
             iconSize: logoSize, fontSize: fontSize, centerAlign: center),
         SizedBox(height: spacing),
         titleWidget,

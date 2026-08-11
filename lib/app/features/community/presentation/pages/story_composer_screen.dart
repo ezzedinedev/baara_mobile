@@ -1,17 +1,17 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/story_controller.dart';
 import '../widgets/story_mention_autocomplete.dart';
@@ -84,9 +84,11 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
     if (widget.isVideo) {
       final v = _video;
       if (v == null || !v.value.isInitialized) {
-        return const Center(
-          child: CircularProgressIndicator(
-              color: AppColors.onPrimary, strokeWidth: 2),
+        return ColoredBox(
+          color: AppColors.onDark,
+          child: const Center(
+            child: AppLoader(color: AppColors.onPrimary, strokeWidth: 2),
+          ),
         );
       }
       return Center(
@@ -102,20 +104,23 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.onDark,
       body: Stack(
         fit: StackFit.expand,
         children: [
           // Média plein écran (image ou vidéo) — canvas inchangé.
           Positioned.fill(child: _preview()),
           // Scrim bas pour lisibilité des contrôles.
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black87],
+                  colors: [
+                    Colors.transparent,
+                    AppColors.onDark.withValues(alpha: 0.87),
+                  ],
                 ),
               ),
             ),
@@ -127,7 +132,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: _RoundBtn(
-                  icon: IconlyLight.close_square,
+                  icon: AppIcons.closeSquare,
                   onTap: () => Get.back<void>(),
                 ),
               ),
@@ -182,7 +187,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
                       children: [
                         _VisibilityChip(
                           label: 'Mes connexions',
-                          icon: IconlyLight.user_1,
+                          icon: AppIcons.network,
                           selected: _visibility == 'connections',
                           onTap: () =>
                               setState(() => _visibility = 'connections'),
@@ -217,9 +222,9 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
                                     ? const SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                        child: AppLoader(
                                           color: AppColors.onPrimary,
+                                          strokeWidth: 2,
                                         ),
                                       )
                                     : Row(
@@ -231,7 +236,7 @@ class _StoryComposerScreenState extends State<StoryComposerScreen>
                                                       color:
                                                           AppColors.onPrimary)),
                                           const SizedBox(width: 6),
-                                          const Icon(IconlyLight.send,
+                                          const Icon(AppIcons.send,
                                               size: 16,
                                               color: AppColors.onPrimary),
                                         ],
@@ -266,10 +271,10 @@ class _RoundBtn extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.4),
+          color: AppColors.onDark.withValues(alpha: 0.4),
           borderRadius: AppShapes.squircleRadius(AppRadius.md),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.14),
+            color: AppColors.onPrimary.withValues(alpha: 0.14),
             width: 1,
           ),
         ),

@@ -1,4 +1,4 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 
 import '../../domain/entities/conversation.dart';
 
@@ -15,6 +15,7 @@ class ConversationModel extends Conversation {
     super.peerUserId,
     super.isRequest,
     super.isRequester,
+    super.offerTitle,
   });
 
   /// Mappe une conversation telle que renvoyee par
@@ -58,6 +59,13 @@ class ConversationModel extends Conversation {
             : (employer?['logo_url'] ?? candidateUser?['avatar_url']));
     final avatar = ApiConstants.resolveMediaUrl(rawAvatar as String?);
 
+    // Poste rattaché à la candidature. Distingue plusieurs conversations avec
+    // le même employeur, dont le nom seul est identique partout.
+    // cf. MessageApiController@conversations (with application.offer).
+    final application = json['application'] as Map<String, dynamic>?;
+    final offer = application?['offer'] as Map<String, dynamic>?;
+    final offerTitle = (offer?['title'] as String?)?.trim();
+
     final latest = json['latest_message'] as Map<String, dynamic>?;
     final lastMessage =
         (latest?['content'] as String?) ?? (json['preview'] as String?) ?? '';
@@ -94,6 +102,8 @@ class ConversationModel extends Conversation {
       // cf. MessageApiController@decorateDirect.
       isRequest: json['is_request'] == true,
       isRequester: json['is_requester'] == true,
+      offerTitle:
+          (offerTitle == null || offerTitle.isEmpty) ? null : offerTitle,
     );
   }
 

@@ -1,7 +1,7 @@
-﻿import 'package:chewie/chewie.dart';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,14 +9,14 @@ import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-import 'package:jobaway/app/core/services/auth_token_store.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart' show AppRadius;
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/training.dart';
 import '../controllers/training_player_controller.dart';
@@ -340,7 +340,7 @@ class _NavBar extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onPrev,
-                icon: const Icon(IconlyLight.arrow_left_2),
+                icon: const Icon(AppIcons.back),
                 label: const Text('Précédent'),
               ),
             ),
@@ -474,7 +474,7 @@ void _openFullscreen(BuildContext context, Widget child) {
                   color: Colors.black54,
                   shape: const CircleBorder(),
                   child: IconButton(
-                    icon: const Icon(IconlyLight.close_square,
+                    icon: const Icon(AppIcons.closeSquare,
                         color: Colors.white),
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
@@ -566,7 +566,7 @@ class _LinkCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(IconlyLight.arrow_right_2, color: AppColors.hintColor),
+            Icon(AppIcons.arrowRight, color: AppColors.hintColor),
           ],
         ),
       ),
@@ -808,7 +808,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                   },
                 )
               : _chewie == null
-                  ? const _MediaLoadingFill(icon: IconlyLight.play)
+                  ? const _MediaLoadingFill(icon: AppIcons.play)
                   : Chewie(controller: _chewie!),
         ),
       ),
@@ -859,10 +859,10 @@ class _InlinePdfPlayerState extends State<_InlinePdfPlayer> {
           ),
         ),
         child: !_ready
-            ? const _MediaLoadingFill(icon: IconlyLight.paper)
+            ? const _MediaLoadingFill(icon: AppIcons.paper)
             : _error != null
                 ? _MediaErrorPane(
-                    icon: IconlyLight.paper,
+                    icon: AppIcons.paper,
                     title: 'Lecture du document impossible',
                     message: _error!,
                     onRetry: () => setState(() => _error = null),
@@ -929,7 +929,7 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
         maxScale: PhotoViewComputedScale.covered * 4,
         backgroundDecoration: const BoxDecoration(color: Colors.black),
         loadingBuilder: (context, event) =>
-            const _MediaLoadingFill(icon: IconlyLight.image),
+            const _MediaLoadingFill(icon: AppIcons.image),
         errorBuilder: (_, __, ___) => Center(
           child: Icon(Icons.broken_image_outlined,
               color: AppColors.hintColor, size: 42),
@@ -944,7 +944,7 @@ class _InlineImagePlayerState extends State<_InlineImagePlayer> {
         height: 360,
         color: AppColors.surfaceHigh,
         child: !_ready
-            ? const _MediaLoadingFill(icon: IconlyLight.image)
+            ? const _MediaLoadingFill(icon: AppIcons.image)
             : Stack(
                 children: [
                   Positioned.fill(child: _photoView()),
@@ -1099,7 +1099,7 @@ class _OfficeWebViewState extends State<_OfficeWebView> {
   Widget build(BuildContext context) {
     if (_error) {
       return _MediaErrorPane(
-        icon: IconlyLight.paper,
+        icon: AppIcons.paper,
         title: 'Document illisible',
         message:
             'Ce document n\'a pas pu être affiché. Vérifie ta connexion puis réessaie.',
@@ -1117,7 +1117,7 @@ class _OfficeWebViewState extends State<_OfficeWebView> {
         Positioned.fill(child: WebViewWidget(controller: _controller)),
         if (_loading)
           const Positioned.fill(
-            child: _MediaLoadingFill(icon: IconlyLight.paper),
+            child: _MediaLoadingFill(icon: AppIcons.paper),
           ),
       ],
     );

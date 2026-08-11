@@ -1,7 +1,8 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 import '../../domain/entities/portfolio_item.dart';
 
@@ -88,15 +89,7 @@ class PortfolioRepository {
   }
 
   void _ensureSuccess(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ?? 'Opération impossible.',
-        statusCode: statusCode,
-      );
-    }
+    ApiResponse.ensureSuccess(response, fallback: 'Opération impossible.');
   }
 
   Map<String, dynamic> _asMap(dynamic v) =>

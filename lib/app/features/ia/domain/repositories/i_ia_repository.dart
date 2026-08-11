@@ -11,7 +11,13 @@ abstract class IIaRepository {
 
   Future<Map<String, dynamic>> cvAdapt(String offerId);
 
-  Future<Map<String, dynamic>> cvAdaptApply(String offerId);
+  /// Écrit les suggestions d'adaptation dans le CV de l'utilisateur.
+  ///
+  /// ATTENTION au nom : « apply » = appliquer les suggestions **au CV**, pas
+  /// postuler à l'offre. Le backend (`AiApiController@cvAdaptApply`) attend le
+  /// bloc `suggestions` renvoyé par [cvAdapt] et ne crée aucune candidature.
+  /// Pour postuler, enchaîner ensuite sur `IOfferRepository.applyToOffer`.
+  Future<Map<String, dynamic>> cvAdaptApply(Map<String, dynamic> suggestions);
 
   Future<Map<String, dynamic>> cvRewrite({
     String? section,

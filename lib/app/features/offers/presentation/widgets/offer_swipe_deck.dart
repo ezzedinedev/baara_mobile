@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/offer.dart';
 import '../controllers/offer_controller.dart';
@@ -62,142 +62,45 @@ class OfferSwipeDeck extends StatelessWidget {
         );
       }
 
-      final dragDx = controller.offerDragDx.value;
-      final swipeFactor = (dragDx / 140).clamp(-1.0, 1.0);
-      final top = controller.offerAtOffset(0);
-      final second = controller.offerAtOffset(1);
-      final third = controller.offerAtOffset(2);
-      if (top == null) return SizedBox(height: height);
+      final deck = controller.deckOffers;
+      if (deck.isEmpty) {
+        return SizedBox(
+          height: height,
+          child: EmptyState(
+            illustration: const EmptyOffersIllustration(),
+            title: 'Plus d\'offres à swiper',
+            subtitle: controller.hasNextPage.value
+                ? 'Chargez la suite ou repassez en vue liste.'
+                : 'Vous avez parcouru toutes les offres disponibles.',
+            actionLabel: controller.hasNextPage.value
+                ? 'Charger plus'
+                : 'Actualiser',
+            onAction: () {
+              if (controller.hasNextPage.value) {
+                controller.loadOffers();
+              } else {
+                controller.loadOffers(refresh: true);
+              }
+            },
+          ),
+        );
+      }
 
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
             height: height,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                if (third != null)
-                  Positioned.fill(
-                    child: Transform.translate(
-                      offset: const Offset(0, 18),
-                      child: Transform.scale(
-                        scale: 0.93,
-                        child: Opacity(
-                          opacity: 0.34,
-                          child: _OfferDeckCard(
-                              offer: third,
-                              matchScore: controller.scoreForOffset(2),
-                              compact: compact,
-                              muted: true),
-                        ),
-                      ),
-                    ),
-                  ),
-                if (second != null)
-                  Positioned.fill(
-                    child: Transform.translate(
-                      offset: const Offset(0, 9),
-                      child: Transform.scale(
-                        scale: 0.97,
-                        child: Opacity(
-                          opacity: 0.66,
-                          child: _OfferDeckCard(
-                              offer: second,
-                              matchScore: controller.scoreForOffset(1),
-                              compact: compact,
-                              muted: true),
-                        ),
-                      ),
-                    ),
-                  ),
-                Positioned.fill(
-                  child: GestureDetector(
-                    onPanUpdate: (d) => controller.updateOfferDrag(d.delta.dx),
-                    onPanEnd: (d) =>
-                        controller.endOfferDrag(d.velocity.pixelsPerSecond.dx),
-                    onPanCancel: () => controller.endOfferDrag(0),
-                    child: AnimatedContainer(
-                      duration: controller.isOfferAnimating.value
-                          ? const Duration(milliseconds: 210)
-                          : Duration.zero,
-                      curve: Curves.easeOutCubic,
-                      transform:
-                          Matrix4.rotationZ((dragDx / 980).clamp(-0.22, 0.22))
-                            ..setTranslationRaw(dragDx, 0, 0),
-                      child: Stack(
-                        children: [
-                          _OfferDeckCard(
-                            offer: top,
-                            matchScore: controller.scoreForOffset(0),
-                            compact: compact,
-                            onApply: () {
-                              AppHaptics.tap();
-                              controller.swipeOfferRight();
-                            },
-                          ),
-                          Positioned(
-                            top: 12,
-                            left: 12,
-                            child: Opacity(
-                              opacity: (-swipeFactor).clamp(0.0, 1.0),
-                              child: const _OfferSwipeBadge(
-                                  label: 'PASSER', color: AppColors.error),
-                            ),
-                          ),
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Opacity(
-                              opacity: swipeFactor.clamp(0.0, 1.0),
-                              child: const _OfferSwipeBadge(
-                                  label: 'INTÉRESSÉ', color: AppColors.success),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            child: _OfferDeckStack(controller: controller, compact: compact),
           ),
           const SizedBox(height: 12),
           _OfferDeckIndicators(controller: controller),
           if (showActions) ...[
             const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _OfferActionButton(
-                    icon: Icons.replay_rounded,
-                    color: AppColors.warningAccent,
-                    onTap: controller.rewindOffer,
-                    size: 46,
-                    iconSize: 22),
-                const SizedBox(width: 10),
-                _OfferActionButton(
-                    icon: IconlyLight.close_square,
-                    color: AppColors.errorAccent,
-                    onTap: controller.swipeOfferLeft,
-                    size: 58,
-                    iconSize: 30),
-                const SizedBox(width: 14),
-                _OfferActionButton(
-                    icon: IconlyBold.heart,
-                    color: AppColors.successAccent,
-                    onTap: controller.swipeOfferRight,
-                    size: 58,
-                    iconSize: 30),
-                const SizedBox(width: 10),
-                _OfferActionButton(
-                    icon: IconlyLight.info_circle,
-                    color: AppColors.primaryAccent,
-                    onTap: () => _showDetails(
-                        context, top, controller.scoreForOffset(0)),
-                    size: 46,
-                    iconSize: 22),
-              ],
+            _OfferDeckActions(
+              controller: controller,
+              onShowDetails: (offer, score) =>
+                  _showDetails(context, offer, score),
             ),
           ],
         ],
@@ -235,7 +138,7 @@ class OfferSwipeDeck extends StatelessWidget {
               runSpacing: 8,
               children: [
                 GlassChip(
-                    icon: IconlyLight.work,
+                    icon: AppIcons.work,
                     label: offer.contractType,
                     style: GlassChipStyle.tonal),
                 if (offer.sector.isNotEmpty)
@@ -245,13 +148,13 @@ class OfferSwipeDeck extends StatelessWidget {
                       style: GlassChipStyle.tonal),
                 if ((offer.deadlineLabel ?? '').isNotEmpty)
                   GlassChip(
-                      icon: IconlyLight.calendar,
+                      icon: AppIcons.calendar,
                       label: offer.deadlineLabel!,
                       style: GlassChipStyle.tonal),
                 GlassChip(
                     icon: offer.isRemote
                         ? Icons.wifi_tethering_rounded
-                        : IconlyLight.location,
+                        : AppIcons.location,
                     label: (offer.experienceLabel ?? '').isNotEmpty
                         ? offer.experienceLabel!
                         : offer.location,
@@ -292,6 +195,206 @@ class OfferSwipeDeck extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Pile de cartes (hors drag) — ne se reconstruit que quand l'index change.
+class _OfferDeckStack extends StatelessWidget {
+  const _OfferDeckStack({required this.controller, required this.compact});
+
+  final OfferController controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final top = controller.offerAtOffset(0);
+      final second = controller.offerAtOffset(1);
+      final third = controller.offerAtOffset(2);
+      if (top == null) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: OfferCardSkeleton(),
+        );
+      }
+
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (third != null)
+            Positioned.fill(
+              child: Transform.translate(
+                offset: const Offset(0, 18),
+                child: Transform.scale(
+                  scale: 0.93,
+                  child: Opacity(
+                    opacity: 0.34,
+                    child: _OfferDeckCard(
+                      offer: third,
+                      matchScore: controller.scoreForOffset(2),
+                      compact: compact,
+                      muted: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (second != null)
+            Positioned.fill(
+              child: Transform.translate(
+                offset: const Offset(0, 9),
+                child: Transform.scale(
+                  scale: 0.97,
+                  child: Opacity(
+                    opacity: 0.66,
+                    child: _OfferDeckCard(
+                      offer: second,
+                      matchScore: controller.scoreForOffset(1),
+                      compact: compact,
+                      muted: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          _DraggableTopCard(
+            controller: controller,
+            offer: top,
+            matchScore: controller.scoreForOffset(0),
+            compact: compact,
+          ),
+        ],
+      );
+    });
+  }
+}
+
+/// Carte du dessus : seul ce widget réagit au drag (perf swipe).
+class _DraggableTopCard extends StatelessWidget {
+  const _DraggableTopCard({
+    required this.controller,
+    required this.offer,
+    required this.matchScore,
+    required this.compact,
+  });
+
+  final OfferController controller;
+  final Offer offer;
+  final int? matchScore;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final dragDx = controller.offerDragDx.value;
+      final swipeFactor = (dragDx / 140).clamp(-1.0, 1.0);
+      return Positioned.fill(
+        child: GestureDetector(
+          onPanUpdate: (d) => controller.updateOfferDrag(d.delta.dx),
+          onPanEnd: (d) =>
+              controller.endOfferDrag(d.velocity.pixelsPerSecond.dx),
+          onPanCancel: () => controller.endOfferDrag(0),
+          child: AnimatedContainer(
+            duration: controller.isOfferAnimating.value
+                ? const Duration(milliseconds: 210)
+                : Duration.zero,
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.rotationZ((dragDx / 980).clamp(-0.22, 0.22))
+              ..setTranslationRaw(dragDx, 0, 0),
+            child: Stack(
+              children: [
+                _OfferDeckCard(
+                  offer: offer,
+                  matchScore: matchScore,
+                  compact: compact,
+                  onApply: () {
+                    AppHaptics.tap();
+                    controller.swipeOfferRight();
+                  },
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Opacity(
+                    opacity: (-swipeFactor).clamp(0.0, 1.0),
+                    child: const _OfferSwipeBadge(
+                      label: 'PASSER',
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Opacity(
+                    opacity: swipeFactor.clamp(0.0, 1.0),
+                    child: const _OfferSwipeBadge(
+                      label: 'INTÉRESSÉ',
+                      color: AppColors.success,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _OfferDeckActions extends StatelessWidget {
+  const _OfferDeckActions({
+    required this.controller,
+    required this.onShowDetails,
+  });
+
+  final OfferController controller;
+  final void Function(Offer offer, int? score) onShowDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final top = controller.offerAtOffset(0);
+      if (top == null) return const SizedBox.shrink();
+      final score = controller.scoreForOffset(0);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _OfferActionButton(
+            icon: Icons.replay_rounded,
+            color: AppColors.warningAccent,
+            onTap: controller.rewindOffer,
+            size: 46,
+            iconSize: 22,
+          ),
+          const SizedBox(width: 10),
+          _OfferActionButton(
+            icon: AppIcons.closeSquare,
+            color: AppColors.errorAccent,
+            onTap: controller.swipeOfferLeft,
+            size: 58,
+            iconSize: 30,
+          ),
+          const SizedBox(width: 14),
+          _OfferActionButton(
+            icon: AppIcons.heartFilled,
+            color: AppColors.successAccent,
+            onTap: controller.swipeOfferRight,
+            size: 58,
+            iconSize: 30,
+          ),
+          const SizedBox(width: 10),
+          _OfferActionButton(
+            icon: AppIcons.info,
+            color: AppColors.primaryAccent,
+            onTap: () => onShowDetails(top, score),
+            size: 46,
+            iconSize: 22,
+          ),
+        ],
+      );
+    });
   }
 }
 
@@ -423,7 +526,7 @@ class _OfferDeckCard extends StatelessWidget {
                 SizedBox(height: compact ? 6 : 8),
                 Row(
                   children: [
-                    Icon(IconlyLight.location, size: 14, color: muteText),
+                    Icon(AppIcons.location, size: 14, color: muteText),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(offer.location,
@@ -511,7 +614,7 @@ class _OfferDeckCard extends StatelessWidget {
                                         fontWeight: FontWeight.w800,
                                         fontSize: compact ? 11 : 12)),
                                 const SizedBox(width: 4),
-                                Icon(IconlyLight.arrow_right_2,
+                                Icon(AppIcons.arrowRight,
                                     size: compact ? 12 : 14,
                                     color: AppColors.primaryAccent),
                               ],
@@ -591,26 +694,31 @@ class _OfferDeckIndicators extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Limité à 8 points pour éviter une ligne trop longue sur grandes listes.
-    final count = controller.offers.length.clamp(0, 8);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(count, (index) {
-        final isActive = controller.currentOfferIndex.value % count == index;
-        return AnimatedContainer(
-          // Étirement du point actif en ressort (langage motion 2026).
-          duration: AppMotion.medium,
-          curve: AppMotion.spring,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          height: 6,
-          width: isActive ? 24 : 7,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : AppColors.surfaceHighest,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-        );
-      }),
-    );
+    return Obx(() {
+      final deck = controller.deckOffers;
+      final count = deck.length.clamp(0, 8);
+      if (count == 0) return const SizedBox.shrink();
+      final activeIdx =
+          controller.currentOfferIndex.value.clamp(0, count - 1);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(count, (index) {
+          final isActive = activeIdx == index;
+          return AnimatedContainer(
+            // Étirement du point actif en ressort (langage motion 2026).
+            duration: AppMotion.medium,
+            curve: AppMotion.spring,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            height: 6,
+            width: isActive ? 24 : 7,
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.primary : AppColors.surfaceHighest,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          );
+        }),
+      );
+    });
   }
 }
 
@@ -683,7 +791,7 @@ class _DeckFavoriteButton extends StatelessWidget {
               duration: const Duration(milliseconds: 180),
               transitionBuilder: (child, anim) =>
                   ScaleTransition(scale: anim, child: child),
-              child: Icon(saved ? IconlyBold.heart : IconlyLight.heart,
+              child: Icon(saved ? AppIcons.heartFilled : AppIcons.heart,
                   key: ValueKey(saved),
                   size: 18,
                   color: saved ? AppColors.errorAccent : AppColors.onPrimary),

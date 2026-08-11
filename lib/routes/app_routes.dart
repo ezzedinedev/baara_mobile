@@ -11,6 +11,7 @@ abstract class AppRoutes {
   static const emailVerification = '/verification-email';
   static const forgotPassword = '/mot-de-passe-oublie';
   static const forgotPasswordReset = '/mot-de-passe-oublie/reinitialiser';
+  static const onboarding = '/onboarding';
   static const home = '/accueil';
   static const profile = '/profile';
   static const profileEdit = '/profile/edit';

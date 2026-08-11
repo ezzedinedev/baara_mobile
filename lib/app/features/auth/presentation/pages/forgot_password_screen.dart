@@ -1,12 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
@@ -24,26 +24,46 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
             WavyAuthHeader(
               height: 180,
               showLeading: true,
-              foregroundIcon: IconlyLight.unlock,
+              foregroundIcon: AppIcons.unlock,
               onLeadingTap: () => Get.back(),
             ),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Obx(
-                () => controller.step.value == 1
-                    ? _buildRequestStep()
-                    : _buildResetStep(),
-              ),
+              child: Obx(() {
+                final step = controller.step.value;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.04),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  ),
+                  child: step == 1
+                      ? _RequestStep(key: const ValueKey('request'), controller: controller)
+                      : _ResetStep(key: const ValueKey('reset'), controller: controller),
+                );
+              }),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildRequestStep() {
+class _RequestStep extends StatelessWidget {
+  const _RequestStep({super.key, required this.controller});
+  final ForgotPasswordController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
-      key: const ValueKey('forgot-request'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RevealOnMount(
@@ -83,7 +103,7 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
                   controller: controller.emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   validator: controller.validateEmail,
-                  icon: IconlyLight.message,
+                  icon: AppIcons.message,
                 ),
         ),
         Obx(() => AuthErrorBanner(message: controller.errorMsg.value)),
@@ -96,10 +116,45 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
       ],
     );
   }
+}
 
-  Widget _buildResetStep() {
+class _ResetStep extends StatefulWidget {
+  const _ResetStep({super.key, required this.controller});
+  final ForgotPasswordController controller;
+
+  @override
+  State<_ResetStep> createState() => _ResetStepState();
+}
+
+class _ResetStepState extends State<_ResetStep> {
+  String _password = '';
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.passwordCtrl.addListener(_onPasswordChanged);
+    _password = widget.controller.passwordCtrl.text;
+  }
+
+  void _onPasswordChanged() {
+    final next = widget.controller.passwordCtrl.text;
+    if (next != _password) setState(() => _password = next);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.passwordCtrl.removeListener(_onPasswordChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller;
+    final destination = c.mode.value == 'email'
+        ? c.emailCtrl.text.trim()
+        : c.fullPhone;
+
     return Column(
-      key: const ValueKey('forgot-reset'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
@@ -108,47 +163,51 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Saisissez le code reçu par email puis votre nouveau mot de passe.',
+          'Saisissez le code reçu puis choisissez un mot de passe sécurisé.',
           style: AppTextStyles.bodyMd
               .copyWith(color: AppColors.bodyColor, height: 1.45),
         ),
-        const SizedBox(height: 24),
-        AuthTextField(
-          label: 'Code reçu',
-          hint: 'Code à 6 chiffres',
-          controller: controller.otpCtrl,
-          keyboardType: TextInputType.number,
-          icon: IconlyLight.time_circle,
+        const SizedBox(height: 20),
+        Obx(() => AuthDeliveryStatus(
+              phase: c.deliveryPhase.value,
+              destination: destination,
+              errorMessage: c.sendError.value,
+            )),
+        AuthOtpField(
+          controller: c.otpCtrl,
+          length: 6,
+          autofocus: false,
         ),
         const SizedBox(height: 16),
         AuthTextField(
           label: 'Nouveau mot de passe',
           hint: 'Au moins 8 caractères',
-          controller: controller.passwordCtrl,
+          controller: c.passwordCtrl,
           obscureText: true,
-          icon: IconlyLight.lock,
+          icon: AppIcons.lock,
         ),
+        AuthPasswordStrength(password: _password),
         const SizedBox(height: 16),
         AuthTextField(
           label: 'Confirmer le mot de passe',
           hint: 'Retapez le mot de passe',
-          controller: controller.confirmCtrl,
+          controller: c.confirmCtrl,
           obscureText: true,
-          icon: IconlyLight.password,
+          icon: AppIcons.password,
         ),
-        Obx(() => AuthErrorBanner(message: controller.errorMsg.value)),
+        Obx(() => AuthErrorBanner(message: c.errorMsg.value)),
         const SizedBox(height: 28),
         Obx(() => AuthCtaButton(
               label: 'Réinitialiser',
-              isLoading: controller.isLoading.value,
-              onPressed: () => controller.confirmReset(),
+              isLoading: c.isLoading.value,
+              onPressed: () => c.confirmReset(),
             )),
         const SizedBox(height: 8),
         Center(
           child: TextButton(
             onPressed: () {
               AppHaptics.tap();
-              controller.requestReset();
+              c.requestReset();
             },
             child: Text(
               'Renvoyer le code',
@@ -164,8 +223,7 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
   }
 }
 
-/// Bascule segmentée Email / Téléphone pour choisir l'identifiant de
-/// réinitialisation (pilule glissante), alignée sur l'écran de connexion.
+/// Bascule segmentée Email / Téléphone.
 class _ModeToggle extends StatelessWidget {
   const _ModeToggle({required this.mode, required this.onChanged});
 
@@ -204,9 +262,9 @@ class _ModeToggle extends StatelessWidget {
               ),
               Row(
                 children: [
-                  _seg('Email', IconlyLight.message, !isPhone,
+                  _seg('Email', AppIcons.message, !isPhone,
                       () => onChanged('email')),
-                  _seg('Téléphone', IconlyLight.call, isPhone,
+                  _seg('Téléphone', AppIcons.phone, isPhone,
                       () => onChanged('phone')),
                 ],
               ),

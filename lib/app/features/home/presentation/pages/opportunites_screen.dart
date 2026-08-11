@@ -1,18 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:jobaway/app/features/offers/presentation/pages/offer_list_screen.dart';
-import 'package:jobaway/app/features/offers/presentation/widgets/offer_swipe_deck.dart';
-import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
-import 'package:jobaway/app/features/trainings/presentation/pages/trainings_screen.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/app/features/offers/presentation/pages/offer_list_screen.dart';
+import 'package:baara/app/features/offers/presentation/widgets/offer_swipe_deck.dart';
+import 'package:baara/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:baara/app/features/trainings/presentation/pages/trainings_screen.dart';
 import '../controllers/home_controller.dart';
 
 /// Hub « Opportunités » : un seul en-tête + un segmented control qui bascule
@@ -37,20 +37,17 @@ class _OpportunitesScreenState extends State<OpportunitesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Le segment actif est porté par HomeController → l'accueil peut ouvrir
-    // directement « Formations » via « Tout voir ».
     final home = Get.find<HomeController>();
     return ColoredBox(
       color: AppColors.background,
-      child: Obx(() {
-        final segment = home.opportunitesTab.value;
-        return SankTabShell(
-          title: 'Opportunités',
-          subtitle: 'Offres et formations pour ton profil.',
-          headerActions: [
-            // Filtres (selon le segment actif).
-            AppIconButton(
-              icon: IconlyLight.filter,
+      child: SankTabShell(
+        title: 'Opportunités',
+        subtitle: 'Offres et formations pour ton profil.',
+        headerActions: [
+          Obx(() {
+            final segment = home.opportunitesTab.value;
+            return AppIconButton(
+              icon: AppIcons.filter,
               tooltip: 'Filtrer',
               onTap: () {
                 AppHaptics.tap();
@@ -60,53 +57,68 @@ class _OpportunitesScreenState extends State<OpportunitesScreen> {
                   openTrainingsFilter(context, Get.find<TrainingsController>());
                 }
               },
-            ),
-            // Bascule Liste / Découverte (swipe) — visible uniquement sur Offres.
-            if (segment == 0)
-              AppIconButton(
-                icon: _offersSwipe
-                    ? Icons.view_agenda_rounded
-                    : Icons.swipe_rounded,
-                tooltip: _offersSwipe ? 'Vue liste' : 'Mode découverte (swipe)',
-                onTap: () {
-                  AppHaptics.tap();
-                  setState(() => _offersSwipe = !_offersSwipe);
-                },
-              ),
-          ],
-          headerChild: SegmentedControl(
-            segments: _segments,
-            selected: segment,
-            onChanged: (i) {
-              AppHaptics.tap();
-              home.opportunitesTab.value = i;
-            },
-          ),
-          body: IndexedStack(
+            );
+          }),
+          Obx(() {
+            if (home.opportunitesTab.value != 0) {
+              return const SizedBox.shrink();
+            }
+            return AppIconButton(
+              icon: _offersSwipe
+                  ? Icons.view_agenda_rounded
+                  : Icons.swipe_rounded,
+              tooltip: _offersSwipe ? 'Vue liste' : 'Mode découverte (swipe)',
+              onTap: () {
+                AppHaptics.tap();
+                setState(() => _offersSwipe = !_offersSwipe);
+              },
+            );
+          }),
+        ],
+        headerChild: Obx(() => SegmentedControl(
+              segments: _segments,
+              selected: home.opportunitesTab.value,
+              onChanged: (i) {
+                AppHaptics.tap();
+                home.opportunitesTab.value = i;
+              },
+            )),
+        body: Obx(() {
+          final segment = home.opportunitesTab.value;
+          return IndexedStack(
             index: segment,
             children: [
               _offersSwipe
-                  ? _OffersSwipeView()
+                  ? const _OffersSwipeView()
                   : const OfferListScreen(embedded: true),
               const TrainingsScreen(embedded: true),
             ],
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }
 
 /// Mode « Découverte » : le deck d'offres swipeable (réutilise [OfferSwipeDeck]).
 class _OffersSwipeView extends StatelessWidget {
+  const _OffersSwipeView();
+
   @override
   Widget build(BuildContext context) {
     final offerController = Get.find<OfferController>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.pageH, AppSpacing.md, AppSpacing.pageH, AppSpacing.xxl),
-      child: Center(
-        child: OfferSwipeDeck(controller: offerController, height: 480),
+    return AppRefreshIndicator(
+      color: AppColors.primaryAccent,
+      onRefresh: () => offerController.loadOffers(refresh: true),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.pageH, AppSpacing.md, AppSpacing.pageH, AppSpacing.xxl),
+        children: [
+          Center(
+            child: OfferSwipeDeck(controller: offerController, height: 480),
+          ),
+        ],
       ),
     );
   }

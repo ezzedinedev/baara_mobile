@@ -1,8 +1,10 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/services/realtime_events.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/realtime_events.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/entities/notification.dart';
 import '../../domain/repositories/i_notification_repository.dart';
 
@@ -15,6 +17,9 @@ class NotificationsController extends GetxController {
   final isLoadingMore = false.obs;
   final hasMore = false.obs;
   final unreadCount = 0.obs;
+  /// Message d'erreur de chargement, vide si tout va bien. Permet à l'écran de
+  /// distinguer « aucune notification » d'un échec réseau/serveur.
+  final errorMessage = ''.obs;
   int _page = 1;
 
   StreamSubscription<RealtimeEvent>? _realtimeSub;
@@ -40,12 +45,14 @@ class NotificationsController extends GetxController {
   Future<void> fetchNotifications() async {
     try {
       isLoading.value = true;
+      errorMessage.value = '';
       _page = 1;
       final result = await _repository.getNotifications(page: 1);
       notifications.assignAll(result.items);
       hasMore.value = result.hasMore;
       unreadCount.value = result.unreadCount;
-    } catch (_) {
+    } catch (e) {
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
     }
@@ -54,6 +61,10 @@ class NotificationsController extends GetxController {
   /// Rafraîchit UNIQUEMENT le compteur non-lu (pour le badge de la cloche),
   /// sans toucher à la liste affichée — évite de casser le scroll/pagination
   /// en cours lors du polling périodique des badges.
+  ///
+  /// Volontairement silencieux : ce rafraîchissement tourne en tâche de fond
+  /// (timer 45 s), un échec ne doit pas afficher d'erreur ni écraser l'état de
+  /// la liste visible.
   Future<void> refreshUnreadCount() async {
     try {
       final result = await _repository.getNotifications(page: 1);
@@ -71,7 +82,10 @@ class NotificationsController extends GetxController {
       notifications.addAll(result.items);
       hasMore.value = result.hasMore;
       unreadCount.value = result.unreadCount;
-    } catch (_) {
+    } catch (e) {
+      // Échec en pagination : la liste déjà chargée reste affichée, on signale
+      // sans la remplacer par un écran d'erreur plein.
+      AppToast.error('Notifications', userFacingError(e));
     } finally {
       isLoadingMore.value = false;
     }

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../../domain/entities/cv_template.dart';
 import '../../controllers/cv_preview_controller.dart';
@@ -38,12 +38,7 @@ class CvPreviewScreen extends GetView<CvPreviewController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
-                  ),
-                );
+                return const CvPreviewSkeleton();
               }
               if (controller.errorMessage.value != null) {
                 return ErrorStateView(
@@ -99,7 +94,7 @@ class _TemplateBar extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(IconlyLight.category,
+                  Icon(AppIcons.tracking,
                       size: 18, color: AppColors.primaryAccent),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
@@ -125,7 +120,7 @@ class _TemplateBar extends StatelessWidget {
                   if (current != null && current.isLocked)
                     _PremiumBadge(priceFcfa: current.priceFcfa),
                   const SizedBox(width: AppSpacing.sm),
-                  Icon(IconlyLight.arrow_down_2,
+                  Icon(AppIcons.chevronDown,
                       size: 18, color: AppColors.hintColor),
                 ],
               ),
@@ -153,7 +148,7 @@ class _PremiumBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(IconlyBold.lock, size: 12, color: AppColors.warningAccent),
+          Icon(AppIcons.lockFilled, size: 12, color: AppColors.warningAccent),
           const SizedBox(width: 4),
           Text(
             '$priceFcfa F',
@@ -289,7 +284,7 @@ class _TemplateTile extends StatelessWidget {
               if (template.isLocked)
                 _PremiumBadge(priceFcfa: template.priceFcfa)
               else if (template.isPremium)
-                Icon(IconlyBold.tick_square,
+                Icon(AppIcons.tickSquare,
                     size: 16, color: AppColors.primaryAccent),
             ],
           ),
@@ -330,11 +325,20 @@ class _PdfArea extends StatelessWidget {
             // imprimer ou partager ne contourne donc pas le paiement.
             allowPrinting: true,
             allowSharing: true,
-            pdfFileName: 'CV-JobAway.pdf',
-            loadingWidget: Center(
-              child: CircularProgressIndicator(
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
+            pdfFileName: 'CV-Baara.pdf',
+            loadingWidget: const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: SkeletonCluster(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SkeletonBox(height: 12, width: 120),
+                    SizedBox(height: AppSpacing.md),
+                    SkeletonBox(height: 10, width: double.infinity),
+                    SizedBox(height: 8),
+                    SkeletonBox(height: 10, width: 200),
+                  ],
+                ),
               ),
             ),
             // Marge resserrée : chaque pixel gagné agrandit le CV visible.
@@ -383,7 +387,7 @@ class _DownloadBar extends StatelessWidget {
             isLoading: busy,
             textColor: AppColors.onPrimary,
             height: 52,
-            borderRadius: 14,
+            borderRadius: AppRadius.md,
             onPressed: busy
                 ? null
                 : () => locked

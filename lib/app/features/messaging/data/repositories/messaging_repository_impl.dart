@@ -1,8 +1,9 @@
-﻿import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http;
 
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/i_messaging_repository.dart';
@@ -26,19 +27,18 @@ class MessagingRepositoryImpl implements IMessagingRepository {
     final response = await _apiProvider.getJson(
       '${ApiConstants.conversations}?page=$page&per_page=$perPage',
     );
-    if (response['success'] == true) {
-      final data = response['data'];
-      if (data == null) return [];
-      final List<dynamic> items =
-          data is List ? data : (data['data'] as List<dynamic>? ?? []);
-      return items
-          .map((json) => ConversationModel.fromJson(
-                json as Map<String, dynamic>,
-                viewerType: viewerType,
-              ))
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos conversations.');
+    final data = response['data'];
+    if (data == null) return [];
+    final List<dynamic> items =
+        data is List ? data : (data['data'] as List<dynamic>? ?? []);
+    return items
+        .map((json) => ConversationModel.fromJson(
+              json as Map<String, dynamic>,
+              viewerType: viewerType,
+            ))
+        .toList();
   }
 
   @override
@@ -80,16 +80,6 @@ class MessagingRepositoryImpl implements IMessagingRepository {
       ApiConstants.conversationDecline(conversationId),
       const {},
     );
-  }
-
-  @override
-  Future<bool> setVoiceNotesAllowed(
-      String conversationId, bool allowed) async {
-    final response = await _apiProvider.postJson(
-      ApiConstants.conversationVoiceNotes(conversationId),
-      {'allowed': allowed},
-    );
-    return response['success'] == true;
   }
 
   @override

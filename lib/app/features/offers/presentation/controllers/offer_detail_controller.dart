@@ -1,17 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/services/offline_apply_queue.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/offline_error.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
-import 'package:jobaway/app/core/widgets/common/sheet_handle.dart';
-import 'package:jobaway/app/core/widgets/common/success_sheet.dart';
-import 'package:jobaway/app/core/widgets/effects/celebration_overlay.dart';
-import 'package:jobaway/app/core/widgets/gradient_button.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/offline_error.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
+import 'package:baara/app/core/widgets/common/sheet_handle.dart';
+import 'package:baara/app/core/widgets/common/success_sheet.dart';
+import 'package:baara/app/core/widgets/effects/celebration_overlay.dart';
+import 'package:baara/app/core/widgets/gradient_button.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../../../data/models/ai_models.dart';
 import '../../../ia/domain/repositories/i_ia_repository.dart';
 import '../../domain/entities/offer.dart';
@@ -197,7 +197,13 @@ class OfferDetailController extends GetxController {
   void _showApplySuccess(Offer o) {
     final ctx = Get.context;
     if (ctx == null) {
-      AppToast.success('Candidature envoyée', '${o.company} · ${o.title}');
+      AppToast.action(
+        title: 'Candidature envoyée',
+        message: '${o.company} · ${o.title}',
+        actionLabel: 'Voir mon suivi',
+        onAction: () =>
+            Get.offAllNamed(AppRoutes.home, arguments: {'tab': 3}),
+      );
       return;
     }
     showSuccessSheet(
@@ -206,20 +212,6 @@ class OfferDetailController extends GetxController {
       message: '${o.company} · ${o.title}\n'
           'Votre candidature a bien été transmise au recruteur.',
     );
-  }
-
-  Future<AiCoverLetter?> generateCoverLetter() async {
-    final o = offer.value;
-    if (o == null || isAiActionLoading.value) return null;
-    isAiActionLoading.value = true;
-    try {
-      return await _iaRepository.coverLetter(offerId: o.id);
-    } catch (e) {
-      AppToast.error('Lettre non générée', userFacingError(e));
-      return null;
-    } finally {
-      isAiActionLoading.value = false;
-    }
   }
 
   Future<Map<String, dynamic>?> adaptCv() async {
@@ -236,19 +228,37 @@ class OfferDetailController extends GetxController {
     }
   }
 
+  /// Adapte le CV à l'offre, enregistre les suggestions, puis postule.
+  ///
+  /// Trois appels distincts, et c'est nécessaire : `/ai/cv/adapt/apply` veut
+  /// dire « appliquer les suggestions AU CV » — il ne crée aucune candidature.
+  /// L'implémentation précédente l'appelait seul, avec `offer_id` au lieu de
+  /// `suggestions` : elle repartait en 422 sans jamais rien envoyer, tout en
+  /// affichant « Candidature envoyée ».
   Future<void> adaptCvAndApply() async {
     final o = offer.value;
     if (o == null || isAiActionLoading.value || hasApplied.value) return;
     isAiActionLoading.value = true;
     try {
-      await _iaRepository.cvAdaptApply(o.id);
-      hasApplied.value = true;
-      AppToast.success('Candidature envoyée', 'CV adapté pour ${o.title}.');
+      final adaptation = await _iaRepository.cvAdapt(o.id);
+      final suggestions = adaptation['suggestions'];
+      if (suggestions is Map<String, dynamic> && suggestions.isNotEmpty) {
+        // Non bloquant : si aucune suggestion n'est applicable (422
+        // `no_applicable_suggestion`), le CV reste tel quel et on postule
+        // quand même — l'utilisateur a demandé à candidater, pas à éditer.
+        try {
+          await _iaRepository.cvAdaptApply(suggestions);
+        } catch (_) {}
+      }
     } catch (e) {
-      AppToast.error('Action impossible', userFacingError(e));
-    } finally {
+      AppToast.error('CV non adapté', userFacingError(e));
       isAiActionLoading.value = false;
+      return;
     }
+    isAiActionLoading.value = false;
+    // `apply()` porte déjà la candidature réelle, la file hors-ligne, l'écran
+    // de match et la bascule `hasApplied`.
+    await apply();
   }
 
   /// Toggle favori optimiste : on bascule l'état localement tout de suite, puis

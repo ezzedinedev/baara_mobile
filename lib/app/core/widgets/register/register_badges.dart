@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
@@ -14,7 +14,7 @@ class RegisterBadges extends StatelessWidget {
           children: [
             Expanded(
               child: _RegisterMiniBadge(
-                icon: IconlyLight.shield_done,
+                icon: AppIcons.shieldDone,
                 iconColor: AppColors.successAccent,
                 title: '100% Securise',
               ),
@@ -22,7 +22,7 @@ class RegisterBadges extends StatelessWidget {
             SizedBox(width: 12),
             Expanded(
               child: _RegisterMiniBadge(
-                icon: IconlyLight.chart,
+                icon: AppIcons.chart,
                 iconColor: AppColors.primaryAccent,
                 title: '0% Commission',
               ),
@@ -42,7 +42,7 @@ class RegisterBadges extends StatelessWidget {
             SizedBox(width: 12),
             Expanded(
               child: _RegisterMiniBadge(
-                icon: IconlyLight.shield_done,
+                icon: AppIcons.shieldDone,
                 iconColor: AppColors.primaryMedium,
                 title: 'Recruteurs verifies',
               ),

@@ -1,5 +1,5 @@
 import "package:flutter/material.dart";
-import 'package:iconly/iconly.dart' show IconlyLight;
+import '../../theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_motion.dart';
@@ -80,7 +80,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 onPressed: _toggleObscure,
                 splashRadius: 18,
                 icon: Icon(
-                  _obscured ? IconlyLight.show : IconlyLight.hide,
+                  _obscured ? AppIcons.show : AppIcons.hide,
                   size: 20,
                   color: AppColors.hintColor,
                 ),

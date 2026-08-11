@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/features/messaging/data/models/message_model.dart';
-import 'package:jobaway/app/features/messaging/domain/entities/message.dart';
-import 'package:jobaway/app/features/messaging/domain/repositories/i_messaging_repository.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
-import 'package:jobaway/app/features/messaging/presentation/widgets/chat_structured_actions.dart';
-import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:baara/app/features/messaging/data/models/message_model.dart';
+import 'package:baara/app/features/messaging/domain/entities/message.dart';
+import 'package:baara/app/features/messaging/domain/repositories/i_messaging_repository.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/features/messaging/presentation/widgets/chat_structured_actions.dart';
+import 'package:baara/app/features/offers/data/models/interview_detail_model.dart';
 
 import '../../../support/fake_offer_repository.dart';
 

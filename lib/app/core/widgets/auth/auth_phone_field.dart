@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter/services.dart';
-import 'package:iconly/iconly.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
@@ -199,7 +199,7 @@ class _CountryPrefix extends StatelessWidget {
               ),
               const SizedBox(width: 2),
               Icon(
-                IconlyLight.arrow_down_2,
+                AppIcons.chevronDown,
                 size: 16,
                 color: focused ? AppColors.primaryAccent : AppColors.hintColor,
               ),
@@ -335,7 +335,7 @@ class _CountryTile extends StatelessWidget {
               ),
               if (selected) ...[
                 const SizedBox(width: 10),
-                Icon(IconlyBold.tick_square,
+                Icon(AppIcons.tickSquare,
                     size: 20, color: AppColors.primaryAccent),
               ],
             ],

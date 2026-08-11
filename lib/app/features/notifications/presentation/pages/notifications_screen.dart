@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/notifications_controller.dart';
 import '../widgets/notification_preferences_sheet.dart';
 import '../../domain/entities/notification.dart';
@@ -23,12 +23,12 @@ class NotificationsScreen extends GetView<NotificationsController> {
       backgroundColor: AppColors.background,
       body: SankSheetScaffold(
         title: 'Notifications',
-        titleIcon: IconlyLight.notification,
+        titleIcon: AppIcons.bell,
         showBack: Navigator.of(context).canPop(),
         actions: [
           AppIconButton(
             onBrandHeader: true,
-            icon: IconlyLight.tick_square,
+            icon: AppIcons.tickSquare,
             tooltip: 'Tout marquer comme lu',
             onTap: () {
               AppHaptics.tap();
@@ -37,7 +37,7 @@ class NotificationsScreen extends GetView<NotificationsController> {
           ),
           AppIconButton(
             onBrandHeader: true,
-            icon: IconlyLight.setting,
+            icon: AppIcons.settings,
             tooltip: 'Préférences de notifications',
             onTap: () => showNotificationPreferencesSheet(context),
           ),
@@ -45,6 +45,18 @@ class NotificationsScreen extends GetView<NotificationsController> {
         body: Obx(() {
           if (controller.isLoading.value) {
             return const PageSkeleton();
+          }
+
+          // Erreur de chargement : seulement si on n'a rien à afficher. Si une
+          // liste est déjà à l'écran, l'échec est signalé par un toast et la
+          // liste existante reste consultable.
+          if (controller.errorMessage.value.isNotEmpty &&
+              controller.notifications.isEmpty) {
+            return ErrorStateView(
+              message: controller.errorMessage.value,
+              illustration: const ErrorIllustration(),
+              onRetry: controller.fetchNotifications,
+            );
           }
 
           if (controller.notifications.isEmpty) {
@@ -232,7 +244,7 @@ class _DeleteBackground extends StatelessWidget {
         color: AppColors.error.withValues(alpha: 0.14),
         shape: AppShapes.squircle(AppRadius.md),
       ),
-      child: const Icon(IconlyLight.delete, color: AppColors.error, size: 22),
+      child: const Icon(AppIcons.delete, color: AppColors.error, size: 22),
     );
   }
 }
@@ -274,28 +286,28 @@ class _NotifIcon extends StatelessWidget {
   // Mentions (`mention_post`, `mention_comment`) : prioritaire car la clé
   // contient aussi « post »/« comment ».
   if (has('mention')) {
-    return (icon: IconlyBold.chat, color: AppColors.categoryPurple);
+    return (icon: AppIcons.chatFilled, color: AppColors.categoryPurple);
   }
   if (has('message') || has('new_message')) {
-    return (icon: IconlyBold.chat, color: AppColors.categoryBlue);
+    return (icon: AppIcons.chatFilled, color: AppColors.categoryBlue);
   }
   if (has('network') || has('connection') || has('connexion')) {
-    return (icon: IconlyBold.add_user, color: AppColors.categoryCyan);
+    return (icon: AppIcons.addUser, color: AppColors.categoryCyan);
   }
   if (has('story') || has('reaction')) {
-    return (icon: IconlyBold.heart, color: AppColors.categoryPink);
+    return (icon: AppIcons.heartFilled, color: AppColors.categoryPink);
   }
   if (has('interview') || has('entretien')) {
-    return (icon: IconlyBold.calendar, color: AppColors.categoryPurple);
+    return (icon: AppIcons.calendar, color: AppColors.categoryPurple);
   }
   if (has('application') || has('candidat') || has('status')) {
-    return (icon: IconlyBold.tick_square, color: AppColors.secondary);
+    return (icon: AppIcons.tickSquare, color: AppColors.secondary);
   }
   if (has('offer') || has('job') || has('emploi')) {
-    return (icon: IconlyBold.work, color: AppColors.primaryAccent);
+    return (icon: AppIcons.workFilled, color: AppColors.primaryAccent);
   }
   if (has('training') || has('formation') || has('course')) {
-    return (icon: IconlyBold.bookmark, color: AppColors.categoryOrange);
+    return (icon: AppIcons.bookmarkFilled, color: AppColors.categoryOrange);
   }
   if (has('comment') ||
       has('commentaire') ||
@@ -304,12 +316,12 @@ class _NotifIcon extends StatelessWidget {
       has('follow') ||
       has('réseau') ||
       has('reseau')) {
-    return (icon: IconlyBold.chat, color: AppColors.categoryCyan);
+    return (icon: AppIcons.chatFilled, color: AppColors.categoryCyan);
   }
   if (has('profile') || has('profil') || has('portfolio')) {
-    return (icon: IconlyBold.profile, color: AppColors.categoryPink);
+    return (icon: AppIcons.profileFilled, color: AppColors.categoryPink);
   }
-  return (icon: IconlyBold.notification, color: AppColors.primaryAccent);
+  return (icon: AppIcons.notificationFilled, color: AppColors.primaryAccent);
 }
 
 /// Heure relative compacte (Maintenant / 5 min / 2 h / 3 j / 2 sem).

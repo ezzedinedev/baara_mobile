@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/profile_selection_controller.dart';
 
 class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
@@ -23,7 +23,7 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
             height: 150,
             showLeading: true,
             onLeadingTap: () => Get.back(),
-            foregroundIcon: IconlyLight.profile,
+            foregroundIcon: AppIcons.profile,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -47,7 +47,8 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
                   RevealOnMount(
                     delay: const Duration(milliseconds: 60),
                     child: Text(
-                        'Sélectionnez le profil qui correspond à votre situation.',
+                        'Inscription réservée aux candidats (emploi ou stage). '
+                        'Les employeurs utilisent la plateforme web Baara.bf.',
                         style: AppTextStyles.bodyMd.copyWith(
                             color: AppColors.bodyColor,
                             height: 1.35,
@@ -60,7 +61,7 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
                     delay: const Duration(milliseconds: 120),
                     child: _ProfileCard(
                       type: ProfileType.jobseeker,
-                      icon: IconlyBold.work,
+                      icon: AppIcons.workFilled,
                       title: 'Je cherche un emploi',
                       subtitle: 'Trouvez un emploi et soyez recruté.',
                       gradient: AppColors.primaryGradient,

@@ -1,4 +1,4 @@
-﻿// Bibliothèque d'illustrations de marque JobAway (CustomPainter, dark-aware,
+// Bibliothèque d'illustrations de marque Baara (CustomPainter, dark-aware,
 // 100 % tokens AppColors). Voir `brand_illustration.dart` pour le langage commun
 // (blob de fond, palette, helpers de dessin, animation d'entrée).
 export 'brand_illustration.dart';

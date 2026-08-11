@@ -1,20 +1,24 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/theme/app_theme_controller.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/notifications/presentation/widgets/notification_preferences_sheet.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/services/biometric_service.dart';
+import 'package:baara/app/core/services/fcm_service.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/core/services/review_prompt_service.dart';
+import 'package:baara/app/core/theme/app_theme_controller.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/notifications/presentation/widgets/notification_preferences_sheet.dart';
+import 'package:baara/routes/app_routes.dart';
 
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
 
@@ -73,7 +77,7 @@ class SettingsBody extends StatelessWidget {
           _Group(
             rows: [
               _HeaderRow(
-                icon: IconlyLight.profile,
+                icon: AppIcons.profile,
                 color: AppColors.categoryBlue,
                 title: 'Informations personnelles',
                 subtitle: 'Gérez les détails de votre compte',
@@ -83,7 +87,7 @@ class SettingsBody extends StatelessWidget {
                 },
               ),
               _HeaderRow(
-                icon: IconlyLight.work,
+                icon: AppIcons.work,
                 color: AppColors.categoryPurple,
                 title: 'Expériences & formations',
                 subtitle: 'Votre parcours et vos diplômes',
@@ -98,7 +102,7 @@ class SettingsBody extends StatelessWidget {
                     ? Get.find<OfferController>().appliedOfferIds.length
                     : 0;
                 return _HeaderRow(
-                  icon: IconlyLight.paper,
+                  icon: AppIcons.paper,
                   color: AppColors.successDark,
                   title: 'Mes candidatures',
                   subtitle: 'Suivez l\'état de vos postulations',
@@ -116,7 +120,7 @@ class SettingsBody extends StatelessWidget {
           _Group(
             rows: [
               _HeaderRow(
-                icon: IconlyLight.wallet,
+                icon: AppIcons.wallet,
                 color: AppColors.categoryPurple,
                 title: 'Mon abonnement',
                 subtitle: 'Forfait, avantages et facturation',
@@ -130,9 +134,39 @@ class SettingsBody extends StatelessWidget {
           const SectionLabel('Préférences'),
           _Group(
             rows: [
+              if (Get.isRegistered<FcmService>())
+                Obx(() {
+                  final fcm = Get.find<FcmService>();
+                  final granted = fcm.pushPermissionGranted.value;
+                  final denied = granted == false;
+                  return _HeaderRow(
+                    icon: AppIcons.notificationFilled,
+                    color: denied
+                        ? AppColors.warningAccent
+                        : AppColors.categoryOrange,
+                    title: 'Notifications push',
+                    subtitle: denied
+                        ? 'Autorisez Baara dans les réglages système'
+                        : 'Alertes candidatures, messages et offres',
+                    valueLabel: granted == null
+                        ? null
+                        : (granted ? 'Activées' : 'Désactivées'),
+                    onTap: () async {
+                      AppHaptics.tap();
+                      if (denied) {
+                        await fcm.openNotificationSettings();
+                      } else if (granted != true) {
+                        await fcm.activateAfterLogin();
+                      } else {
+                        await fcm.openNotificationSettings();
+                      }
+                      await fcm.refreshPermissionStatus();
+                    },
+                  );
+                }),
               Obx(
                 () => _HeaderRow(
-                  icon: IconlyLight.notification,
+                  icon: AppIcons.bell,
                   color: AppColors.categoryOrange,
                   title: 'Notifications',
                   subtitle: 'Offres, messages et suivi des candidatures',
@@ -144,7 +178,7 @@ class SettingsBody extends StatelessWidget {
               ),
               Obx(
                 () => _HeaderRow(
-                  icon: IconlyLight.show,
+                  icon: AppIcons.show,
                   color: AppColors.primary,
                   title: 'Apparence',
                   subtitle: 'Système, clair ou sombre',
@@ -159,7 +193,7 @@ class SettingsBody extends StatelessWidget {
               // Pas d'Obx : Get.locale n'est pas un observable .obs ; changer la
               // langue déclenche déjà un rebuild global via GetMaterialApp.
               _HeaderRow(
-                icon: IconlyLight.message,
+                icon: AppIcons.message,
                 color: AppColors.categoryBlue,
                 title: 'Langue',
                 subtitle: 'Langue de l\'application',
@@ -173,7 +207,7 @@ class SettingsBody extends StatelessWidget {
           _Group(
             rows: [
               _HeaderRow(
-                icon: IconlyLight.discovery,
+                icon: AppIcons.discovery,
                 color: AppColors.primary,
                 title: 'Mon fil communauté',
                 subtitle: 'Publications et professionnels à suivre',
@@ -183,7 +217,7 @@ class SettingsBody extends StatelessWidget {
                 },
               ),
               _HeaderRow(
-                icon: IconlyLight.show,
+                icon: AppIcons.show,
                 color: AppColors.categoryCyan,
                 title: 'Vues de profil',
                 subtitle: 'Qui a consulté votre profil',
@@ -194,7 +228,7 @@ class SettingsBody extends StatelessWidget {
               ),
               Obx(
                 () => _HeaderRow(
-                  icon: IconlyLight.unlock,
+                  icon: AppIcons.unlock,
                   color: AppColors.categoryPurple,
                   title: 'Visibilité du profil',
                   subtitle: 'Qui peut voir votre profil',
@@ -206,7 +240,7 @@ class SettingsBody extends StatelessWidget {
               ),
               Obx(
                 () => _HeaderRow(
-                  icon: IconlyLight.activity,
+                  icon: AppIcons.activity,
                   color: AppColors.secondary,
                   title: 'Activité du réseau',
                   subtitle: 'Abonnés, mentions et publications',
@@ -226,15 +260,59 @@ class SettingsBody extends StatelessWidget {
           const SectionLabel('Sécurité & aides'),
           _Group(
             rows: [
+              Obx(() {
+                if (!Get.isRegistered<BiometricService>()) {
+                  return const SizedBox.shrink();
+                }
+                final bio = Get.find<BiometricService>();
+                if (!bio.canUseBiometrics.value) {
+                  return const SizedBox.shrink();
+                }
+                return _HeaderRow(
+                  icon: Icons.fingerprint_rounded,
+                  color: AppColors.categoryPurple,
+                  title: 'Verrou biométrique',
+                  subtitle: 'Déverrouiller l\'app au démarrage',
+                  trailing: Switch.adaptive(
+                    value: bio.isEnabled.value,
+                    activeThumbColor: AppColors.onPrimary,
+                    activeTrackColor: AppColors.successSwitch,
+                    onChanged: (v) {
+                      AppHaptics.tap();
+                      bio.setEnabled(v);
+                    },
+                  ),
+                );
+              }),
+              Obx(() {
+                if (!Get.isRegistered<OfflineApplyQueue>()) {
+                  return const SizedBox.shrink();
+                }
+                final pending =
+                    Get.find<OfflineApplyQueue>().pending.length;
+                if (pending <= 0) return const SizedBox.shrink();
+                return _HeaderRow(
+                  icon: Icons.cloud_upload_outlined,
+                  color: AppColors.categoryOrange,
+                  title: 'Candidatures en attente',
+                  subtitle:
+                      '$pending en file — appuyez pour réessayer l\'envoi',
+                  badge: pending,
+                  onTap: () {
+                    AppHaptics.tap();
+                    Get.find<OfflineApplyQueue>().flush();
+                  },
+                );
+              }),
               _HeaderRow(
-                icon: IconlyLight.shield_done,
+                icon: AppIcons.shieldDone,
                 color: AppColors.categoryGray,
                 title: 'Confidentialité',
                 subtitle: 'Vos données et leur partage',
                 onTap: () => _showPrivacy(context),
               ),
               _HeaderRow(
-                icon: IconlyLight.password,
+                icon: AppIcons.password,
                 color: AppColors.categoryBlue,
                 title: 'Changer le mot de passe',
                 subtitle: 'Protégez l\'accès à votre compte',
@@ -261,10 +339,10 @@ class SettingsBody extends StatelessWidget {
                 },
               ),
               _HeaderRow(
-                icon: IconlyLight.info_circle,
+                icon: AppIcons.info,
                 color: AppColors.categoryBlue,
                 title: 'À propos',
-                subtitle: 'JobAway',
+                subtitle: 'Baara',
                 valueLabel: 'v1.0.0',
                 onTap: () => _showAbout(context),
               ),
@@ -277,11 +355,18 @@ class SettingsBody extends StatelessWidget {
                 icon: Icons.share_rounded,
                 color: AppColors.primary,
                 title: 'Partager l\'application',
-                subtitle: 'Invitez vos proches sur JobAway',
+                subtitle: 'Invitez vos proches sur Baara',
                 onTap: _shareApp,
               ),
               _HeaderRow(
-                icon: IconlyLight.logout,
+                icon: AppIcons.star,
+                color: AppColors.warningAccent,
+                title: 'Noter l\'application',
+                subtitle: 'Votre avis compte pour la communauté',
+                onTap: _rateApp,
+              ),
+              _HeaderRow(
+                icon: AppIcons.logout,
                 color: AppColors.error,
                 title: 'Se déconnecter',
                 titleColor: AppColors.errorAccent,
@@ -525,7 +610,7 @@ class SettingsBody extends StatelessWidget {
             Obx(
               () => _choiceTile(
                 ctx,
-                icon: IconlyLight.user,
+                icon: AppIcons.network,
                 label: 'Mes connexions',
                 selected: settings.profileVisibility.value == 'connections',
                 onTap: () {
@@ -596,7 +681,7 @@ class SettingsBody extends StatelessWidget {
                 ),
                 if (selected)
                   Icon(
-                    IconlyLight.tick_square,
+                    AppIcons.tickSquare,
                     color: AppColors.primaryAccent,
                     size: 20,
                   ),
@@ -612,7 +697,7 @@ class SettingsBody extends StatelessWidget {
     AppHaptics.tap();
     await showConfirmSheet(
       context: context,
-      icon: IconlyLight.lock,
+      icon: AppIcons.lock,
       iconColor: AppColors.categoryGray,
       title: 'Confidentialité',
       message:
@@ -627,20 +712,25 @@ class SettingsBody extends StatelessWidget {
   Future<void> _shareApp() async {
     AppHaptics.tap();
     await Share.share(
-      'Découvre JobAway — la plateforme emploi, formations et '
+      'Découvre Baara — la plateforme emploi, formations et '
       'opportunités d\'Afrique de l\'Ouest. Télécharge l\'app et trouve ta '
       'prochaine opportunité !',
-      subject: 'JobAway',
+      subject: 'Baara',
     );
+  }
+
+  Future<void> _rateApp() async {
+    AppHaptics.tap();
+    await ReviewPromptService.instance.maybeShowPrompt(force: true);
   }
 
   Future<void> _showAbout(BuildContext context) async {
     AppHaptics.tap();
     await showConfirmSheet(
       context: context,
-      icon: IconlyLight.info_circle,
+      icon: AppIcons.info,
       iconColor: AppColors.primaryAccent,
-      title: 'JobAway',
+      title: 'Baara',
       message:
           'Version 1.0.0\n\nLa plateforme emploi, formations et opportunités '
           'd\'Afrique de l\'Ouest.',
@@ -651,7 +741,7 @@ class SettingsBody extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showConfirmSheet(
       context: context,
-      icon: IconlyLight.logout,
+      icon: AppIcons.logout,
       iconColor: AppColors.errorAccent,
       title: 'Se déconnecter ?',
       message: 'Vous devrez vous reconnecter pour accéder à votre compte.',
@@ -732,7 +822,7 @@ class _EmailVerifyBanner extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(IconlyBold.message,
+                Icon(AppIcons.messageFilled,
                     size: 22, color: AppColors.warningAccent),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -757,7 +847,7 @@ class _EmailVerifyBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(IconlyLight.arrow_right_2,
+                Icon(AppIcons.arrowRight,
                     size: 18, color: AppColors.warningAccent),
               ],
             ),
@@ -898,7 +988,7 @@ class _HeaderRow extends StatelessWidget {
                           .copyWith(color: AppColors.hintColor)),
                 ),
               if (!hideChevron)
-                Icon(IconlyLight.arrow_right_2,
+                Icon(AppIcons.arrowRight,
                     color: AppColors.outlineVariant),
             ],
           ],

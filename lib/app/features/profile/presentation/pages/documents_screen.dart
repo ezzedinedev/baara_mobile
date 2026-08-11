@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../data/models/candidate_document_model.dart';
 import '../controllers/documents_controller.dart';
@@ -155,7 +155,7 @@ class DocumentsScreen extends GetView<DocumentsController> {
                       color: AppColors.primaryAccent, size: 18),
                 ),
                 title: Text(t.label, style: AppTextStyles.titleMd),
-                trailing: Icon(IconlyLight.arrow_right_2,
+                trailing: Icon(AppIcons.arrowRight,
                     color: AppColors.outlineVariant),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -174,7 +174,7 @@ class DocumentsScreen extends GetView<DocumentsController> {
       BuildContext context, CandidateDocument doc) async {
     final ok = await showConfirmSheet(
       context: context,
-      icon: IconlyLight.delete,
+      icon: AppIcons.delete,
       iconColor: AppColors.errorAccent,
       title: 'Supprimer ce document ?',
       message: '« ${doc.title} » sera retiré de votre espace.',
@@ -191,14 +191,14 @@ class DocumentsScreen extends GetView<DocumentsController> {
 IconData _iconFor(String type) {
   switch (type) {
     case 'diploma':
-      return IconlyBold.star;
+      return AppIcons.starFilled;
     case 'certificate':
-      return IconlyBold.shield_done;
+      return AppIcons.shieldDone;
     case 'cover_letter':
     case 'reference':
-      return IconlyBold.document;
+      return AppIcons.document;
     default:
-      return IconlyBold.paper;
+      return AppIcons.paper;
   }
 }
 
@@ -248,14 +248,15 @@ class _DocumentCard extends StatelessWidget {
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
+                          child: AppLoader(
+                            size: 20,
                             strokeWidth: 2.2,
                             color: AppColors.primaryAccent,
                           ),
                         ),
                       )
                     : Icon(
-                        doc.isImage ? IconlyBold.image : IconlyBold.document,
+                        doc.isImage ? AppIcons.image : AppIcons.document,
                         color: AppColors.primaryAccent,
                       ),
               ),
@@ -284,7 +285,7 @@ class _DocumentCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(IconlyLight.delete, color: AppColors.errorAccent),
+                icon: Icon(AppIcons.delete, color: AppColors.errorAccent),
                 tooltip: 'Supprimer',
                 onPressed: onDelete,
               ),

@@ -1,20 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/services/realtime_service.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/services/realtime_service.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/messages_controller.dart';
 import '../widgets/chat_message_bubble.dart';
 import '../widgets/chat_request_banner.dart';
 import '../widgets/chat_smart_replies_bar.dart';
 import '../widgets/chat_typing_bubble.dart';
-import '../widgets/voice_recorder.dart';
 
 class ChatThreadScreen extends StatefulWidget {
   const ChatThreadScreen({super.key});
@@ -77,8 +76,26 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
           Expanded(
             child: Obx(() {
               if (controller.isLoadingMessages.value &&
-                  controller.activeMessages.isEmpty) {
+                  controller.activeMessages.isEmpty &&
+                  controller.messagesError.value.isEmpty) {
                 return const ChatMessagesSkeleton();
+              }
+
+              if (controller.messagesError.value.isNotEmpty &&
+                  controller.activeMessages.isEmpty) {
+                return Center(
+                  child: EmptyState(
+                    illustration: const EmptyChatIllustration(),
+                    title: 'Impossible de charger',
+                    subtitle: controller.messagesError.value,
+                    actionLabel: 'Actualiser',
+                    onAction: () async {
+                      final id = controller.activeConversationId.value ??
+                          Get.parameters['id'];
+                      if (id != null) await controller.loadMessages(id);
+                    },
+                  ),
+                );
               }
 
               if (controller.activeMessages.isEmpty) {
@@ -88,33 +105,21 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
               return _buildMessageList(scrollController);
             }),
           ),
-          // Réponses suggérées (IA) — masquées pendant l'enregistrement vocal.
-          Obx(() => controller.showVoiceRecorder.value
-              ? const SizedBox.shrink()
-              : ChatSmartRepliesBar(
-                  suggestions: controller.smartReplies.toList(),
-                  loading: controller.isLoadingSmartReplies.value,
-                  onTap: (text) {
-                    AppHaptics.tap();
-                    inputCtrl.text = text;
-                    inputCtrl.selection =
-                        TextSelection.collapsed(offset: inputCtrl.text.length);
-                    controller.dismissSmartReplies();
-                  },
-                )),
-          // L'enregistreur vocal REMPLACE le composer (plus de barres empilées).
-          Obx(() => controller.showVoiceRecorder.value
-              ? VoiceRecorderWidget(
-                  onSend: (path) {
-                    controller.showVoiceRecorder.value = false;
-                    controller.sendVoiceMessage(path);
-                    _scrollToBottom(scrollController);
-                  },
-                  onCancel: () => controller.showVoiceRecorder.value = false,
-                )
-              : _buildInputBar(inputCtrl, scrollController)),
+          // Réponses suggérées (IA).
+          Obx(() => ChatSmartRepliesBar(
+                suggestions: controller.smartReplies.toList(),
+                loading: controller.isLoadingSmartReplies.value,
+                onTap: (text) {
+                  AppHaptics.tap();
+                  inputCtrl.text = text;
+                  inputCtrl.selection =
+                      TextSelection.collapsed(offset: inputCtrl.text.length);
+                  controller.dismissSmartReplies();
+                },
+              )),
+          _buildInputBar(inputCtrl, scrollController),
           // Banque d'emojis (remplace le clavier quand activée).
-          Obx(() => _showEmoji.value && !controller.showVoiceRecorder.value
+          Obx(() => _showEmoji.value
               ? EmojiPickerPanel(controller: inputCtrl, height: 300)
               : const SizedBox.shrink()),
         ],
@@ -134,7 +139,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
         child: const SizedBox.expand(),
       ),
       leading: IconButton(
-        icon: Icon(IconlyLight.arrow_left_2, color: AppColors.primaryAccent),
+        icon: Icon(AppIcons.back, color: AppColors.primaryAccent),
         onPressed: () => Get.back(),
       ),
       title: Obx(() {
@@ -218,31 +223,40 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
     final bool typing = controller.peerTyping.value;
     final int count = controller.activeMessages.length + (typing ? 1 : 0);
     final DateTime? peerRead = controller.peerLastReadAt.value;
-    return ListView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      itemCount: count,
-      itemBuilder: (context, index) {
-        if (typing && index == controller.activeMessages.length) {
-          return const ChatTypingBubble();
-        }
-        final msg = controller.activeMessages[index];
-        final bool isFirstOfGroup = index == 0 ||
-            controller.activeMessages[index - 1].isMine != msg.isMine;
-        // Lu si readAt présent, ou si le pair a lu jusqu'à/au-delà de l'envoi.
-        final bool isRead = msg.isMine &&
-            (msg.isRead || (peerRead != null && !msg.sentAt.isAfter(peerRead)));
-
-        return ChatMessageBubble(
-          message: msg,
-          showAvatar: !msg.isMine && isFirstOfGroup,
-          isRead: isRead,
-          onReact: (emoji) => controller.reactToMessage(msg.id, emoji),
-          isRespondingToActions: controller.isRespondingTo(msg.id),
-          onStructuredAction: (action) =>
-              controller.respondToStructuredAction(context, msg, action),
-        );
+    final convId =
+        controller.activeConversationId.value ?? Get.parameters['id'];
+    return AppRefreshIndicator(
+      color: AppColors.primaryAccent,
+      onRefresh: () async {
+        if (convId != null) await controller.loadMessages(convId);
       },
+      child: ListView.builder(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        itemCount: count,
+        itemBuilder: (context, index) {
+          if (typing && index == controller.activeMessages.length) {
+            return const ChatTypingBubble();
+          }
+          final msg = controller.activeMessages[index];
+          final bool isFirstOfGroup = index == 0 ||
+              controller.activeMessages[index - 1].isMine != msg.isMine;
+          final bool isRead = msg.isMine &&
+              (msg.isRead ||
+                  (peerRead != null && !msg.sentAt.isAfter(peerRead)));
+
+          return ChatMessageBubble(
+            message: msg,
+            showAvatar: !msg.isMine && isFirstOfGroup,
+            isRead: isRead,
+            onReact: (emoji) => controller.reactToMessage(msg.id, emoji),
+            isRespondingToActions: controller.isRespondingTo(msg.id),
+            onStructuredAction: (action) =>
+                controller.respondToStructuredAction(context, msg, action),
+          );
+        },
+      ),
     );
   }
 
@@ -280,7 +294,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                               alignment: Alignment.center,
                               child: Icon(
                                 _showEmoji.value
-                                    ? IconlyBold.chat
+                                    ? AppIcons.chatFilled
                                     : Icons.emoji_emotions_outlined,
                                 size: 22,
                                 color: _showEmoji.value
@@ -320,30 +334,24 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            // Champ vide → micro (1 tap = enregistre) ; texte saisi → envoi.
+            // Envoi texte uniquement (champ vide → bouton désactivé).
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: inputCtrl,
               builder: (context, value, _) {
                 final hasText = value.text.trim().isNotEmpty;
                 return Obx(() => Semantics(
                       button: true,
-                      label: hasText
-                          ? 'Envoyer le message'
-                          : 'Enregistrer un message vocal',
+                      enabled: hasText && !controller.isSending.value,
+                      label: 'Envoyer le message',
                       child: PressScale(
-                        onTap: controller.isSending.value
+                        onTap: !hasText || controller.isSending.value
                             ? null
                             : () async {
-                                if (hasText) {
-                                  final text = inputCtrl.text;
-                                  inputCtrl.clear();
-                                  AppHaptics.success();
-                                  await controller.sendMessage(text);
-                                  _scrollToBottom(scrollController);
-                                } else {
-                                  AppHaptics.tap();
-                                  controller.showVoiceRecorder.value = true;
-                                }
+                                final text = inputCtrl.text;
+                                inputCtrl.clear();
+                                AppHaptics.success();
+                                await controller.sendMessage(text);
+                                _scrollToBottom(scrollController);
                               },
                         child: Container(
                           constraints: const BoxConstraints(
@@ -353,7 +361,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                           padding: const EdgeInsets.all(12),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: controller.isSending.value
+                            color: !hasText || controller.isSending.value
                                 ? AppColors.surfaceLow
                                 : AppColors.primary,
                             shape: BoxShape.circle,
@@ -371,9 +379,11 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                                   ),
                                 )
                               : Icon(
-                                  hasText ? IconlyBold.send : IconlyLight.voice,
-                                  color: AppColors.onPrimary,
-                                  size: hasText ? 18 : 22,
+                                  AppIcons.send,
+                                  color: hasText
+                                      ? AppColors.onPrimary
+                                      : AppColors.hintColor,
+                                  size: 18,
                                 ),
                         ),
                       ),
@@ -410,18 +420,18 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
       itemBuilder: (_) => [
         PopupMenuItem(
             value: 'camera',
-            child: _menuItem(IconlyLight.camera, 'Appareil photo')),
+            child: _menuItem(AppIcons.camera, 'Appareil photo')),
         PopupMenuItem(
-            value: 'gallery', child: _menuItem(IconlyLight.image, 'Galerie')),
+            value: 'gallery', child: _menuItem(AppIcons.image, 'Galerie')),
         PopupMenuItem(
-            value: 'file', child: _menuItem(IconlyLight.paper, 'Fichier')),
+            value: 'file', child: _menuItem(AppIcons.paper, 'Fichier')),
         PopupMenuItem(
             value: 'location',
-            child: _menuItem(IconlyLight.location, 'Localisation')),
+            child: _menuItem(AppIcons.location, 'Localisation')),
       ],
       child: Container(
         padding: const EdgeInsets.all(10),
-        child: Icon(IconlyLight.paper_plus,
+        child: Icon(AppIcons.paperPlus,
             color: AppColors.primaryAccent, size: 22),
       ),
     );

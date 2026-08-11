@@ -1,6 +1,7 @@
-﻿import 'package:http/http.dart' as http;
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:http/http.dart' as http;
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/community_comment.dart';
 import '../../domain/entities/network_user.dart';
@@ -59,7 +60,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   /// Mutualise le parsing d'une page de membres (abonnés / connexions).
   Future<NetworkUserPage> _fetchUserPage(String endpoint, int page) async {
     final res = await _apiProvider.getJson(endpoint);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger cette liste de membres.');
+    final data = ApiResponse.dataMap(res);
     final items = (data['items'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
         .map((j) => NetworkUserModel.fromJson(j))
@@ -74,7 +77,8 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   /// Mutualise le parsing d'une page de feed (feed + explore, même forme).
   Future<FeedPage> _fetchFeedPage(String endpoint, int page) async {
     final res = await _apiProvider.getJson(endpoint);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res, fallback: 'Impossible de charger le fil.');
+    final data = ApiResponse.dataMap(res);
     final items = (data['items'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
         .map((j) => PostModel.fromJson(j))
@@ -123,7 +127,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       fields: fields,
       files: files,
     );
-    return PostModel.fromJson(res['data'] as Map<String, dynamic>);
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de publier votre post.');
+    return PostModel.fromJson(ApiResponse.dataMap(res));
   }
 
   // ── Wave 2 — Contenu riche ──────────────────────────────────────────────
@@ -133,7 +139,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPollVote(pollId),
       {'option_ids': optionIds},
     );
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'enregistrer votre vote.');
+    final data = ApiResponse.dataMap(res);
     return PostModel.fromJson({'id': '', 'poll': data}).poll ??
         (throw const FormatException('Réponse de vote invalide'));
   }
@@ -144,8 +152,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = save
         ? await _apiProvider.postJson(endpoint, {})
         : await _apiProvider.deleteJson(endpoint);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
-    return data['is_saved'] == true;
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de mettre à jour vos enregistrements.');
+    return ApiResponse.dataMap(res)['is_saved'] == true;
   }
 
   @override
@@ -158,6 +167,8 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = await _apiProvider.getJson(
       '${ApiConstants.communityLinkPreview}?url=${Uri.encodeQueryComponent(url)}',
     );
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Aperçu du lien indisponible.');
     final data = res['data'];
     if (data is! Map<String, dynamic>) return null;
     return PostModel.fromJson({'id': '', 'link_preview': data}).linkPreview;
@@ -165,7 +176,10 @@ class CommunityRepositoryImpl implements ICommunityRepository {
 
   @override
   Future<void> deletePost(String postId) async {
-    await _apiProvider.deleteJson(ApiConstants.communityPost(postId));
+    final res =
+        await _apiProvider.deleteJson(ApiConstants.communityPost(postId));
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de supprimer ce post.');
   }
 
   @override
@@ -174,7 +188,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostReact(postId),
       {'type': type},
     );
-    return (res['data'] as Map<String, dynamic>?) ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'enregistrer votre réaction.');
+    return ApiResponse.dataMap(res);
   }
 
   @override
@@ -183,15 +199,18 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostRepost(postId),
       {if (body != null) 'body': body},
     );
-    return PostModel.fromJson(res['data'] as Map<String, dynamic>);
+    ApiResponse.ensureSuccess(res, fallback: 'Impossible de repartager.');
+    return PostModel.fromJson(ApiResponse.dataMap(res));
   }
 
   @override
   Future<void> report(String postId, String reason) async {
-    await _apiProvider.postJson(
+    final res = await _apiProvider.postJson(
       ApiConstants.communityPostReport(postId),
       {'reason': reason},
     );
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'envoyer ce signalement.');
   }
 
   @override
@@ -200,15 +219,18 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostUpdate(id),
       {'body': body},
     );
-    return PostModel.fromJson(res['data'] as Map<String, dynamic>);
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de modifier ce post.');
+    return PostModel.fromJson(ApiResponse.dataMap(res));
   }
 
   @override
   Future<List<CommunityComment>> getComments(String postId) async {
     final res =
         await _apiProvider.getJson(ApiConstants.communityPostComments(postId));
-    final list = res['data'] as List? ?? const [];
-    return list
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les commentaires.');
+    return ApiResponse.extractList(res['data'])
         .whereType<Map<String, dynamic>>()
         .map((j) => CommunityCommentModel.fromJson(j))
         .toList();
@@ -221,12 +243,17 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostComments(postId),
       {'body': body, if (parentId != null) 'parent_id': parentId},
     );
-    return CommunityCommentModel.fromJson(res['data'] as Map<String, dynamic>);
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de publier votre commentaire.');
+    return CommunityCommentModel.fromJson(ApiResponse.dataMap(res));
   }
 
   @override
   Future<void> deleteComment(String commentId) async {
-    await _apiProvider.deleteJson(ApiConstants.communityComment(commentId));
+    final res =
+        await _apiProvider.deleteJson(ApiConstants.communityComment(commentId));
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de supprimer ce commentaire.');
   }
 
   @override
@@ -235,7 +262,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityCommentUpdate(id),
       {'body': body},
     );
-    return CommunityCommentModel.fromJson(res['data'] as Map<String, dynamic>);
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de modifier ce commentaire.');
+    return CommunityCommentModel.fromJson(ApiResponse.dataMap(res));
   }
 
   @override
@@ -245,7 +274,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityCommentReact(id),
       {'type': type},
     );
-    return (res['data'] as Map<String, dynamic>?) ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'enregistrer votre réaction.');
+    return ApiResponse.dataMap(res);
   }
 
   @override
@@ -253,7 +284,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = await _apiProvider.getJson(
       '${ApiConstants.communityHashtag(tag)}?page=$page',
     );
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger ce hashtag.');
+    final data = ApiResponse.dataMap(res);
     final items = (data['items'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
         .map((j) => PostModel.fromJson(j))
@@ -273,7 +306,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityAiCompose,
       {'draft': draft, 'action': action},
     );
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'L\'assistant est indisponible pour le moment.');
+    final data = ApiResponse.dataMap(res);
     final suggestions = data['suggestions'];
     if (suggestions is List) {
       return AiComposeResult(
@@ -292,8 +327,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostSummarize(postId),
       const {},
     );
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
-    return data['summary']?.toString() ?? '';
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de résumer ce post.');
+    return ApiResponse.dataMap(res)['summary']?.toString() ?? '';
   }
 
   @override
@@ -302,15 +338,18 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPostTranslate(postId),
       {'lang': lang},
     );
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
-    return data['translation']?.toString() ?? '';
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de traduire ce post.');
+    return ApiResponse.dataMap(res)['translation']?.toString() ?? '';
   }
 
   @override
   Future<List<TrendingHashtag>> getTrendingHashtags() async {
     final res =
         await _apiProvider.getJson(ApiConstants.communityTrendingHashtags);
-    final list = res['data'] as List? ?? const [];
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les tendances.');
+    final list = ApiResponse.extractList(res['data']);
     return list
         .whereType<Map<String, dynamic>>()
         .map((j) => TrendingHashtag(
@@ -326,7 +365,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = await _apiProvider.getJson(
       '${ApiConstants.communityMentionables}?q=${Uri.encodeQueryComponent(q)}',
     );
-    final list = res['data'] as List? ?? const [];
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les suggestions de mention.');
+    final list = ApiResponse.extractList(res['data']);
     return list
         .whereType<Map<String, dynamic>>()
         .map((j) => Mentionable(
@@ -342,32 +383,44 @@ class CommunityRepositoryImpl implements ICommunityRepository {
 
   @override
   Future<void> follow(String userId) async {
-    await _apiProvider.postJson(ApiConstants.communityUserFollow(userId), {});
+    final res = await _apiProvider
+        .postJson(ApiConstants.communityUserFollow(userId), {});
+    ApiResponse.ensureSuccess(res, fallback: 'Impossible de suivre ce membre.');
   }
 
   @override
   Future<void> unfollow(String userId) async {
-    await _apiProvider.deleteJson(ApiConstants.communityUserFollow(userId));
+    final res = await _apiProvider
+        .deleteJson(ApiConstants.communityUserFollow(userId));
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de ne plus suivre ce membre.');
   }
 
   @override
   Future<void> connect(String userId) async {
-    await _apiProvider.postJson(ApiConstants.communityUserConnect(userId), {});
+    final res = await _apiProvider
+        .postJson(ApiConstants.communityUserConnect(userId), {});
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'envoyer cette demande de connexion.');
   }
 
   @override
   Future<void> respondConnection(String connectionId,
       {required bool accept}) async {
-    await _apiProvider.postJson(
+    final res = await _apiProvider.postJson(
       ApiConstants.communityConnectionRespond(connectionId),
       {'action': accept ? 'accept' : 'reject'},
     );
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de répondre à cette demande.');
   }
 
   @override
   Future<List<ConnectionRequest>> getConnections() async {
     final res = await _apiProvider.getJson(ApiConstants.communityConnections);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger vos demandes de connexion.');
+    final data = ApiResponse.dataMap(res);
     final list = data['pending'] as List? ?? const [];
     return list
         .whereType<Map<String, dynamic>>()
@@ -387,14 +440,17 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = blocked
         ? await _apiProvider.postJson(endpoint, {})
         : await _apiProvider.deleteJson(endpoint);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
-    return data['is_blocked'] == true;
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de mettre à jour le blocage.');
+    return ApiResponse.dataMap(res)['is_blocked'] == true;
   }
 
   @override
   Future<ProfileViewsResult> getProfileViews() async {
     final res = await _apiProvider.getJson(ApiConstants.communityProfileViews);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les vues de profil.');
+    final data = ApiResponse.dataMap(res);
     final viewers = (data['viewers'] as List? ?? const [])
         .whereType<Map<String, dynamic>>()
         .map((j) => ProfileViewer.fromJson(j))
@@ -410,12 +466,17 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   Future<Skill> addSkill(String name) async {
     final res = await _apiProvider
         .postJson(ApiConstants.communitySkills, {'name': name});
-    return Skill.fromJson(res['data'] as Map<String, dynamic>? ?? const {});
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'ajouter cette compétence.');
+    return Skill.fromJson(ApiResponse.dataMap(res));
   }
 
   @override
   Future<void> removeSkill(String skillId) async {
-    await _apiProvider.deleteJson(ApiConstants.communitySkill(skillId));
+    final res =
+        await _apiProvider.deleteJson(ApiConstants.communitySkill(skillId));
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de retirer cette compétence.');
   }
 
   @override
@@ -424,7 +485,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = endorse
         ? await _apiProvider.postJson(endpoint, {})
         : await _apiProvider.deleteJson(endpoint);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de mettre à jour cette recommandation.');
+    final data = ApiResponse.dataMap(res);
     return Skill(
       id: data['skill_id']?.toString() ?? skillId,
       name: data['name']?.toString() ?? '',
@@ -437,8 +500,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   @override
   Future<List<StoryBucket>> getStories() async {
     final res = await _apiProvider.getJson(ApiConstants.stories);
-    final list = res['data'] as List? ?? const [];
-    return list
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les stories.');
+    return ApiResponse.extractList(res['data'])
         .whereType<Map<String, dynamic>>()
         .map((j) => StoryBucketModel.fromJson(j))
         .toList();
@@ -452,7 +516,7 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     String visibility = 'connections',
     List<String> mentions = const [],
   }) async {
-    await _apiProvider.multipartPost(
+    final res = await _apiProvider.multipartPost(
       ApiConstants.stories,
       fields: {
         'visibility': visibility,
@@ -468,17 +532,24 @@ class CommunityRepositoryImpl implements ICommunityRepository {
           await http.MultipartFile.fromPath('media', mediaPath),
       ],
     );
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de publier votre story.');
   }
 
   @override
   Future<void> viewStory(String storyId) async {
-    await _apiProvider.postJson(ApiConstants.storyView(storyId), {});
+    final res =
+        await _apiProvider.postJson(ApiConstants.storyView(storyId), {});
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'enregistrer cette vue.');
   }
 
   @override
   Future<void> reactStory(String storyId, String type) async {
-    await _apiProvider
+    final res = await _apiProvider
         .postJson(ApiConstants.storyReact(storyId), {'type': type});
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'envoyer votre réaction.');
   }
 
   @override
@@ -487,26 +558,32 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.storyReply(storyId),
       {'content': content},
     );
-    final data = res['data'] as Map<String, dynamic>?;
-    return data?['conversation_id']?.toString();
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible d\'envoyer votre réponse.');
+    return ApiResponse.dataMap(res)['conversation_id']?.toString();
   }
 
   @override
   Future<void> deleteStory(String storyId) async {
-    await _apiProvider.deleteJson(ApiConstants.story(storyId));
+    final res = await _apiProvider.deleteJson(ApiConstants.story(storyId));
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de supprimer cette story.');
   }
 
   @override
   Future<Map<String, dynamic>> storyViewers(String storyId) async {
     final res = await _apiProvider.getJson(ApiConstants.storyViewers(storyId));
-    return (res['data'] as Map<String, dynamic>?) ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les vues de cette story.');
+    return ApiResponse.dataMap(res);
   }
 
   @override
   Future<List<NetworkUser>> getSuggestions() async {
     final res = await _apiProvider.getJson(ApiConstants.communitySuggestions);
-    final list = res['data'] as List? ?? const [];
-    return list
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les suggestions.');
+    return ApiResponse.extractList(res['data'])
         .whereType<Map<String, dynamic>>()
         .map((j) => NetworkUserModel.fromJson(j))
         .toList();
@@ -516,7 +593,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   Future<List<SuggestionInsight>> getSuggestionInsights() async {
     final res =
         await _apiProvider.getJson(ApiConstants.communitySuggestionsInsight);
-    final data = res['data'] as Map<String, dynamic>? ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger les suggestions.');
+    final data = ApiResponse.dataMap(res);
     final list = data['insights'] as List? ?? const [];
     return list
         .whereType<Map<String, dynamic>>()
@@ -535,7 +614,9 @@ class CommunityRepositoryImpl implements ICommunityRepository {
   @override
   Future<Map<String, dynamic>> getProfile(String userId) async {
     final res = await _apiProvider.getJson(ApiConstants.communityUser(userId));
-    return (res['data'] as Map<String, dynamic>?) ?? const {};
+    ApiResponse.ensureSuccess(res,
+        fallback: 'Impossible de charger ce profil.');
+    return ApiResponse.dataMap(res);
   }
 
   @override
@@ -544,7 +625,8 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     final res = await _apiProvider.getJson(
       '${ApiConstants.communitySearch}?q=${Uri.encodeQueryComponent(query)}&type=$type',
     );
-    return (res['data'] as Map<String, dynamic>?) ?? const {};
+    ApiResponse.ensureSuccess(res, fallback: 'La recherche a échoué.');
+    return ApiResponse.dataMap(res);
   }
 
   @override

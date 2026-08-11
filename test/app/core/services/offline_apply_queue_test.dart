@@ -1,7 +1,7 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,7 +11,7 @@ void main() {
       final apply = PendingApply(
         offerId: '42',
         offerTitle: 'Dev Flutter',
-        company: 'JobAway',
+        company: 'Baara',
         logoUrl: 'https://cdn/logo.png',
         screeningAnswers: const {'q1': 'oui'},
         queuedAt: DateTime.utc(2026, 1, 15, 10),
@@ -20,7 +20,7 @@ void main() {
       final restored = PendingApply.fromJson(apply.toJson());
       expect(restored?.offerId, '42');
       expect(restored?.offerTitle, 'Dev Flutter');
-      expect(restored?.company, 'JobAway');
+      expect(restored?.company, 'Baara');
       expect(restored?.screeningAnswers, {'q1': 'oui'});
     });
 

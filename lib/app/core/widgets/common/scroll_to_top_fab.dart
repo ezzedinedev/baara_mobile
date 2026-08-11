@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/haptics.dart';
 
@@ -84,7 +84,7 @@ class _ScrollToTopFabState extends State<ScrollToTopFab> {
                   ],
                 ),
                 child: const Icon(
-                  IconlyLight.arrow_up_2,
+                  AppIcons.arrowUp,
                   color: AppColors.onPrimary,
                   size: 22,
                 ),

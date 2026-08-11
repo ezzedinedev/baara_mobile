@@ -77,6 +77,8 @@ class StreakController extends GetxController {
   }
 
   /// Recharge l'état depuis [SharedPreferences].
+  Future<void> reloadFromCache() => _hydrateFromCache();
+
   Future<void> _hydrateFromCache() async {
     final prefs = await SharedPreferences.getInstance();
     currentStreak.value = prefs.getInt(_kCurrentStreak) ?? 0;

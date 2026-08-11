@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../controllers/portfolio_controller.dart';
 import '../../../domain/entities/portfolio_item.dart';
@@ -45,7 +45,7 @@ class PortfolioScreen extends GetView<PortfolioController> {
                     ],
                   ),
                   child:
-                      const Icon(IconlyLight.plus, color: AppColors.onPrimary),
+                      const Icon(AppIcons.add, color: AppColors.onPrimary),
                 ),
               ),
       ),
@@ -134,15 +134,15 @@ class _PortfolioCard extends StatelessWidget {
                     ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(
+                        child: AppLoader(
+                          size: 18,
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.errorAccent),
+                          color: AppColors.errorAccent,
                         ),
                       )
                     : GestureDetector(
                         onTap: () => _confirmDelete(context, controller),
-                        child: Icon(IconlyLight.delete,
+                        child: Icon(AppIcons.delete,
                             size: 20, color: AppColors.hintColor),
                       )),
               ],
@@ -207,7 +207,7 @@ class _PortfolioCard extends StatelessWidget {
       BuildContext context, PortfolioController controller) async {
     final confirmed = await showConfirmSheet(
       context: context,
-      icon: IconlyLight.delete,
+      icon: AppIcons.delete,
       iconColor: AppColors.errorAccent,
       title: 'Supprimer ce projet ?',
       message: 'Cette action est définitive.',

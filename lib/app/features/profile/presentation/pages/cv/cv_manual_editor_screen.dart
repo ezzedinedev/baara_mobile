@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../controllers/cv_editor_controller.dart';
 
@@ -57,12 +57,7 @@ class CvManualEditorScreen extends GetView<CvEditorController> {
           Expanded(
             child: Obx(() {
               if (controller.isLoading.value) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
-                  ),
-                );
+                return const PageSkeleton(showHero: false, rowCount: 4);
               }
               if (controller.errorMessage.value != null &&
                   controller.candidateName.value.isEmpty) {
@@ -75,7 +70,23 @@ class CvManualEditorScreen extends GetView<CvEditorController> {
               return _Form(controller: controller);
             }),
           ),
-          _SaveBar(controller: controller),
+          Obx(() => CvStickyActionBar(
+                primaryLabel: 'Enregistrer le CV',
+                isLoading: controller.isSaving.value,
+                onPrimary: () async {
+                  final ok = await controller.save();
+                  if (ok) {
+                    AppHaptics.confirm();
+                    AppToast.success('CV enregistré',
+                        'Vos modifications ont été sauvegardées.');
+                  } else {
+                    AppToast.error('Échec de l\'enregistrement',
+                        controller.errorMessage.value);
+                  }
+                },
+                secondaryLabel: "Voir l'aperçu",
+                onSecondary: () => Get.toNamed(AppRoutes.profileCvPreview),
+              )),
         ],
       ),
     );
@@ -99,7 +110,7 @@ class _Form extends StatelessWidget {
         RevealOnMount(
           delay: Duration.zero,
           child: _SectionCard(
-            icon: IconlyLight.profile,
+            icon: AppIcons.profile,
             title: 'Identité & contact',
             children: [
               Obx(() => controller.candidateName.value.isEmpty
@@ -143,7 +154,7 @@ class _Form extends StatelessWidget {
         RevealOnMount(
           delay: const Duration(milliseconds: 60),
           child: _SectionCard(
-            icon: IconlyLight.document,
+            icon: AppIcons.document,
             title: 'Résumé',
             children: [
               _Field(
@@ -164,7 +175,7 @@ class _Form extends StatelessWidget {
         RevealOnMount(
           delay: const Duration(milliseconds: 120),
           child: _SectionCard(
-            icon: IconlyLight.star,
+            icon: AppIcons.star,
             title: 'Compétences',
             children: [
               _ChipsEditor(
@@ -188,7 +199,7 @@ class _Form extends StatelessWidget {
         RevealOnMount(
           delay: const Duration(milliseconds: 180),
           child: _SectionCard(
-            icon: IconlyLight.chat,
+            icon: AppIcons.chat,
             title: 'Langues',
             children: [_LanguagesEditor(controller: controller)],
           ),
@@ -226,7 +237,7 @@ class _AssistantHint extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
-              Icon(IconlyBold.chat, color: AppColors.primaryAccent, size: 24),
+              Icon(AppIcons.chatFilled, color: AppColors.primaryAccent, size: 24),
               const SizedBox(width: 14),
               Expanded(
                 child: Obx(() => Column(
@@ -245,7 +256,7 @@ class _AssistantHint extends StatelessWidget {
                       ],
                     )),
               ),
-              Icon(IconlyLight.arrow_right_2,
+              Icon(AppIcons.arrowRight,
                   color: AppColors.primaryAccent, size: 22),
             ],
           ),
@@ -459,7 +470,7 @@ class _RemovableChip extends StatelessWidget {
                 AppHaptics.tap();
                 onRemove();
               },
-              child: Icon(IconlyLight.close_square,
+              child: Icon(AppIcons.closeSquare,
                   size: 16, color: AppColors.primaryAccent),
             ),
           ],
@@ -530,7 +541,7 @@ class _InlineAdderState extends State<_InlineAdder> {
             height: 44,
             decoration: const BoxDecoration(
                 color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
+            child: const Icon(AppIcons.add, color: AppColors.onPrimary),
           ),
         ),
       ],
@@ -601,7 +612,7 @@ class _LanguageRow extends StatelessWidget {
                 AppHaptics.tap();
                 onRemove();
               },
-              child: Icon(IconlyLight.close_square,
+              child: Icon(AppIcons.closeSquare,
                   size: 18, color: AppColors.hintColor),
             ),
           ],
@@ -694,70 +705,10 @@ class _LanguageAdderState extends State<_LanguageAdder> {
             height: 44,
             decoration: const BoxDecoration(
                 color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(IconlyLight.plus, color: AppColors.onPrimary),
+            child: const Icon(AppIcons.add, color: AppColors.onPrimary),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SaveBar extends StatelessWidget {
-  const _SaveBar({required this.controller});
-  final CvEditorController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        boxShadow: AppColors.lightShadow,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        child: SafeArea(
-          top: false,
-          child: Obx(() => SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: controller.isSaving.value
-                      ? null
-                      : () async {
-                          final ok = await controller.save();
-                          if (ok) {
-                            AppToast.success('CV enregistré',
-                                'Vos modifications ont été sauvegardées.');
-                          } else {
-                            AppToast.error('Échec de l\'enregistrement',
-                                controller.errorMessage.value);
-                          }
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: controller.isSaving.value
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.onPrimary),
-                          ),
-                        )
-                      : Text(
-                          'Enregistrer le CV',
-                          style: AppTextStyles.titleMd.copyWith(
-                              color: AppColors.onPrimary,
-                              fontWeight: FontWeight.w800),
-                        ),
-                ),
-              )),
-        ),
-      ),
     );
   }
 }

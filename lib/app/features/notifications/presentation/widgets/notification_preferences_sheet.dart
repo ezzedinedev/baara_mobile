@@ -1,27 +1,27 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/settings_controller.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:baara/app/features/profile/presentation/controllers/settings_controller.dart';
 
 /// Catalogue des canaux de notification (clés = clés backend de
 /// [SettingsController.notifChannels]). Source unique partagée par l'écran
 /// Paramètres et l'écran Notifications.
 const _channels = <String, ({IconData icon, Color color, String label})>{
   'offer_updates': (
-    icon: IconlyLight.work,
+    icon: AppIcons.work,
     color: AppColors.categoryBlue,
     label: 'Nouvelles offres'
   ),
   'application_updates': (
-    icon: IconlyLight.paper,
+    icon: AppIcons.paper,
     color: AppColors.successDark,
     label: 'Suivi des candidatures'
   ),
@@ -31,7 +31,7 @@ const _channels = <String, ({IconData icon, Color color, String label})>{
     label: 'Suggestions IA'
   ),
   'message_alerts': (
-    icon: IconlyLight.message,
+    icon: AppIcons.message,
     color: AppColors.primary,
     label: 'Messages'
   ),

@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
-import 'package:jobaway/app/features/notifications/presentation/controllers/notifications_controller.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/features/notifications/presentation/controllers/notifications_controller.dart';
+import 'package:baara/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/home_controller.dart';
 
 /// Top bar plat (SafeArea) : avatar + salutation + vrai prénom, cloche à
@@ -113,7 +113,7 @@ class HomeAccueilTopBar extends StatelessWidget {
                     : messages.conversations
                         .fold<int>(0, (sum, c) => sum + c.unreadCount);
                 final button = AppIconButton(
-                  icon: IconlyLight.chat,
+                  icon: AppIcons.chat,
                   tooltip: 'Messages',
                   onTap: () {
                     AppHaptics.tap();
@@ -133,7 +133,7 @@ class HomeAccueilTopBar extends StatelessWidget {
                     ? Get.find<NotificationsController>().unreadCount.value
                     : 0;
                 final bell = AppIconButton(
-                  icon: IconlyLight.notification,
+                  icon: AppIcons.bell,
                   onTap: () {
                     AppHaptics.tap();
                     Get.toNamed(AppRoutes.notifications);

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// Symbole officiel JobAway (le pictogramme seul, sans le mot « JobAway »).
+/// Symbole officiel Baara (le pictogramme seul, sans le mot « Baara »).
 ///
 /// Tracé vectoriel de l'artwork officiel : reste net à n'importe quelle taille,
 /// là où le PNG de marque (173x44) pixellise dès qu'on le grossit. Utiliser
-/// [JobAwayLogo] quand le lockup complet (symbole + wordmark) est attendu.
+/// [BaaraLogo] quand le lockup complet (symbole + wordmark) est attendu.
 ///
 /// Le vecteur a été tracé depuis `logo-icon-2.png` du kit de marque (fidélité
 /// mesurée : 98,9 % du pixel d'origine).
-class JobAwayMark extends StatelessWidget {
-  const JobAwayMark({super.key, this.size = 96, this.color});
+class BaaraMark extends StatelessWidget {
+  const BaaraMark({super.key, this.size = 96, this.color});
 
   /// Largeur du symbole. La hauteur suit le ratio de l'artwork officiel.
   final double size;
@@ -32,7 +32,7 @@ class JobAwayMark extends StatelessWidget {
       width: size,
       height: size / aspectRatio,
       child: CustomPaint(
-        painter: _JobAwayMarkPainter(color ?? brandGreen),
+        painter: _BaaraMarkPainter(color ?? brandGreen),
         isComplex: true,
         willChange: false,
       ),
@@ -40,8 +40,8 @@ class JobAwayMark extends StatelessWidget {
   }
 }
 
-class _JobAwayMarkPainter extends CustomPainter {
-  const _JobAwayMarkPainter(this.color);
+class _BaaraMarkPainter extends CustomPainter {
+  const _BaaraMarkPainter(this.color);
 
   final Color color;
 
@@ -49,15 +49,15 @@ class _JobAwayMarkPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(
-      size.width / JobAwayMark._viewW,
-      size.height / JobAwayMark._viewH,
+      size.width / BaaraMark._viewW,
+      size.height / BaaraMark._viewH,
     );
     canvas.drawPath(_path, Paint()..color = color);
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_JobAwayMarkPainter old) => old.color != color;
+  bool shouldRepaint(_BaaraMarkPainter old) => old.color != color;
 
   /// Contours de l'artwork officiel, dans la boîte 60x52.
   /// Trois contours : le disque (avec l'élan qui s'échappe en haut à droite),

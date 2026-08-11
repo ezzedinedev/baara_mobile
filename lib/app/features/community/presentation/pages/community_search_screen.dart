@@ -1,16 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/repositories/i_community_repository.dart';
 import '../controllers/community_controller.dart';
@@ -36,6 +37,8 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
   final _trending = <TrendingHashtag>[];
   bool _loading = false;
   bool _searched = false;
+  String? _errorMessage;
+  String? _lastQuery;
 
   @override
   void initState() {
@@ -70,6 +73,8 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
     setState(() {
       _loading = true;
       _searched = true;
+      _errorMessage = null;
+      _lastQuery = query;
     });
     try {
       final res = await _controller.searchPeople(query);
@@ -80,9 +85,13 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
           ..addAll(res);
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _errorMessage = userFacingError(e);
+        _results.clear();
+      });
     }
   }
 
@@ -122,9 +131,9 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
                   hintStyle:
                       AppTextStyles.bodyMd.copyWith(color: AppColors.hintColor),
                   prefixIcon:
-                      Icon(IconlyLight.search, color: AppColors.hintColor),
+                      Icon(AppIcons.search, color: AppColors.hintColor),
                   suffixIcon: IconButton(
-                    icon: Icon(IconlyLight.arrow_right_2,
+                    icon: Icon(AppIcons.arrowRight,
                         color: AppColors.primaryAccent),
                     onPressed: () => _search(_input.text),
                   ),
@@ -164,6 +173,16 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
     }
     if (!_searched) {
       return _trendingSection();
+    }
+    if (_errorMessage != null) {
+      return ErrorStateView(
+        message: _errorMessage!,
+        illustration: const ErrorIllustration(),
+        onRetry: () async {
+          final q = _lastQuery ?? _input.text;
+          if (q.trim().length >= 2) await _search(q);
+        },
+      );
     }
     if (_results.isEmpty) {
       return const Center(
@@ -224,7 +243,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
       children: [
         Row(
           children: [
-            Icon(IconlyLight.chart, size: 18, color: AppColors.primaryAccent),
+            Icon(AppIcons.chart, size: 18, color: AppColors.primaryAccent),
             const SizedBox(width: 8),
             Text(
               'Tendances',

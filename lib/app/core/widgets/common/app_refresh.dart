@@ -1,10 +1,10 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
 
 /// Indicateur de pull-to-refresh « de marque » (premium), réutilisé partout via
 /// ce widget commun. Sous le capot il s'appuie sur [CustomRefreshIndicator] pour

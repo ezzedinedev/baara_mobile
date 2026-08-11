@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/register_profile_controller.dart';
 
 class RegisterProfileScreen extends GetView<RegisterProfileController> {
@@ -22,7 +22,7 @@ class RegisterProfileScreen extends GetView<RegisterProfileController> {
           WavyAuthHeader(
             height: 180,
             showLeading: true,
-            foregroundIcon: IconlyLight.category,
+            foregroundIcon: AppIcons.tracking,
             onLeadingTap: () => Get.back(),
           ),
           Expanded(
@@ -50,7 +50,7 @@ class RegisterProfileScreen extends GetView<RegisterProfileController> {
                   RevealOnMount(
                     delay: const Duration(milliseconds: 120),
                     child: Obx(() => _ProfileOption(
-                          icon: IconlyLight.bookmark,
+                          icon: AppIcons.bookmark,
                           title: 'Étudiant',
                           subtitle: 'Stages, premiers emplois et formations.',
                           isSelected:
@@ -62,7 +62,7 @@ class RegisterProfileScreen extends GetView<RegisterProfileController> {
                   RevealOnMount(
                     delay: const Duration(milliseconds: 180),
                     child: Obx(() => _ProfileOption(
-                          icon: IconlyLight.work,
+                          icon: AppIcons.work,
                           title: 'Professionnel',
                           subtitle:
                               'Emplois qualifiés et évolution de carrière.',

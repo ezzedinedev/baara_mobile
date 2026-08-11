@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../controllers/my_cv_controller.dart';
 
@@ -145,17 +145,17 @@ class _CvCard extends StatelessWidget {
                 Row(
                   children: [
                     _CvStat(
-                      icon: IconlyLight.work,
+                      icon: AppIcons.work,
                       value: controller.experienceCount.value,
                       label: 'Expériences',
                     ),
                     _CvStat(
-                      icon: IconlyLight.document,
+                      icon: AppIcons.document,
                       value: controller.educationCount.value,
                       label: 'Formations',
                     ),
                     _CvStat(
-                      icon: IconlyLight.star,
+                      icon: AppIcons.star,
                       value: controller.skillCount.value,
                       label: 'Compétences',
                     ),
@@ -227,7 +227,7 @@ class _CvActions extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ActionTile(
-              icon: IconlyLight.edit,
+              icon: AppIcons.edit,
               label: 'Modifier',
               onTap: () {
                 AppHaptics.tap();
@@ -235,7 +235,7 @@ class _CvActions extends StatelessWidget {
               },
             ),
             ActionTile(
-              icon: IconlyLight.chat,
+              icon: AppIcons.chat,
               label: 'Assistant',
               onTap: () {
                 AppHaptics.tap();
@@ -243,7 +243,7 @@ class _CvActions extends StatelessWidget {
               },
             ),
             ActionTile(
-              icon: IconlyLight.upload,
+              icon: AppIcons.upload,
               label: 'Importer',
               onTap: () {
                 AppHaptics.tap();

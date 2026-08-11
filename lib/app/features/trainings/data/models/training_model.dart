@@ -1,4 +1,5 @@
-﻿import 'package:jobaway/app/core/utils/asset_url.dart';
+import 'package:baara/app/core/utils/asset_url.dart';
+import 'package:baara/app/core/utils/money.dart';
 import '../../domain/entities/training.dart';
 
 class TrainingModel extends Training {
@@ -146,12 +147,7 @@ class TrainingModel extends Training {
   static String _formatTrainingPrice(dynamic value) {
     final cost = value?.toDouble();
     if (cost == null || cost <= 0) return 'Gratuite';
-    final whole = cost.toStringAsFixed(0);
-    final formatted = whole.replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]} ',
-    );
-    return '$formatted FCFA';
+    return formatMoney(cost) ?? 'Gratuite';
   }
 
   static String _formatTrainingDuration(Map<String, dynamic> json) {

@@ -1,8 +1,9 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/core/services/deep_link_service.dart';
 import 'app/core/services/fcm_service.dart';
+import 'app/core/widgets/common/network_status_banner.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/app_theme_controller.dart';
 import 'app/core/theme/app_motion.dart';
@@ -50,7 +52,9 @@ Future<void> _bootstrap() async {
   ]);
 
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
     _wireCrashlytics();
   } catch (e) {
@@ -65,7 +69,7 @@ Future<void> _bootstrap() async {
     unawaited(fcm.init());
   }
 
-  runApp(const JobAwayBFApp());
+  runApp(const BaaraApp());
 }
 
 void _wireCrashlytics() {
@@ -81,14 +85,14 @@ void _wireCrashlytics() {
   };
 }
 
-class JobAwayBFApp extends StatefulWidget {
-  const JobAwayBFApp({super.key});
+class BaaraApp extends StatefulWidget {
+  const BaaraApp({super.key});
 
   @override
-  State<JobAwayBFApp> createState() => _JobAwayBFAppState();
+  State<BaaraApp> createState() => _BaaraAppState();
 }
 
-class _JobAwayBFAppState extends State<JobAwayBFApp> {
+class _BaaraAppState extends State<BaaraApp> {
   @override
   void initState() {
     super.initState();
@@ -118,8 +122,10 @@ class _JobAwayBFAppState extends State<JobAwayBFApp> {
         themeController.amoled.value;
         themeController.accentSeed.value;
         return GetMaterialApp(
-          title: 'JobAway',
+          title: 'Baara.bf',
           debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              NetworkStatusBanner(child: child ?? const SizedBox.shrink()),
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeController.themeMode,

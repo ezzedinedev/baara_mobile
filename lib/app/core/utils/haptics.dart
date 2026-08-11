@@ -1,6 +1,6 @@
-﻿import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 
-/// Feedback haptique centralisé pour JobAway.
+/// Feedback haptique centralisé pour Baara.
 /// Éviter d'appeler directement `HapticFeedback` ailleurs : tout passe par ces helpers
 /// pour garder une sensation cohérente dans l'app.
 class AppHaptics {

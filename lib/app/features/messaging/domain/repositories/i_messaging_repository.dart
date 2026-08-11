@@ -51,9 +51,6 @@ abstract class IMessagingRepository {
   /// POST /messages/{id}/decline.
   Future<void> declineConversation(String conversationId);
 
-  /// Autorise/refuse les notes vocales dans la conversation.
-  /// POST /messages/{id}/voice-notes (body {allowed}).
-  Future<bool> setVoiceNotesAllowed(String conversationId, bool allowed);
   Future<MessagesPage> getMessages(String conversationId,
       {int page = 1, int perPage = 50});
   Future<Message> sendMessage(String conversationId, String text);

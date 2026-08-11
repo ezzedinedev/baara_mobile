@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart' show AppRadius;
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart' show AppRadius;
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../domain/entities/quiz.dart';
 import '../../domain/entities/training.dart';
@@ -50,7 +50,11 @@ class TrainingPlayerScreen extends GetView<TrainingPlayerController> {
               }
               final t = controller.training.value;
               if (t == null) {
-                return const SizedBox.shrink();
+                return ErrorStateView(
+                  message: 'Formation introuvable ou indisponible.',
+                  illustration: const ErrorIllustration(),
+                  onRetry: controller.load,
+                );
               }
               return _Content(training: t);
             }),
@@ -241,7 +245,7 @@ class _ModuleCard extends StatelessWidget {
                     shape: AppShapes.squircle(AppRadius.xs),
                   ),
                   child: completed
-                      ? Icon(IconlyBold.tick_square,
+                      ? Icon(AppIcons.tickSquare,
                           size: 18, color: AppColors.successAccent)
                       : Text(
                           '$index',
@@ -285,7 +289,7 @@ class _ModuleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(IconlyLight.arrow_right_2, color: AppColors.hintColor),
+                Icon(AppIcons.arrowRight, color: AppColors.hintColor),
               ],
             ),
           ),
@@ -373,7 +377,7 @@ class _QuizButton extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                allPassed ? IconlyBold.tick_square : IconlyBold.document,
+                allPassed ? AppIcons.tickSquare : AppIcons.document,
                 size: 16,
                 color: accent,
               ),
@@ -391,13 +395,10 @@ class _QuizButton extends StatelessWidget {
                 SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(accent),
-                  ),
+                  child: AppLoader(size: 14, strokeWidth: 2, color: accent),
                 )
               else if (!exhausted)
-                Icon(IconlyLight.arrow_right_2, size: 16, color: accent),
+                Icon(AppIcons.arrowRight, size: 16, color: accent),
             ],
           ),
         ),
@@ -517,7 +518,7 @@ class _QuizChoiceTile extends StatelessWidget {
                 ),
               ),
               if (quiz.passed)
-                Icon(IconlyBold.tick_square,
+                Icon(AppIcons.tickSquare,
                     size: 18, color: AppColors.successAccent),
             ],
           ),
@@ -543,7 +544,7 @@ class _CompleteButton extends StatelessWidget {
     if (completed) {
       return Row(
         children: [
-          Icon(IconlyBold.tick_square,
+          Icon(AppIcons.tickSquare,
               size: 18, color: AppColors.successAccent),
           const SizedBox(width: 8),
           Text(
@@ -572,9 +573,10 @@ class _CompleteButton extends StatelessWidget {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
+                  child: AppLoader(
+                    size: 18,
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(AppColors.onPrimary),
+                    color: AppColors.onPrimary,
                   ),
                 )
               : Text(

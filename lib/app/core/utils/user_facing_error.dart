@@ -1,4 +1,5 @@
 import '../network/api_provider.dart';
+import 'candidate_access.dart';
 
 const String _genericError =
     'Une erreur est survenue. Réessayez dans un instant.';
@@ -64,6 +65,9 @@ String userFacingError(Object error) {
   // serveur (français) et présentables tels quels.
   if (error is ApiValidationException) {
     return error.message;
+  }
+  if (error is CandidateAccessDeniedException) {
+    return CandidateAccess.blockedMessage;
   }
   if (error is ApiException) {
     final code = error.statusCode;

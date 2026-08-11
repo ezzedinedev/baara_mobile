@@ -1,17 +1,17 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 class MatchCelebrationScreen extends StatefulWidget {
   const MatchCelebrationScreen({super.key});
@@ -192,7 +192,7 @@ class _MatchCelebrationScreenState extends State<MatchCelebrationScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(IconlyBold.heart,
+                              const Icon(AppIcons.heartFilled,
                                   color: AppColors.onPrimary, size: 22),
                               const SizedBox(width: 8),
                               // Flexible : sans lui le Text prend sa largeur
@@ -246,7 +246,7 @@ class _MatchCelebrationScreenState extends State<MatchCelebrationScreen>
                               Get.back<void>();
                             },
                             icon:
-                                const Icon(IconlyLight.arrow_right_2, size: 20),
+                                const Icon(AppIcons.arrowRight, size: 20),
                             label: Text(
                               'Continuer',
                               style: AppTextStyles.buttonLg.copyWith(

@@ -1,18 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/offers/domain/entities/matched_offer.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/offers/domain/entities/matched_offer.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/home_controller.dart';
 
 /// Section « Pour toi » : offres recommandées par l'IA (match feed). Se charge
@@ -166,9 +166,10 @@ class HomeMatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 250,
-      child: PressScale(
+    return RepaintBoundary(
+      child: SizedBox(
+        width: 250,
+        child: PressScale(
         onTap: () {
           AppHaptics.tap();
           Get.toNamed(AppRoutes.offerDetail.replaceFirst(':id', offer.id));
@@ -236,7 +237,7 @@ class HomeMatchCard extends StatelessWidget {
               else if (offer.location.isNotEmpty)
                 Row(
                   children: [
-                    Icon(IconlyLight.location,
+                    Icon(AppIcons.location,
                         size: 14, color: AppColors.hintColor),
                     const SizedBox(width: 4),
                     Flexible(
@@ -254,6 +255,7 @@ class HomeMatchCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

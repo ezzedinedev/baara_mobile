@@ -1,5 +1,5 @@
-﻿import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:get/get.dart';
+import 'package:baara/app/core/network/api_provider.dart';
 
 import '../../data/repositories/cv_assistant_repository.dart';
 import '../../data/repositories/cv_import_repository.dart';

@@ -1,12 +1,13 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/common/brand_avatar.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/common/app_loader.dart';
+import 'package:baara/app/core/widgets/common/brand_avatar.dart';
 
 import '../../domain/repositories/i_community_repository.dart';
 import '../controllers/community_controller.dart';
@@ -188,10 +189,7 @@ mixin StoryMentionAutocomplete<T extends StatefulWidget> on State<T> {
                   child: SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primaryAccent,
-                    ),
+                    child: AppLoader(size: 18, strokeWidth: 2),
                   ),
                 ),
               )

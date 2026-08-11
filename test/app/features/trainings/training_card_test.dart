@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:jobaway/app/features/trainings/domain/entities/training.dart';
-import 'package:jobaway/app/features/trainings/presentation/widgets/training_card.dart';
+import 'package:baara/app/features/trainings/domain/entities/training.dart';
+import 'package:baara/app/features/trainings/presentation/widgets/training_card.dart';
 
 Training _training() => const Training(
       id: 't1',
       title: 'Bases de la comptabilité',
-      providerName: 'JobAway Academy',
+      providerName: 'Baara Academy',
       location: 'Ouagadougou',
       format: 'En ligne',
       level: 'Débutant',

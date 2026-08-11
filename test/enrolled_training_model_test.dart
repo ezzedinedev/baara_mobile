@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/features/trainings/data/models/enrolled_training_model.dart';
+import 'package:baara/app/features/trainings/data/models/enrolled_training_model.dart';
 
 /// Test de contrat : décode une ligne telle que la renvoie
 /// `GET /trainings/enrolled/list` (TrainingApiController@enrolled).

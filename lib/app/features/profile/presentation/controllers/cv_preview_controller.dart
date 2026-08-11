@@ -126,7 +126,7 @@ class CvPreviewController extends GetxController {
       final bytes = await _repository.downloadPdf(selectedTemplate.value);
       return FilePicker.saveFile(
         dialogTitle: 'Enregistrer mon CV',
-        fileName: 'CV-JobAway-${selectedTemplate.value}.pdf',
+        fileName: 'CV-Baara-${selectedTemplate.value}.pdf',
         bytes: bytes,
         type: FileType.custom,
         allowedExtensions: const ['pdf'],

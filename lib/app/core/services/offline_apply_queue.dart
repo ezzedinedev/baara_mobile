@@ -10,6 +10,7 @@ import '../utils/offline_error.dart';
 import '../widgets/common/app_toast.dart';
 import '../widgets/effects/celebration_overlay.dart';
 import 'local_cache_service.dart';
+import '../../../routes/app_routes.dart';
 
 /// Une candidature soumise alors que l'appareil etait hors-ligne, en attente de
 /// renvoi. On garde un instantane leger de l'offre pour l'afficher dans « Mes
@@ -71,7 +72,9 @@ class OfflineApplyQueue extends GetxService {
   /// Candidatures en attente d'envoi (observable pour l'UI).
   final pending = <PendingApply>[].obs;
 
-  bool _isFlushing = false;
+  /// True pendant un renvoi manuel ou automatique.
+  final isFlushing = false.obs;
+
   StreamSubscription<List<ConnectivityResult>>? _connSub;
 
   @override
@@ -130,8 +133,8 @@ class OfflineApplyQueue extends GetxService {
   ///   silencieusement (inutile de retenter) ;
   /// - erreur reseau → conservee, on retentera au prochain retour de reseau.
   Future<void> flush() async {
-    if (_isFlushing || pending.isEmpty) return;
-    _isFlushing = true;
+    if (isFlushing.value || pending.isEmpty) return;
+    isFlushing.value = true;
     try {
       // Copie : on mute `pending` pendant l'iteration.
       for (final apply in List<PendingApply>.of(pending)) {
@@ -157,9 +160,15 @@ class OfflineApplyQueue extends GetxService {
                 '${apply.offerTitle}${apply.company.isEmpty ? '' : ' · ${apply.company}'}',
               );
             } else {
-              AppToast.success(
-                'Candidature envoyee',
-                '${apply.company.isEmpty ? '' : '${apply.company} · '}${apply.offerTitle}',
+              AppToast.action(
+                title: 'Candidature envoyée',
+                message:
+                    '${apply.company.isEmpty ? '' : '${apply.company} · '}${apply.offerTitle}',
+                actionLabel: 'Voir mon suivi',
+                onAction: () => Get.offAllNamed(
+                  AppRoutes.home,
+                  arguments: {'tab': 3, 'suiviTab': 1},
+                ),
               );
             }
           } else {
@@ -180,7 +189,7 @@ class OfflineApplyQueue extends GetxService {
         }
       }
     } finally {
-      _isFlushing = false;
+      isFlushing.value = false;
     }
   }
 }

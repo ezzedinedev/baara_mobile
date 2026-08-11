@@ -1,4 +1,4 @@
-import 'package:jobaway/app/core/utils/asset_url.dart';
+import 'package:baara/app/core/utils/asset_url.dart';
 
 import '../../domain/entities/enrolled_training.dart';
 import 'training_model.dart';

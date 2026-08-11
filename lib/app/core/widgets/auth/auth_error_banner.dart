@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
@@ -32,7 +32,7 @@ class AuthErrorBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
-            IconlyLight.info_circle,
+            AppIcons.info,
             color: AppColors.errorStrong,
             size: 20,
           ),

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/quiz.dart';
 import '../controllers/quiz_controller.dart';
@@ -71,7 +71,7 @@ class QuizScreen extends GetView<QuizController> {
   Future<void> _confirmQuit(BuildContext context) async {
     final quit = await showConfirmSheet(
       context: context,
-      icon: IconlyBold.danger,
+      icon: AppIcons.danger,
       iconColor: AppColors.errorAccent,
       title: 'Abandonner le quiz ?',
       message: 'Votre copie sera envoyée en l\'état et la tentative sera '
@@ -233,7 +233,7 @@ class _Countdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(IconlyLight.time_circle, size: 14, color: color),
+            Icon(AppIcons.time, size: 14, color: color),
             const SizedBox(width: 6),
             Text(
               '$minutes:${rest.toString().padLeft(2, '0')}',
@@ -264,7 +264,7 @@ class _ProctoringWarning extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(IconlyBold.danger, size: 14, color: AppColors.warningAccent),
+          Icon(AppIcons.danger, size: 14, color: AppColors.warningAccent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -361,7 +361,7 @@ class _QuizFooter extends StatelessWidget {
           children: [
             if (controller.currentIndex.value > 0) ...[
               AppIconButton(
-                icon: IconlyLight.arrow_left_2,
+                icon: AppIcons.back,
                 onTap: () {
                   AppHaptics.tap();
                   controller.previous();
@@ -408,7 +408,7 @@ class _QuizFooter extends StatelessWidget {
 
     final ok = await showConfirmSheet(
       context: context,
-      icon: IconlyBold.tick_square,
+      icon: AppIcons.tickSquare,
       iconColor: AppColors.primaryAccent,
       title: 'Valider vos réponses ?',
       message: 'Vous ne pourrez plus modifier votre copie.',

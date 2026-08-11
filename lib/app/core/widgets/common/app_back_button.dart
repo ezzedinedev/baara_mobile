@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
 import '../../theme/app_colors.dart';
 import '../../utils/haptics.dart';
@@ -43,7 +43,7 @@ class AppBackButton extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: borderColor),
             ),
-            child: Icon(IconlyLight.arrow_left_2, color: iconColor, size: 26),
+            child: Icon(AppIcons.back, color: iconColor, size: 26),
           ),
         ),
       ),

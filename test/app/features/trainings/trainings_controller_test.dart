@@ -1,8 +1,8 @@
-﻿import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/features/trainings/domain/entities/enrolled_training.dart';
-import 'package:jobaway/app/features/trainings/domain/entities/training.dart';
-import 'package:jobaway/app/features/trainings/domain/repositories/i_training_repository.dart';
-import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:baara/app/features/trainings/domain/entities/enrolled_training.dart';
+import 'package:baara/app/features/trainings/domain/entities/training.dart';
+import 'package:baara/app/features/trainings/domain/repositories/i_training_repository.dart';
+import 'package:baara/app/features/trainings/presentation/controllers/trainings_controller.dart';
 
 class _FakeTrainingRepository implements ITrainingRepository {
   Object? errorOnLoad;

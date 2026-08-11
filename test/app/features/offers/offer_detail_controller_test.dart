@@ -1,25 +1,32 @@
-﻿import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/features/offers/data/models/application_model.dart';
-import 'package:jobaway/app/features/offers/data/models/upcoming_interview_model.dart';
-import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
-import 'package:jobaway/app/features/offers/data/models/job_proposal_model.dart';
-import 'package:jobaway/app/features/offers/domain/entities/apply_result.dart';
-import 'package:jobaway/app/features/offers/domain/entities/offer.dart';
-import 'package:jobaway/app/features/offers/domain/entities/matched_offer.dart';
-import 'package:jobaway/app/features/offers/domain/entities/sector_option.dart';
-import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_detail_controller.dart';
-import 'package:jobaway/app/features/ia/domain/repositories/i_ia_repository.dart';
-import 'package:jobaway/app/data/models/ai_models.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:baara/routes/app_routes.dart';
+import 'package:baara/app/features/offers/data/models/application_model.dart';
+import 'package:baara/app/features/offers/data/models/upcoming_interview_model.dart';
+import 'package:baara/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:baara/app/features/offers/data/models/job_proposal_model.dart';
+import 'package:baara/app/features/offers/domain/entities/apply_result.dart';
+import 'package:baara/app/features/offers/domain/entities/offer.dart';
+import 'package:baara/app/features/offers/domain/entities/matched_offer.dart';
+import 'package:baara/app/features/offers/domain/entities/sector_option.dart';
+import 'package:baara/app/features/offers/domain/repositories/i_offer_repository.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_detail_controller.dart';
+import 'package:baara/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:baara/app/data/models/ai_models.dart';
 
 class _FakeOfferRepository implements IOfferRepository {
   Offer? offerById;
+
+  /// Offres réellement candidatées — c'est ce qui manquait : l'ancien
+  /// « Adapter + postuler » n'appelait jamais applyToOffer.
+  final appliedOfferIds = <String>[];
 
   @override
   Future<Offer?> getOfferById(String id) async => offerById;
 
   @override
-  Future<List<Offer>> getOffers({
+  Future<OfferPage> getOffers({
     int page = 1,
     int perPage = 20,
     String? search,
@@ -31,7 +38,7 @@ class _FakeOfferRepository implements IOfferRepository {
     int? salaryMin,
     String? sort,
   }) async =>
-      [];
+      const OfferPage(items: [], currentPage: 1, hasMore: false);
 
   @override
   Future<List<SectorOption>> getSectors() async => [];
@@ -56,6 +63,7 @@ class _FakeOfferRepository implements IOfferRepository {
     String offerId, {
     Map<String, dynamic>? screeningAnswers,
   }) async {
+    appliedOfferIds.add(offerId);
     return ApplyResult(
       application: ApplicationModel(
         id: 'app-1',
@@ -118,6 +126,19 @@ class _FakeOfferRepository implements IOfferRepository {
 }
 
 class _FakeIaRepository implements IIaRepository {
+  /// Réponse simulée de `/ai/cv/adapt`.
+  Map<String, dynamic> adaptResult = const {
+    'suggestions': {
+      'bio': {'suggested': 'Nouvelle bio'},
+    },
+  };
+
+  /// Lève sur l'écriture au CV, pour vérifier que la candidature part quand même.
+  bool failOnAdaptApply = false;
+
+  final cvAdaptOfferIds = <String>[];
+  final cvAdaptApplyPayloads = <Map<String, dynamic>>[];
+
   @override
   Future<AiCoverLetter> coverLetter({
     required String offerId,
@@ -132,10 +153,20 @@ class _FakeIaRepository implements IIaRepository {
       );
 
   @override
-  Future<Map<String, dynamic>> cvAdapt(String offerId) async => {};
+  Future<Map<String, dynamic>> cvAdapt(String offerId) async {
+    cvAdaptOfferIds.add(offerId);
+    return adaptResult;
+  }
 
   @override
-  Future<Map<String, dynamic>> cvAdaptApply(String offerId) async => {};
+  Future<Map<String, dynamic>> cvAdaptApply(
+      Map<String, dynamic> suggestions) async {
+    cvAdaptApplyPayloads.add(suggestions);
+    if (failOnAdaptApply) {
+      throw Exception('no_applicable_suggestion');
+    }
+    return {};
+  }
 
   @override
   Future<AiCvAudit> cvAudit() async => const AiCvAudit(
@@ -191,13 +222,29 @@ class _FakeIaRepository implements IIaRepository {
       true;
 }
 
+const _offer = Offer(
+  id: '1',
+  title: 'Dev Flutter',
+  company: 'Baara',
+  description: 'Desc',
+  location: 'Ouaga',
+  salary: '400 000 FCFA',
+  contractType: 'CDI',
+  requiredSkills: ['Flutter'],
+  minYearsExperience: 2,
+  sector: 'Informatique',
+  isRemote: false,
+);
+
 void main() {
   late OfferDetailController controller;
   late _FakeOfferRepository fakeOfferRepo;
+  late _FakeIaRepository fakeIaRepo;
 
   setUp(() {
     fakeOfferRepo = _FakeOfferRepository();
-    controller = OfferDetailController(fakeOfferRepo, _FakeIaRepository());
+    fakeIaRepo = _FakeIaRepository();
+    controller = OfferDetailController(fakeOfferRepo, fakeIaRepo);
   });
 
   group('OfferDetailController', () {
@@ -205,7 +252,7 @@ void main() {
       fakeOfferRepo.offerById = const Offer(
         id: '1',
         title: 'Dev Flutter',
-        company: 'JobAway',
+        company: 'Baara',
         description: 'Desc',
         location: 'Ouaga',
         salary: '400 000 FCFA',
@@ -229,6 +276,103 @@ void main() {
 
       expect(controller.offer.value, null);
       expect(controller.errorMessage.value, 'Offre introuvable');
+    });
+  });
+
+  // `/ai/cv/adapt/apply` applique les suggestions AU CV — il ne postule pas.
+  // L'implémentation précédente l'appelait seul, avec `offer_id` au lieu de
+  // `suggestions` : 422 systématique, et aucune candidature n'était créée.
+  //
+  // `testWidgets` et non `test` : le chemin de succès de `apply()` déclenche
+  // haptique, confetti et feuille de confirmation, qui exigent un arbre de
+  // widgets et un contexte GetX.
+  group('OfferDetailController.adaptCvAndApply', () {
+    tearDown(Get.reset);
+
+    Future<void> pumpShell(WidgetTester tester) async {
+      Get.put(controller);
+      await tester.pumpWidget(
+        GetMaterialApp(
+          initialRoute: '/accueil',
+          getPages: [
+            GetPage(
+                name: '/accueil', page: () => const Scaffold(body: SizedBox())),
+            GetPage(
+              name: AppRoutes.offerMatch,
+              page: () => const Scaffold(body: Text('CELEBRATION')),
+            ),
+          ],
+        ),
+      );
+      fakeOfferRepo.offerById = _offer;
+      await controller.fetchOfferDetail('1');
+      await tester.pump();
+    }
+
+    /// Laisse retomber toasts et feuilles : un snackbar GetX laisse un Ticker
+    /// actif qui ferait échouer le teardown.
+    Future<void> settle(WidgetTester tester) async {
+      await tester.pump();
+      Get.closeAllSnackbars();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    testWidgets('adapte le CV puis postule réellement', (tester) async {
+      await pumpShell(tester);
+
+      await controller.adaptCvAndApply();
+      await settle(tester);
+
+      expect(fakeIaRepo.cvAdaptOfferIds, ['1']);
+      expect(fakeOfferRepo.appliedOfferIds, ['1'],
+          reason: 'la candidature doit partir, pas seulement l\'adaptation');
+      expect(controller.hasApplied.value, isTrue);
+    });
+
+    testWidgets('envoie les suggestions, jamais offer_id', (tester) async {
+      await pumpShell(tester);
+
+      await controller.adaptCvAndApply();
+      await settle(tester);
+
+      expect(fakeIaRepo.cvAdaptApplyPayloads, hasLength(1));
+      final payload = fakeIaRepo.cvAdaptApplyPayloads.single;
+      expect(payload, contains('bio'));
+      expect(payload, isNot(contains('offer_id')));
+    });
+
+    testWidgets('postule même si aucune suggestion n\'est applicable',
+        (tester) async {
+      await pumpShell(tester);
+      fakeIaRepo.failOnAdaptApply = true;
+
+      await controller.adaptCvAndApply();
+      await settle(tester);
+
+      expect(fakeOfferRepo.appliedOfferIds, ['1']);
+      expect(controller.hasApplied.value, isTrue);
+    });
+
+    testWidgets('ne postule pas deux fois', (tester) async {
+      await pumpShell(tester);
+
+      await controller.adaptCvAndApply();
+      await settle(tester);
+      await controller.adaptCvAndApply();
+      await settle(tester);
+
+      expect(fakeOfferRepo.appliedOfferIds, hasLength(1));
+    });
+
+    testWidgets('sans bloc suggestions, postule quand même', (tester) async {
+      await pumpShell(tester);
+      fakeIaRepo.adaptResult = const {};
+
+      await controller.adaptCvAndApply();
+      await settle(tester);
+
+      expect(fakeIaRepo.cvAdaptApplyPayloads, isEmpty);
+      expect(fakeOfferRepo.appliedOfferIds, ['1']);
     });
   });
 }

@@ -1,7 +1,7 @@
-﻿import 'package:flutter_test/flutter_test.dart';
-import 'package:jobaway/app/data/models/ai_models.dart';
-import 'package:jobaway/app/features/ia/domain/repositories/i_ia_repository.dart';
-import 'package:jobaway/app/features/ia/presentation/controllers/chatbot_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:baara/app/data/models/ai_models.dart';
+import 'package:baara/app/features/ia/domain/repositories/i_ia_repository.dart';
+import 'package:baara/app/features/ia/presentation/controllers/chatbot_controller.dart';
 
 class _FakeIaRepository implements IIaRepository {
   AiChatResponse? chatResponse;
@@ -67,7 +67,9 @@ class _FakeIaRepository implements IIaRepository {
   Future<Map<String, dynamic>> cvAdapt(String offerId) async => {};
 
   @override
-  Future<Map<String, dynamic>> cvAdaptApply(String offerId) async => {};
+  Future<Map<String, dynamic>> cvAdaptApply(
+          Map<String, dynamic> suggestions) async =>
+      {};
 
   @override
   Future<Map<String, dynamic>> cvRewrite({

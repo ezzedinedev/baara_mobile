@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 /// Écran 404 — langage 2026 : fond mesh de marque subtil, illustration
 /// expressive (chiffre hero + icône), titre `displayHero`, bouton retour
@@ -79,7 +79,7 @@ class _Illustration extends StatelessWidget {
               shadows: AppColors.lightShadow,
             ),
             child: Icon(
-              IconlyBold.discovery,
+              AppIcons.discovery,
               size: 56,
               color: AppColors.primaryAccent,
             ),
@@ -139,7 +139,7 @@ class _Actions extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(IconlyBold.home,
+                const Icon(AppIcons.homeFilled,
                     size: 19, color: AppColors.onPrimary),
                 const SizedBox(width: AppSpacing.sm),
                 Text(

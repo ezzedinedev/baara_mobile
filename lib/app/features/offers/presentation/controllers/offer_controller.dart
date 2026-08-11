@@ -1,18 +1,19 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/services/offline_apply_queue.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/offline_error.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
-import 'package:jobaway/app/core/widgets/common/confirm_sheet.dart';
-import 'package:jobaway/app/core/widgets/effects/celebration_overlay.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/core/services/review_prompt_service.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/offline_error.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
+import 'package:baara/app/core/widgets/common/confirm_sheet.dart';
+import 'package:baara/app/core/widgets/effects/celebration_overlay.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/entities/offer.dart';
 import '../../domain/entities/matched_offer.dart';
 import '../../domain/entities/sector_option.dart';
@@ -169,19 +170,26 @@ class OfferController extends GetxController {
         for (final match in matchedOffers) match.id: match,
       };
 
-  // ── Deck swipe (Accueil) ──────────────────────────────────────────────
-  // Pile de cartes type Tinder : drag horizontal, badges PASSER/INTÉRESSÉ,
-  // rewind, et candidature réelle au swipe droite. Le deck est cyclique
-  // (modulo offers.length) comme l'implémentation d'origine.
+  // ── Deck swipe (mode découverte) ──────────────────────────────────────
+  // Les offres passées / postulées sortent du deck (plus de boucle infinie).
+  final skippedOfferIds = <String>{}.obs;
+  final _skipHistory = <String>[];
   final currentOfferIndex = 0.obs;
   final offerDragDx = 0.0.obs;
   final isOfferAnimating = false.obs;
 
-  /// Offre à `offset` cartes du sommet (cyclique). Null si aucune offre.
+  List<Offer> get deckOffers => offers
+      .where((o) =>
+          !skippedOfferIds.contains(o.id) && !appliedOfferIds.contains(o.id))
+      .toList();
+
+  /// Offre à `offset` cartes du sommet. Null si deck épuisé.
   Offer? offerAtOffset(int offset) {
-    if (offers.isEmpty) return null;
-    final i = (currentOfferIndex.value + offset) % offers.length;
-    return offers[i];
+    final deck = deckOffers;
+    if (deck.isEmpty) return null;
+    final idx = currentOfferIndex.value + offset;
+    if (idx < 0 || idx >= deck.length) return null;
+    return deck[idx];
   }
 
   int? scoreForOffset(int offset) {
@@ -222,10 +230,14 @@ class OfferController extends GetxController {
   Future<void> swipeOfferRight() => _animateSwipe(true);
 
   void rewindOffer() {
-    if (isOfferAnimating.value || offers.isEmpty) return;
-    currentOfferIndex.value =
-        (currentOfferIndex.value - 1 + offers.length) % offers.length;
+    if (isOfferAnimating.value || _skipHistory.isEmpty) return;
+    final id = _skipHistory.removeLast();
+    skippedOfferIds.remove(id);
+    if (currentOfferIndex.value > 0) {
+      currentOfferIndex.value--;
+    }
     offerDragDx.value = 0;
+    AppHaptics.tap();
   }
 
   Future<void> _animateBackToCenter() async {
@@ -252,13 +264,29 @@ class OfferController extends GetxController {
     isOfferAnimating.value = true;
     offerDragDx.value = toRight ? 420 : -420;
     await Future<void>.delayed(const Duration(milliseconds: 210));
-    currentOfferIndex.value = (currentOfferIndex.value + 1) % offers.length;
+
+    if (toRight && swiped != null) {
+      AppHaptics.success();
+      unawaited(_applySwiped(swiped));
+    } else if (!toRight && swiped != null) {
+      skippedOfferIds.add(swiped.id);
+      _skipHistory.add(swiped.id);
+      AppHaptics.tap();
+    }
+
+    _clampDeckIndex();
     offerDragDx.value = 0;
     isOfferAnimating.value = false;
+  }
 
-    // Swipe droite = candidature réelle (POST /applications via le repo).
-    if (toRight && swiped != null) {
-      unawaited(_applySwiped(swiped));
+  void _clampDeckIndex() {
+    final deck = deckOffers;
+    if (deck.isEmpty) {
+      currentOfferIndex.value = 0;
+      return;
+    }
+    if (currentOfferIndex.value >= deck.length) {
+      currentOfferIndex.value = deck.length - 1;
     }
   }
 
@@ -272,7 +300,7 @@ class OfferController extends GetxController {
     isOfferAnimating.value = true;
     final confirmed = await showConfirmSheet(
       context: context,
-      icon: IconlyBold.heart,
+      icon: AppIcons.heartFilled,
       iconColor: AppColors.primary,
       title: 'Postuler chez ${offer.company} ?',
       message: '${offer.title} · ${offer.location}\n'
@@ -308,8 +336,14 @@ class OfferController extends GetxController {
 
       // Pas de match : burst de confetti de célébration en plus du toast.
       showCelebration();
-      AppToast.success(
-          'Candidature envoyée', '${offer.company} · ${offer.title}');
+      AppToast.action(
+        title: 'Candidature envoyée',
+        message: '${offer.company} · ${offer.title}',
+        actionLabel: 'Voir mon suivi',
+        onAction: () =>
+            Get.offAllNamed(AppRoutes.home, arguments: {'tab': 3}),
+      );
+      unawaited(ReviewPromptService.instance.recordApplicationSent());
     } on MissingSkillsException catch (e) {
       // Le swipe passe par la même API : sans compétences, la candidature serait
       // écartée automatiquement. On le dit, on ne la compte pas comme envoyée.
@@ -380,6 +414,9 @@ class OfferController extends GetxController {
       currentPage.value = 1;
       offers.clear();
       hasNextPage.value = true;
+      skippedOfferIds.clear();
+      _skipHistory.clear();
+      currentOfferIndex.value = 0;
     }
 
     if (!hasNextPage.value || (isLoading.value && !refresh)) return;
@@ -389,7 +426,7 @@ class OfferController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final result = await _repository.getOffers(
+      final page = await _repository.getOffers(
         page: currentPage.value,
         search: searchQuery.value,
         sectorId: selectedSectorId.value,
@@ -399,15 +436,15 @@ class OfferController extends GetxController {
       );
 
       if (refresh) {
-        offers.assignAll(result);
+        offers.assignAll(page.items);
       } else {
-        offers.addAll(result);
+        offers.addAll(page.items);
       }
 
-      hasNextPage.value = result.isNotEmpty; // Simplification pour l'exemple
-      if (result.isNotEmpty) currentPage.value++;
+      hasNextPage.value = page.hasMore;
+      if (page.items.isNotEmpty) currentPage.value = page.currentPage + 1;
     } catch (e) {
-      errorMessage.value = "Erreur de chargement";
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -420,6 +457,8 @@ class OfferController extends GetxController {
     isLoadingSaved.value = true;
     try {
       savedOffers.assignAll(await _repository.getSavedOffers());
+    } catch (e) {
+      AppToast.error('Favoris', userFacingError(e));
     } finally {
       isLoadingSaved.value = false;
     }
@@ -431,16 +470,16 @@ class OfferController extends GetxController {
 
   Future<void> toggleSaveOffer(Offer offer) async {
     final isSaved = isOfferSaved(offer.id);
-    final success = isSaved
-        ? await _repository.unsaveOffer(offer.id)
-        : await _repository.saveOffer(offer.id);
-
-    if (success) {
+    try {
       if (isSaved) {
+        await _repository.unsaveOffer(offer.id);
         savedOffers.removeWhere((o) => o.id == offer.id);
       } else {
+        await _repository.saveOffer(offer.id);
         savedOffers.add(offer);
       }
+    } catch (e) {
+      AppToast.error('Favoris', userFacingError(e));
     }
   }
 

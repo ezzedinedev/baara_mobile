@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -93,7 +93,7 @@ class _LabeledInputState extends State<LabeledInput> {
               obscureText: _obscure.value,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscure.value ? IconlyLight.show : IconlyLight.hide,
+                  _obscure.value ? AppIcons.show : AppIcons.hide,
                   color: AppColors.hintColor,
                   size: 20,
                 ),

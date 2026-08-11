@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
 
+import '../../theme/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_shapes.dart';
@@ -15,7 +15,7 @@ class AuthCtaButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
-    this.trailing = IconlyLight.arrow_right_2,
+    this.trailing = AppIcons.arrowRight,
     this.backgroundColor,
     this.foregroundColor,
   });

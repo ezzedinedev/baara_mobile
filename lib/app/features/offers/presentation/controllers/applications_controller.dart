@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../../core/utils/user_facing_error.dart';
+import '../../../../core/services/offline_apply_queue.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../data/models/application_model.dart';
 import '../../data/models/interview_detail_model.dart';
@@ -103,6 +104,17 @@ class ApplicationsController extends GetxController {
     } finally {
       respondingIds.remove(proposal.id);
     }
+  }
+
+  /// Compteur pour la pastille de l'onglet Suivi (hors-ligne + actions en attente).
+  int get attentionCount {
+    var count = 0;
+    if (Get.isRegistered<OfflineApplyQueue>()) {
+      count += Get.find<OfflineApplyQueue>().pending.length;
+    }
+    count += interviews.where((i) => i.canRespond).length;
+    count += jobProposals.where((p) => p.status == 'sent').length;
+    return count;
   }
 
   /// Détail complet d'une candidature (offre + entretien). Null si introuvable.

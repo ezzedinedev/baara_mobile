@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 import '../../../offers/presentation/controllers/offer_controller.dart';
 import '../../domain/entities/saved_search.dart';
@@ -60,13 +60,22 @@ class _AlertsBody extends StatelessWidget {
         );
       }
       if (controller.alerts.isEmpty) {
-        return EmptyState(
-          icon: IconlyLight.notification,
-          title: 'Aucune alerte',
-          subtitle:
-              'Filtre les offres puis touche « Créer une alerte » pour être notifié des nouvelles offres qui te correspondent.',
-          actionLabel: 'Voir les offres',
-          onAction: () => Get.toNamed(AppRoutes.offers),
+        return AppRefreshIndicator(
+          color: AppColors.primaryAccent,
+          onRefresh: controller.load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              EmptyState(
+                icon: AppIcons.bell,
+                title: 'Aucune alerte',
+                subtitle:
+                    'Filtre les offres puis touche « Créer une alerte » pour être notifié des nouvelles offres qui te correspondent.',
+                actionLabel: 'Voir les offres',
+                onAction: () => Get.toNamed(AppRoutes.offers),
+              ),
+            ],
+          ),
         );
       }
       return AppRefreshIndicator(
@@ -123,35 +132,16 @@ class _AlertCard extends StatelessWidget {
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
         AppHaptics.tap();
-        final ok = await Get.dialog<bool>(
-          AlertDialog(
-            backgroundColor: AppColors.surfaceCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: AppShapes.squircleRadius(AppRadius.lg),
-            ),
-            title: Text('Supprimer l\'alerte',
-                style:
-                    AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w800)),
-            content: Text(
+        final ok = await showConfirmSheet(
+          context: context,
+          icon: AppIcons.delete,
+          iconColor: AppColors.errorAccent,
+          title: 'Supprimer l\'alerte',
+          message:
               'Supprimer « ${alert.label} » ? Tu ne recevras plus de notifications pour cette recherche.',
-              style: AppTextStyles.bodySm.copyWith(color: AppColors.bodyColor),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(result: false),
-                child: Text('Annuler',
-                    style: AppTextStyles.labelMd
-                        .copyWith(color: AppColors.hintColor)),
-              ),
-              TextButton(
-                onPressed: () => Get.back(result: true),
-                child: Text('Supprimer',
-                    style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.errorAccent,
-                        fontWeight: FontWeight.w800)),
-              ),
-            ],
-          ),
+          confirmLabel: 'Supprimer',
+          cancelLabel: 'Annuler',
+          isDestructive: true,
         );
         return ok ?? false;
       },
@@ -164,7 +154,7 @@ class _AlertCard extends StatelessWidget {
           color: AppColors.errorSoft,
           shape: AppShapes.squircle(AppRadius.lg),
         ),
-        child: Icon(IconlyLight.delete, color: AppColors.errorAccent, size: 22),
+        child: Icon(AppIcons.delete, color: AppColors.errorAccent, size: 22),
       ),
       child: PressScale(
         onTap: () => _openSearch(alert),
@@ -188,7 +178,7 @@ class _AlertCard extends StatelessWidget {
                       color: AppColors.surfaceIconSoft,
                       borderRadius: AppShapes.squircleRadius(AppRadius.sm),
                     ),
-                    child: Icon(IconlyLight.notification,
+                    child: Icon(AppIcons.bell,
                         size: 20, color: AppColors.primaryAccent),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -222,7 +212,7 @@ class _AlertCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
-                  Icon(IconlyLight.work, size: 14, color: AppColors.hintColor),
+                  Icon(AppIcons.work, size: 14, color: AppColors.hintColor),
                   const SizedBox(width: 6),
                   Text(
                     alert.matchCount > 0
@@ -236,7 +226,7 @@ class _AlertCard extends StatelessWidget {
                       style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.primaryAccent,
                           fontWeight: FontWeight.w700)),
-                  Icon(IconlyLight.arrow_right_2,
+                  Icon(AppIcons.arrowRight,
                       size: 16, color: AppColors.primaryAccent),
                 ],
               ),

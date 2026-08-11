@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/cv_audit_controller.dart';
 
@@ -199,7 +199,7 @@ class _AtsBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            atsFriendly ? IconlyBold.tick_square : Icons.warning_amber_rounded,
+            atsFriendly ? AppIcons.tickSquare : Icons.warning_amber_rounded,
             size: 16,
             color: color,
           ),
@@ -344,15 +344,15 @@ class _SectionCard extends StatelessWidget {
                       SizedBox(
                         width: 14,
                         height: 14,
-                        child: CircularProgressIndicator(
+                        child: AppLoader(
+                          size: 14,
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryAccent),
+                          color: AppColors.primaryAccent,
                         ),
                       )
                     else
                       Icon(
-                        IconlyLight.edit,
+                        AppIcons.edit,
                         size: 16,
                         color: AppColors.primaryAccent,
                       ),

@@ -1,6 +1,7 @@
-﻿import 'package:http/http.dart' as http;
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:http/http.dart' as http;
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 import '../models/profile_model.dart';
@@ -14,19 +15,17 @@ class ProfileRepositoryImpl implements IProfileRepository {
   @override
   Future<Profile> getProfile() async {
     final response = await _apiProvider.getJson(ApiConstants.profile);
-    if (response['success'] == true && response['data'] != null) {
-      return ProfileModel.fromJson(response['data'] as Map<String, dynamic>);
-    }
-    throw Exception('Failed to load profile');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger votre profil.');
+    return ProfileModel.fromJson(ApiResponse.dataMap(response));
   }
 
   @override
   Future<Profile> updateProfile(Map<String, dynamic> data) async {
     final response = await _apiProvider.putJson(ApiConstants.profile, data);
-    if (response['success'] == true && response['data'] != null) {
-      return ProfileModel.fromJson(response['data'] as Map<String, dynamic>);
-    }
-    throw Exception('Failed to update profile');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de mettre à jour votre profil.');
+    return ProfileModel.fromJson(ApiResponse.dataMap(response));
   }
 
   @override
@@ -38,11 +37,9 @@ class ProfileRepositoryImpl implements IProfileRepository {
         http.MultipartFile.fromBytes('avatar', bytes, filename: 'avatar.jpg'),
       ],
     );
-
-    if (response['success'] == true && response['data'] != null) {
-      return ProfileModel.fromJson(response['data'] as Map<String, dynamic>);
-    }
-    throw Exception('Failed to update avatar');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de mettre à jour votre photo.');
+    return ProfileModel.fromJson(ApiResponse.dataMap(response));
   }
 
   @override
@@ -55,32 +52,25 @@ class ProfileRepositoryImpl implements IProfileRepository {
         http.MultipartFile.fromBytes('video', bytes, filename: filename),
       ],
     );
-
-    if (response['success'] == true && response['data'] != null) {
-      return (response['data']
-          as Map<String, dynamic>)['presentation_video_url'] as String?;
-    }
-    throw Exception('Failed to upload presentation video');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible d\'envoyer votre vidéo de présentation.');
+    return ApiResponse.dataMap(response)['presentation_video_url'] as String?;
   }
 
   @override
   Future<void> deletePresentationVideo() async {
     final response =
         await _apiProvider.deleteJson(ApiConstants.profilePresentationVideo);
-    if (response['success'] != true) {
-      throw Exception(
-          response['message'] ?? 'Échec de la suppression de la vidéo.');
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de supprimer votre vidéo.');
   }
 
   @override
   Future<void> updatePreferences(Map<String, dynamic> prefs) async {
     final response =
         await _apiProvider.putJson(ApiConstants.profilePreferences, prefs);
-    if (response['success'] != true) {
-      throw Exception(
-          response['message'] ?? 'Échec de la mise à jour des préférences.');
-    }
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de mettre à jour vos préférences.');
   }
 
   @override
@@ -89,39 +79,36 @@ class ProfileRepositoryImpl implements IProfileRepository {
       ApiConstants.profile,
       {'profile_visibility': visibility},
     );
-    if (response['success'] == true && response['data'] != null) {
-      return ProfileModel.fromJson(response['data'] as Map<String, dynamic>);
-    }
-    throw Exception('Failed to update profile visibility');
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de changer la visibilité de votre profil.');
+    return ProfileModel.fromJson(ApiResponse.dataMap(response));
   }
 
   @override
   Future<List<Map<String, dynamic>>> getCertificates() async {
     final response =
         await _apiProvider.getJson(ApiConstants.profileCertificates);
-    if (response['success'] == true) {
-      final data = response['data'];
-      final items = data is List
-          ? data
-          : data is Map
-              ? data['data']
-              : const [];
-      if (items is List) {
-        return items.whereType<Map>().map((e) {
-          return Map<String, dynamic>.from(e);
-        }).toList();
-      }
-    }
-    return const [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos certificats.');
+    return ApiResponse.extractList(response['data'])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
+  /// Révoque le token côté serveur. Peut légitimement échouer (token déjà
+  /// expiré → 401) : l'appelant (ProfileController) vide la session locale et
+  /// navigue quoi qu'il arrive, la déconnexion n'est donc jamais bloquée ici.
   @override
   Future<void> logout() async {
-    await _apiProvider.postJson(ApiConstants.logout, {});
+    final response = await _apiProvider.postJson(ApiConstants.logout, {});
+    ApiResponse.ensureSuccess(response, fallback: 'Déconnexion impossible.');
   }
 
+  /// Même contrat que [logout], sur l'ensemble des appareils.
   @override
   Future<void> logoutAll() async {
-    await _apiProvider.postJson(ApiConstants.logoutAll, {});
+    final response = await _apiProvider.postJson(ApiConstants.logoutAll, {});
+    ApiResponse.ensureSuccess(response, fallback: 'Déconnexion impossible.');
   }
 }

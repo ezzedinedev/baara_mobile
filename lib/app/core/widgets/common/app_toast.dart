@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
@@ -18,6 +18,24 @@ class AppToast {
         message: message,
         variant: AppToastVariant.success,
         duration: duration ?? _defaultDuration,
+      );
+
+  /// Toast avec action (CTA) — ex. « Voir ma candidature » après postulation.
+  static void action({
+    required String title,
+    String? message,
+    required String actionLabel,
+    required VoidCallback onAction,
+    AppToastVariant variant = AppToastVariant.success,
+    Duration? duration,
+  }) =>
+      _show(
+        title: title,
+        message: message,
+        variant: variant,
+        duration: duration ?? const Duration(milliseconds: 5000),
+        actionLabel: actionLabel,
+        onAction: onAction,
       );
 
   static void error(String title, [String? message, Duration? duration]) =>
@@ -49,6 +67,8 @@ class AppToast {
     String? message,
     required AppToastVariant variant,
     required Duration duration,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     switch (variant) {
       case AppToastVariant.success:
@@ -84,6 +104,8 @@ class AppToast {
           message: message,
           variant: variant,
           duration: duration,
+          actionLabel: actionLabel,
+          onAction: onAction,
         ),
       ),
     );
@@ -96,12 +118,16 @@ class _AppToastBody extends StatefulWidget {
     required this.message,
     required this.variant,
     required this.duration,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String? message;
   final AppToastVariant variant;
   final Duration duration;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   State<_AppToastBody> createState() => _AppToastBodyState();
@@ -142,7 +168,7 @@ class _AppToastBodyState extends State<_AppToastBody>
         return (
           color: AppColors.successStrong,
           softBg: AppColors.successSoft,
-          icon: IconlyBold.tick_square,
+          icon: AppIcons.tickSquare,
         );
       case AppToastVariant.error:
         return (
@@ -160,7 +186,7 @@ class _AppToastBodyState extends State<_AppToastBody>
         return (
           color: AppColors.primaryAccent,
           softBg: AppColors.surfaceIconSoft,
-          icon: IconlyLight.info_circle,
+          icon: AppIcons.info,
         );
     }
   }
@@ -268,6 +294,36 @@ class _AppToastBodyState extends State<_AppToastBody>
                             ),
                           ),
                         ],
+                        if (widget.actionLabel != null &&
+                            widget.onAction != null) ...[
+                          const SizedBox(height: 8),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                AppHaptics.tap();
+                                if (Get.isSnackbarOpen) Get.closeAllSnackbars();
+                                widget.onAction!();
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                  horizontal: 2,
+                                ),
+                                child: Text(
+                                  widget.actionLabel!,
+                                  style: AppTextStyles.labelMd.copyWith(
+                                    color: p.color,
+                                    fontWeight: FontWeight.w800,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: p.color,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -284,7 +340,7 @@ class _AppToastBodyState extends State<_AppToastBody>
                       child: Padding(
                         padding: const EdgeInsets.all(4),
                         child: Icon(
-                          IconlyLight.close_square,
+                          AppIcons.closeSquare,
                           size: 16,
                           color: AppColors.hintColor,
                         ),

@@ -1,21 +1,21 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import 'dart:async';
 
-import 'package:jobaway/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:baara/app/features/profile/presentation/controllers/profile_controller.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/repositories/i_community_repository.dart';
 import '../controllers/community_controller.dart';
@@ -272,16 +272,13 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
           boxShadow: AppColors.lightShadow,
         ),
         child: _mentionLoading && _mentionResults.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
+            ? const Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
                 child: Center(
                   child: SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primaryAccent,
-                    ),
+                    child: AppLoader(strokeWidth: 2),
                   ),
                 ),
               )
@@ -545,7 +542,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
         backgroundColor: AppColors.surfaceCard,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(IconlyLight.close_square, color: AppColors.titleColor),
+          icon: Icon(AppIcons.closeSquare, color: AppColors.titleColor),
           onPressed: () => Get.back<void>(),
         ),
         title: Text(_isEditing ? 'Modifier' : 'Nouvelle publication',
@@ -574,8 +571,11 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: AppColors.onPrimary))
+                            child: AppLoader(
+                              color: AppColors.onPrimary,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : Text(_isEditing ? 'Enregistrer' : 'Publier',
                             style: AppTextStyles.labelLg.copyWith(
                               color: _canPublish
@@ -669,7 +669,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
           _selectChip(
             icon: _visibility == 'public'
                 ? Icons.public_rounded
-                : IconlyLight.user_1,
+                : AppIcons.network,
             label: _visibility == 'public' ? 'Public' : 'Mes relations',
             onTap: () => setState(() => _visibility =
                 _visibility == 'public' ? 'connections' : 'public'),
@@ -702,7 +702,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
               ListTile(
                 title: Text(entry.value, style: AppTextStyles.titleMd),
                 trailing: _category == entry.key
-                    ? Icon(IconlyLight.tick_square,
+                    ? Icon(AppIcons.tickSquare,
                         color: AppColors.primaryAccent)
                     : null,
                 onTap: () {
@@ -774,7 +774,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                   child: const CircleAvatar(
                     radius: 12,
                     backgroundColor: Colors.black54,
-                    child: Icon(IconlyLight.close_square,
+                    child: Icon(AppIcons.closeSquare,
                         size: 15, color: Colors.white),
                   ),
                 ),
@@ -798,7 +798,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
         ),
         child: Row(
           children: [
-            Icon(IconlyLight.paper, color: AppColors.errorAccent, size: 22),
+            Icon(AppIcons.paper, color: AppColors.errorAccent, size: 22),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(_pdfName ?? 'Document.pdf',
@@ -812,7 +812,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                 _pdfPath = null;
                 _pdfName = null;
               }),
-              child: Icon(IconlyLight.close_square, color: AppColors.hintColor),
+              child: Icon(AppIcons.closeSquare, color: AppColors.hintColor),
             ),
           ],
         ),
@@ -871,7 +871,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    Icon(IconlyLight.video, size: 13, color: Colors.white),
+                    Icon(AppIcons.video, size: 13, color: Colors.white),
                     SizedBox(width: 4),
                     Text('Vidéo',
                         style: TextStyle(
@@ -894,7 +894,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                 child: const CircleAvatar(
                   radius: 14,
                   backgroundColor: Colors.black54,
-                  child: Icon(IconlyLight.close_square,
+                  child: Icon(AppIcons.closeSquare,
                       size: 17, color: Colors.white),
                 ),
               ),
@@ -921,7 +921,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
           children: [
             Row(
               children: [
-                Icon(IconlyLight.chart,
+                Icon(AppIcons.chart,
                     size: 18, color: AppColors.primaryAccent),
                 const SizedBox(width: 8),
                 Expanded(
@@ -935,7 +935,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                 ),
                 GestureDetector(
                   onTap: _togglePoll,
-                  child: Icon(IconlyLight.close_square,
+                  child: Icon(AppIcons.closeSquare,
                       size: 20, color: AppColors.hintColor),
                 ),
               ],
@@ -982,7 +982,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
                   alignment: Alignment.centerLeft,
                   minimumSize: const Size(0, 36),
                 ),
-                icon: Icon(IconlyLight.plus,
+                icon: Icon(AppIcons.add,
                     size: 18, color: AppColors.primaryAccent),
                 label: Text(
                   'Ajouter une option',
@@ -1079,11 +1079,11 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
           child: Row(
             children: [
               if (!_isEditing) ...[
-                _toolBtn(IconlyLight.image, 'Galerie', _pickImages),
-                _toolBtn(IconlyLight.video, 'Vidéo', _pickVideo,
+                _toolBtn(AppIcons.image, 'Galerie', _pickImages),
+                _toolBtn(AppIcons.video, 'Vidéo', _pickVideo,
                     active: _videoPath != null),
                 _toolBtn(Icons.attach_file_rounded, 'Document', _pickPdf),
-                _toolBtn(IconlyLight.chart, 'Sondage', _togglePoll,
+                _toolBtn(AppIcons.chart, 'Sondage', _togglePoll,
                     active: _pollEnabled),
               ],
               _toolBtn(
@@ -1199,8 +1199,8 @@ class _AiAction {
 const _aiActions = <_AiAction>[
   _AiAction('improve', 'Améliorer', Icons.auto_awesome_rounded, true),
   _AiAction('rephrase', 'Reformuler', Icons.cached_rounded, true),
-  _AiAction('shorten', 'Raccourcir', IconlyLight.paper, true),
-  _AiAction('expand', 'Développer', IconlyLight.paper, true),
+  _AiAction('shorten', 'Raccourcir', AppIcons.paper, true),
+  _AiAction('expand', 'Développer', AppIcons.paper, true),
   _AiAction('hashtags', 'Suggérer des hashtags', Icons.tag_rounded, true),
   _AiAction('ideas', 'Idées de post', Icons.lightbulb_outline_rounded, false),
 ];
@@ -1333,7 +1333,7 @@ class _AiComposeSheetState extends State<_AiComposeSheet> {
         if (showBack && !_loading)
           IconButton(
             onPressed: _reset,
-            icon: Icon(IconlyLight.close_square, color: AppColors.hintColor),
+            icon: Icon(AppIcons.closeSquare, color: AppColors.hintColor),
           ),
       ],
     );
@@ -1380,7 +1380,7 @@ class _AiComposeSheetState extends State<_AiComposeSheet> {
                       ),
                     ),
                   ),
-                  Icon(IconlyLight.arrow_right_2, color: AppColors.hintColor),
+                  Icon(AppIcons.arrowRight, color: AppColors.hintColor),
                 ],
               ),
             ),

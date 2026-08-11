@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-class JobAwayLogo extends StatelessWidget {
-  const JobAwayLogo({
+class BaaraLogo extends StatelessWidget {
+  const BaaraLogo({
     super.key,
     this.iconSize = 20,
     this.fontSize = 22,
@@ -41,26 +41,16 @@ class JobAwayLogo extends StatelessWidget {
               ],
             ),
             child: Icon(
-              IconlyLight.work,
+              AppIcons.work,
               color: AppColors.onPrimary,
               size: iconSize,
             ),
           ),
           const SizedBox(width: 10),
         ],
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: 'Job',
-                style: AppTextStyles.logoGreen(size: fontSize),
-              ),
-              TextSpan(
-                text: 'Away',
-                style: AppTextStyles.logoDark(size: fontSize),
-              ),
-            ],
-          ),
+        Text(
+          'Baara',
+          style: AppTextStyles.logoGreen(size: fontSize),
         ),
       ],
     );

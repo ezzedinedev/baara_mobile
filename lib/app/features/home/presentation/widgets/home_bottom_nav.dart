@@ -1,15 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/community/presentation/controllers/community_controller.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/services/offline_apply_queue.dart';
+import 'package:baara/app/features/community/presentation/controllers/community_controller.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/features/offers/presentation/controllers/applications_controller.dart';
 import '../controllers/home_controller.dart';
 
 /// Pastille de compteur sur un onglet de nav. [kind] : 'messages' (conversations
@@ -36,6 +38,22 @@ class HomeNavBadge extends StatelessWidget {
         if (!Get.isRegistered<CommunityController>()) return child;
         final community = Get.find<CommunityController>();
         return Obx(() => _wrap(community.pendingConnections.length, child));
+      case 'tracking':
+        return Obx(() {
+          if (Get.isRegistered<ApplicationsController>()) {
+            return _wrap(
+              Get.find<ApplicationsController>().attentionCount,
+              child,
+            );
+          }
+          if (Get.isRegistered<OfflineApplyQueue>()) {
+            return _wrap(
+              Get.find<OfflineApplyQueue>().pending.length,
+              child,
+            );
+          }
+          return child;
+        });
       default:
         return child;
     }
@@ -62,32 +80,32 @@ class HomeBottomNav extends GetView<HomeController> {
   static const _items =
       <({IconData icon, IconData active, String labelKey, String? badge})>[
     (
-      icon: IconlyLight.home,
-      active: IconlyBold.home,
+      icon: AppIcons.home,
+      active: AppIcons.homeFilled,
       labelKey: 'nav.home',
       badge: null
     ),
     (
-      icon: IconlyLight.work,
-      active: IconlyBold.work,
+      icon: AppIcons.work,
+      active: AppIcons.workFilled,
       labelKey: 'nav.offers',
       badge: null
     ),
     (
-      icon: IconlyLight.user,
-      active: IconlyBold.user_3,
+      icon: AppIcons.network,
+      active: AppIcons.networkFilled,
       labelKey: 'nav.network',
       badge: 'network'
     ),
     (
-      icon: IconlyLight.category,
-      active: IconlyBold.category,
+      icon: AppIcons.tracking,
+      active: AppIcons.trackingFilled,
       labelKey: 'nav.tracking',
-      badge: null
+      badge: 'tracking'
     ),
     (
-      icon: IconlyLight.profile,
-      active: IconlyBold.profile,
+      icon: AppIcons.profile,
+      active: AppIcons.profileFilled,
       labelKey: 'nav.profile',
       badge: null
     ),

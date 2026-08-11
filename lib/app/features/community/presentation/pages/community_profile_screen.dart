@@ -1,21 +1,21 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
-import 'package:jobaway/app/features/messaging/data/repositories/messaging_repository_impl.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
+import 'package:baara/app/features/messaging/data/repositories/messaging_repository_impl.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/skill.dart';
@@ -160,7 +160,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     if (willBlock) {
       final confirmed = await showConfirmSheet(
         context: context,
-        icon: IconlyLight.shield_fail,
+        icon: AppIcons.shieldFail,
         iconColor: AppColors.errorAccent,
         title: 'Bloquer $name ?',
         message:
@@ -217,7 +217,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
             const SizedBox(height: AppSpacing.md),
             ListTile(
               leading: Icon(
-                _hasBlocked ? IconlyLight.unlock : IconlyLight.shield_fail,
+                _hasBlocked ? AppIcons.unlock : AppIcons.shieldFail,
                 color: AppColors.errorAccent,
               ),
               title: Text(
@@ -247,7 +247,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
       actions: [
         if (!_loading && !_error && !_isSelf)
           AppIconButton(
-            icon: IconlyLight.more_circle,
+            icon: AppIcons.moreCircle,
             onTap: _openMenu,
             onBrandHeader: true,
           ),
@@ -269,8 +269,8 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     final name = _profile?['full_name']?.toString() ?? 'Ce membre';
     final url = ApiConstants.webProfileUrl(_userId);
     await Share.share(
-      'Découvrez le profil de $name sur JobAway.\n$url',
-      subject: 'Profil de $name — JobAway',
+      'Découvrez le profil de $name sur Baara.\n$url',
+      subject: 'Profil de $name — Baara',
     );
   }
 
@@ -346,7 +346,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                 left: AppSpacing.xs, bottom: AppSpacing.md),
             child: Row(
               children: [
-                Icon(IconlyBold.document,
+                Icon(AppIcons.document,
                     size: 18, color: AppColors.primaryAccent),
                 const SizedBox(width: AppSpacing.sm),
                 Text('Publications',
@@ -368,17 +368,13 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                 child: _profilePostCard(post),
               ),
             if (loadingMore)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                 child: Center(
                   child: SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation(AppColors.primaryAccent),
-                    ),
+                    child: AppLoader(),
                   ),
                 ),
               ),
@@ -419,7 +415,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
             children: [
               Row(
                 children: [
-                  Icon(IconlyBold.image,
+                  Icon(AppIcons.image,
                       size: 18, color: AppColors.primaryAccent),
                   const SizedBox(width: AppSpacing.sm),
                   Text('Médias',
@@ -473,12 +469,12 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
             ),
             if (overlayMore > 0)
               Container(
-                color: Colors.black.withValues(alpha: 0.45),
+                color: AppColors.surfaceImmersive.withValues(alpha: 0.72),
                 alignment: Alignment.center,
                 child: Text(
                   '+$overlayMore',
                   style: AppTextStyles.titleLg.copyWith(
-                    color: Colors.white,
+                    color: AppColors.onDark,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -494,7 +490,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     Navigator.of(context).push<void>(
       PageRouteBuilder(
         opaque: false,
-        barrierColor: Colors.black,
+        barrierColor: AppColors.surfaceImmersive,
         pageBuilder: (_, __, ___) =>
             _MediaViewer(urls: urls, initialIndex: initialIndex),
       ),
@@ -528,28 +524,19 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
     );
   }
 
-  void _deletePost(String postId) {
-    showAdaptiveDialog<void>(
+  void _deletePost(String postId) async {
+    AppHaptics.tap();
+    final ok = await showConfirmSheet(
       context: context,
-      builder: (ctx) => AlertDialog.adaptive(
-        title: const Text('Supprimer'),
-        content: const Text('Supprimer cette publication ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _controller.deletePost(postId);
-            },
-            child:
-                Text('Supprimer', style: TextStyle(color: AppColors.errorAccent)),
-          ),
-        ],
-      ),
+      icon: AppIcons.delete,
+      iconColor: AppColors.errorAccent,
+      title: 'Supprimer la publication',
+      message: 'Cette action est définitive. Continuer ?',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      isDestructive: true,
     );
+    if (ok == true) _controller.deletePost(postId);
   }
 
   Widget _postsEmpty() {
@@ -570,7 +557,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
               color: AppColors.surfaceIconSoft,
               borderRadius: AppShapes.squircleRadius(AppRadius.lg),
             ),
-            child: Icon(IconlyLight.document,
+            child: Icon(AppIcons.document,
                 size: 28, color: AppColors.primaryAccent),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -595,28 +582,11 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
   }
 
   Widget _postsError(String message) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: AppShapes.cardRadius,
-        border: Border.all(color: AppColors.outlineVariant),
-      ),
-      child: Column(
-        children: [
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyColor),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextButton.icon(
-            onPressed: () => _controller.loadUserPosts(_userId),
-            icon: const Icon(IconlyLight.arrow_right_circle, size: 18),
-            label: const Text('Réessayer'),
-          ),
-        ],
-      ),
+    return ErrorStateView(
+      message: message,
+      compact: true,
+      illustration: const ErrorIllustration(),
+      onRetry: () async => _controller.loadUserPosts(_userId),
     );
   }
 
@@ -663,7 +633,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                     ),
                     if (profile['user_type']?.toString() == 'admin') ...[
                       const SizedBox(width: 6),
-                      Icon(IconlyBold.shield_done,
+                      Icon(AppIcons.shieldDone,
                           size: 20, color: AppColors.verified),
                     ],
                   ],
@@ -781,7 +751,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                 color: AppColors.surfaceIconSoft,
                 borderRadius: AppShapes.squircleRadius(AppRadius.lg),
               ),
-              child: Icon(IconlyLight.lock,
+              child: Icon(AppIcons.lock,
                   size: 32, color: AppColors.primaryAccent),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -813,7 +783,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                       borderRadius: AppShapes.squircleRadius(AppRadius.md),
                     ),
                   ),
-                  icon: const Icon(IconlyLight.add_user, size: 18),
+                  icon: const Icon(AppIcons.addUser, size: 18),
                   label: Text(
                     _connecting ? '…' : 'Se connecter',
                     style: AppTextStyles.buttonMd,
@@ -853,7 +823,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
               color: AppColors.errorAccent.withValues(alpha: 0.12),
               borderRadius: AppShapes.squircleRadius(AppRadius.lg),
             ),
-            child: Icon(IconlyLight.shield_fail,
+            child: Icon(AppIcons.shieldFail,
                 size: 30, color: AppColors.errorAccent),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -883,7 +853,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                   borderRadius: AppShapes.squircleRadius(AppRadius.md),
                 ),
               ),
-              icon: const Icon(IconlyLight.unlock, size: 18),
+              icon: const Icon(AppIcons.unlock, size: 18),
               label: Text(
                 _blocking ? '…' : 'Débloquer',
                 style: AppTextStyles.titleMd.copyWith(
@@ -906,7 +876,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
         children: [
           Expanded(
             child: _ContactAction(
-              icon: IconlyLight.edit,
+              icon: AppIcons.edit,
               label: 'Modifier le profil',
               active: true,
               onTap: () {
@@ -931,7 +901,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
       children: [
         Expanded(
           child: _ContactAction(
-            icon: _isFollowing ? IconlyLight.tick_square : IconlyLight.add_user,
+            icon: _isFollowing ? AppIcons.tickSquare : AppIcons.addUser,
             label: _isFollowing ? 'Suivi' : 'Suivre',
             active: _isFollowing,
             onTap: canFollow ? _toggleFollow : null,
@@ -943,7 +913,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: _ContactAction(
-              icon: IconlyLight.chat,
+              icon: AppIcons.chat,
               label: 'Message',
               onTap: _openConversation,
             ),
@@ -1006,14 +976,14 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
         );
       case 'pending_received':
         return _ContactAction(
-          icon: IconlyLight.message,
+          icon: AppIcons.message,
           label: 'Répondre',
           onTap: () => Get.toNamed(AppRoutes.communityConnections),
         );
       default:
         final canConnect = !_isSelf;
         return _ContactAction(
-          icon: IconlyLight.add_user,
+          icon: AppIcons.addUser,
           label: _connecting ? '…' : 'Connecter',
           onTap: _connecting || !canConnect ? null : _connect,
         );
@@ -1122,7 +1092,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
           children: [
             Row(
               children: [
-                Icon(IconlyLight.star,
+                Icon(AppIcons.star,
                     size: 18, color: AppColors.primaryAccent),
                 const SizedBox(width: AppSpacing.sm),
                 Text('Compétences',
@@ -1176,7 +1146,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Icon(IconlyBold.heart,
+                        Icon(AppIcons.heartFilled,
                             size: 11, color: AppColors.primaryAccent),
                         const SizedBox(width: 4),
                         Text(
@@ -1197,7 +1167,7 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                 onTap: () => _removeSkill(skill),
                 child: Padding(
                   padding: const EdgeInsets.all(6),
-                  child: Icon(IconlyLight.close_square,
+                  child: Icon(AppIcons.closeSquare,
                       size: 18, color: AppColors.hintColor),
                 ),
               )
@@ -1253,16 +1223,12 @@ class _CommunityProfileScreenState extends State<CommunityProfileScreen> {
                 ? null
                 : () => _addSkill(controller.text, controller),
             icon: _addingSkill.value
-                ? SizedBox(
+                ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation(AppColors.primaryAccent),
-                    ),
+                    child: AppLoader(strokeWidth: 2),
                   )
-                : Icon(IconlyLight.plus, color: AppColors.primaryAccent),
+                : Icon(AppIcons.add, color: AppColors.primaryAccent),
           ),
         ),
       ],
@@ -1413,7 +1379,7 @@ class _MediaViewerState extends State<_MediaViewer> {
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => Icon(
                     Icons.broken_image_outlined,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: AppColors.onDark.withValues(alpha: 0.6),
                     size: 48,
                   ),
                 ),
@@ -1429,20 +1395,20 @@ class _MediaViewerState extends State<_MediaViewer> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: Icon(Icons.close_rounded, color: AppColors.onDark),
                   ),
                   if (widget.urls.length > 1)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.md, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
+                        color: AppColors.surfaceImmersive.withValues(alpha: 0.65),
                         borderRadius: AppShapes.pill,
                       ),
                       child: Text(
                         '${_index + 1} / ${widget.urls.length}',
                         style: AppTextStyles.labelMd.copyWith(
-                          color: Colors.white,
+                          color: AppColors.onDark,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1531,7 +1497,7 @@ class _EndorseButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              endorsed ? IconlyBold.heart : IconlyLight.heart,
+              endorsed ? AppIcons.heartFilled : AppIcons.heart,
               size: 14,
               color: endorsed ? AppColors.primaryAccent : AppColors.hintColor,
             ),

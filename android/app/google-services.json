@@ -1,4 +1,4 @@
-﻿{
+{
   "project_info": {
     "project_number": "474816588506",
     "project_id": "flutter-ai-playground-e84b5",
@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:474816588506:android:f832f8fa9bbcf4d45613e3",
         "android_client_info": {
-          "package_name": "com.JobAway.bf"
+          "package_name": "com.Baara.bf"
         }
       },
       "oauth_client": [],

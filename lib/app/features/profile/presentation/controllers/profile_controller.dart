@@ -1,11 +1,11 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:jobaway/app/core/services/auth_token_store.dart';
-import 'package:jobaway/app/core/theme/app_theme_controller.dart';
-import 'package:jobaway/app/core/services/realtime_service.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/theme/app_theme_controller.dart';
+import 'package:baara/app/core/services/realtime_service.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/i_profile_repository.dart';
 

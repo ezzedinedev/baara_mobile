@@ -3,7 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/api_constants.dart';
 import '../core/network/api_provider.dart';
 import '../core/services/auth_token_store.dart';
+import '../core/services/biometric_service.dart';
+import '../core/services/network_status_service.dart';
 import '../core/services/offline_apply_queue.dart';
+import '../core/services/onboarding_service.dart';
+import '../core/services/post_auth_bootstrap.dart';
 import '../core/services/realtime_events.dart';
 import '../core/services/realtime_service.dart';
 import '../core/theme/app_theme_controller.dart';
@@ -33,8 +37,9 @@ class InitialBinding extends Bindings {
         await tokenStore.clearSession();
         if (Get.currentRoute != AppRoutes.profileSelection &&
             Get.currentRoute != AppRoutes.landing &&
-            Get.currentRoute != AppRoutes.candidateLogin) {
-          Get.offAllNamed(AppRoutes.profileSelection);
+            Get.currentRoute != AppRoutes.candidateLogin &&
+            Get.currentRoute != AppRoutes.onboarding) {
+          Get.offAllNamed(AppRoutes.landing);
         }
       },
     );
@@ -43,6 +48,9 @@ class InitialBinding extends Bindings {
     // File d'attente des candidatures hors-ligne : renvoi auto au retour du
     // reseau. Permanent (survit aux changements de page), depend d'ApiProvider.
     Get.put(OfflineApplyQueue(apiProvider), permanent: true);
+    Get.put(NetworkStatusService(), permanent: true);
+    Get.put(BiometricService(), permanent: true);
+    Get.put(OnboardingService(), permanent: true);
 
     Get.put(RealtimeEventBus(), permanent: true);
 
@@ -91,5 +99,6 @@ class InitialBinding extends Bindings {
     final prefs = await SharedPreferences.getInstance();
     final userType = prefs.getString('user_type') ?? 'candidate';
     await store.saveSession(token: newToken, userType: userType);
+    await PostAuthBootstrap.syncPushToken();
   }
 }

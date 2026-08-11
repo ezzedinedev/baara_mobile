@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -70,7 +70,7 @@ class RegisterCountryDropdown extends StatelessWidget {
               ),
             ),
             icon: Icon(
-              IconlyLight.arrow_down_2,
+              AppIcons.chevronDown,
               color: AppColors.hintColor,
             ),
             items: controller.countries.map((country) {

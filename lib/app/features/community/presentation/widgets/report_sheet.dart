@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
 import '../controllers/community_controller.dart';
 
 /// Feuille de signalement d'une publication : choix du motif (aligné sur les
@@ -58,7 +58,7 @@ Future<void> showReportSheet(
             for (final entry in reasons.entries)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(IconlyLight.danger, color: AppColors.hintColor),
+                leading: Icon(AppIcons.danger, color: AppColors.hintColor),
                 title: Text(entry.value, style: AppTextStyles.titleMd),
                 onTap: () async {
                   AppHaptics.tap();

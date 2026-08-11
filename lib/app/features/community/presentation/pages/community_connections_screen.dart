@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/community_controller.dart';
 import '../widgets/network_user_tile.dart';
 import 'suggestions_screen.dart';
@@ -38,7 +38,7 @@ class _CommunityConnectionsScreenState
       title: 'Demandes de connexion',
       actions: [
         AppIconButton(
-          icon: IconlyLight.user,
+          icon: AppIcons.network,
           tooltip: 'Personnes à suivre',
           onBrandHeader: true,
           onTap: () {
@@ -49,7 +49,8 @@ class _CommunityConnectionsScreenState
       ],
       body: Obx(() {
         if (_controller.isLoadingConnections.value &&
-            _controller.pendingConnections.isEmpty) {
+            _controller.pendingConnections.isEmpty &&
+            _controller.connectionsErrorMessage.value == null) {
           return ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: 7,
@@ -57,12 +58,29 @@ class _CommunityConnectionsScreenState
             itemBuilder: (_, __) => const MessageTileSkeleton(),
           );
         }
+        if (_controller.connectionsErrorMessage.value != null &&
+            _controller.pendingConnections.isEmpty) {
+          return ErrorStateView(
+            message: _controller.connectionsErrorMessage.value!,
+            illustration: const ErrorIllustration(),
+            onRetry: _controller.loadPendingConnections,
+          );
+        }
         if (_controller.pendingConnections.isEmpty) {
-          return const Center(
-            child: EmptyState(
-              illustration: EmptyPeopleIllustration(),
-              title: 'Aucune demande',
-              subtitle: 'Vous n\'avez pas de demande de connexion en attente.',
+          return AppRefreshIndicator(
+            color: AppColors.primaryAccent,
+            onRefresh: _controller.loadPendingConnections,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 80),
+                EmptyState(
+                  illustration: EmptyPeopleIllustration(),
+                  title: 'Aucune demande',
+                  subtitle:
+                      'Vous n\'avez pas de demande de connexion en attente.',
+                ),
+              ],
             ),
           );
         }
@@ -95,14 +113,14 @@ class _CommunityConnectionsScreenState
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _RespondButton(
-                              icon: IconlyLight.close_square,
+                              icon: AppIcons.closeSquare,
                               color: AppColors.errorAccent,
                               tooltip: 'Refuser',
                               onTap: () => _respond(req.connectionId, false),
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             _RespondButton(
-                              icon: IconlyLight.tick_square,
+                              icon: AppIcons.tickSquare,
                               color: AppColors.primaryAccent,
                               filled: true,
                               tooltip: 'Accepter',

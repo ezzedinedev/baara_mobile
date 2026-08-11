@@ -1,11 +1,11 @@
 {
-    "name": "appli_pour_lemploie",
-    "short_name": "appli_pour_lemploie",
+    "name": "Baara.bf",
+    "short_name": "Baara.bf",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0E8A4D",
     "theme_color": "#0E8A4D",
-    "description": "A new Flutter project.",
+    "description": "Baara.bf — Emploi, formation et réseau professionnel au Burkina Faso.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

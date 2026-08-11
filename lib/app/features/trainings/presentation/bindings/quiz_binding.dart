@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_provider.dart';
 
 import '../../data/repositories/quiz_repository.dart';
 import '../controllers/quiz_controller.dart';

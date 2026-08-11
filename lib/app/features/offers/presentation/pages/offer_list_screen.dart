@@ -1,18 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../../../alerts/data/repositories/alerts_repository_impl.dart';
 import '../controllers/offer_controller.dart';
 import '../widgets/offer_boost_badge.dart';
@@ -70,14 +70,14 @@ class OfferListScreen extends GetView<OfferController> {
             subtitle: 'Opportunités sélectionnées pour votre profil.',
             headerActions: [
               AppIconButton(
-                icon: IconlyLight.notification,
+                icon: AppIcons.bell,
                 onTap: () {
                   AppHaptics.tap();
                   Get.toNamed(AppRoutes.alerts);
                 },
               ),
               AppIconButton(
-                icon: IconlyLight.filter,
+                icon: AppIcons.filter,
                 onTap: () {
                   AppHaptics.tap();
                   openOffersFilter(context, controller);
@@ -409,7 +409,7 @@ class _CreateAlertBar extends StatelessWidget {
                   horizontal: AppSpacing.md, vertical: 10),
               child: Row(
                 children: [
-                  Icon(IconlyBold.notification,
+                  Icon(AppIcons.notificationFilled,
                       size: 18, color: AppColors.primary),
                   const SizedBox(width: 10),
                   Expanded(
@@ -447,7 +447,8 @@ class _OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<OfferController>();
 
-    return PressScale(
+    return RepaintBoundary(
+      child: PressScale(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -509,7 +510,7 @@ class _OfferCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          Icon(IconlyLight.work,
+                          Icon(AppIcons.work,
                               size: 13, color: AppColors.primaryAccent),
                           const SizedBox(width: 5),
                           Expanded(
@@ -556,7 +557,7 @@ class _OfferCard extends StatelessWidget {
                           transitionBuilder: (child, anim) =>
                               ScaleTransition(scale: anim, child: child),
                           child: Icon(
-                            saved ? IconlyBold.bookmark : IconlyLight.bookmark,
+                            saved ? AppIcons.bookmarkFilled : AppIcons.bookmark,
                             key: ValueKey(saved),
                             size: 19,
                             color: saved
@@ -576,7 +577,7 @@ class _OfferCard extends StatelessWidget {
               children: [
                 if (offer.contractType.isNotEmpty) ...[
                   _OfferBadge(
-                    icon: IconlyLight.work,
+                    icon: AppIcons.work,
                     label: offer.contractType,
                     accent: true,
                   ),
@@ -584,7 +585,7 @@ class _OfferCard extends StatelessWidget {
                 ],
                 Flexible(
                   child: _OfferBadge(
-                    icon: IconlyLight.location,
+                    icon: AppIcons.location,
                     label: offer.isRemote ? 'Télétravail' : offer.location,
                   ),
                 ),
@@ -592,7 +593,7 @@ class _OfferCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Flexible(
                     child: _OfferBadge(
-                      icon: IconlyLight.wallet,
+                      icon: AppIcons.wallet,
                       label: offer.salary,
                     ),
                   ),
@@ -602,6 +603,7 @@ class _OfferCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

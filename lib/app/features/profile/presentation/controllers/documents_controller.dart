@@ -1,9 +1,9 @@
-﻿import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/common/app_toast.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/common/app_toast.dart';
 
 import '../../data/models/candidate_document_model.dart';
 import '../../domain/repositories/i_document_repository.dart';

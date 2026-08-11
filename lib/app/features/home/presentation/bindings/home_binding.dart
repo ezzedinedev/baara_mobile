@@ -1,48 +1,61 @@
-﻿import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:get/get.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/services/candidate_session_guard.dart';
+import 'package:baara/app/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:baara/app/features/auth/domain/repositories/i_auth_repository.dart';
 
-import 'package:jobaway/app/features/offers/data/repositories/offer_repository_impl.dart';
-import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/applications_controller.dart';
+import 'package:baara/app/features/offers/data/repositories/offer_repository_impl.dart';
+import 'package:baara/app/features/offers/domain/repositories/i_offer_repository.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/app/features/offers/presentation/controllers/applications_controller.dart';
 
-import 'package:jobaway/app/features/trainings/data/repositories/training_repository_impl.dart';
-import 'package:jobaway/app/features/trainings/domain/repositories/i_training_repository.dart';
-import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:baara/app/features/trainings/data/repositories/training_repository_impl.dart';
+import 'package:baara/app/features/trainings/domain/repositories/i_training_repository.dart';
+import 'package:baara/app/features/trainings/presentation/controllers/trainings_controller.dart';
 
-import 'package:jobaway/app/features/profile/data/repositories/profile_repository_impl.dart';
-import 'package:jobaway/app/features/profile/domain/repositories/i_profile_repository.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/settings_controller.dart';
-import 'package:jobaway/app/features/profile/data/repositories/document_repository_impl.dart';
-import 'package:jobaway/app/features/profile/domain/repositories/i_document_repository.dart';
-import 'package:jobaway/app/features/profile/presentation/controllers/documents_controller.dart';
+import 'package:baara/app/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:baara/app/features/profile/domain/repositories/i_profile_repository.dart';
+import 'package:baara/app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:baara/app/features/profile/presentation/controllers/settings_controller.dart';
+import 'package:baara/app/features/profile/data/repositories/document_repository_impl.dart';
+import 'package:baara/app/features/profile/domain/repositories/i_document_repository.dart';
+import 'package:baara/app/features/profile/presentation/controllers/documents_controller.dart';
 
-import 'package:jobaway/app/features/messaging/data/repositories/messaging_repository_impl.dart';
-import 'package:jobaway/app/features/messaging/domain/repositories/i_messaging_repository.dart';
-import 'package:jobaway/app/features/messaging/presentation/controllers/messages_controller.dart';
+import 'package:baara/app/features/messaging/data/repositories/messaging_repository_impl.dart';
+import 'package:baara/app/features/messaging/domain/repositories/i_messaging_repository.dart';
+import 'package:baara/app/features/messaging/presentation/controllers/messages_controller.dart';
 
-import 'package:jobaway/app/features/community/data/repositories/community_repository_impl.dart';
-import 'package:jobaway/app/features/community/domain/repositories/i_community_repository.dart';
-import 'package:jobaway/app/features/community/presentation/controllers/community_controller.dart';
-import 'package:jobaway/app/features/community/presentation/controllers/story_controller.dart';
+import 'package:baara/app/features/community/data/repositories/community_repository_impl.dart';
+import 'package:baara/app/features/community/domain/repositories/i_community_repository.dart';
+import 'package:baara/app/features/community/presentation/controllers/community_controller.dart';
+import 'package:baara/app/features/community/presentation/controllers/story_controller.dart';
 
-import 'package:jobaway/app/features/notifications/data/repositories/notification_repository_impl.dart';
-import 'package:jobaway/app/features/notifications/domain/repositories/i_notification_repository.dart';
-import 'package:jobaway/app/features/notifications/presentation/controllers/notifications_controller.dart';
+import 'package:baara/app/features/notifications/data/repositories/notification_repository_impl.dart';
+import 'package:baara/app/features/notifications/domain/repositories/i_notification_repository.dart';
+import 'package:baara/app/features/notifications/presentation/controllers/notifications_controller.dart';
 
-import 'package:jobaway/app/features/dashboard/data/repositories/dashboard_repository_impl.dart';
-import 'package:jobaway/app/features/dashboard/domain/repositories/i_dashboard_repository.dart';
-import 'package:jobaway/app/features/dashboard/presentation/controllers/dashboard_controller.dart';
+import 'package:baara/app/features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import 'package:baara/app/features/dashboard/domain/repositories/i_dashboard_repository.dart';
+import 'package:baara/app/features/dashboard/presentation/controllers/dashboard_controller.dart';
 
-import 'package:jobaway/app/features/suivi/presentation/controllers/suivi_controller.dart';
-import 'package:jobaway/app/features/streak/presentation/controllers/streak_controller.dart';
+import 'package:baara/app/features/suivi/presentation/controllers/suivi_controller.dart';
+import 'package:baara/app/features/streak/presentation/controllers/streak_controller.dart';
 
-import 'package:jobaway/app/features/home/presentation/controllers/home_controller.dart';
+import 'package:baara/app/features/home/presentation/controllers/home_controller.dart';
 
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
+    Get.lazyPut<IAuthRepository>(
+      () => AuthRepositoryImpl(apiProvider: Get.find<ApiProvider>()),
+    );
+    Get.lazyPut(
+      () => CandidateSessionGuard(
+        Get.find<AuthTokenStore>(),
+        Get.find<IAuthRepository>(),
+      ),
+    );
     Get.lazyPut(() => HomeController());
 
     // Dashboard candidat : stats de synthèse consommables par l'accueil.
@@ -75,7 +88,11 @@ class HomeBinding extends Bindings {
 
     // TAB: Messaging
     Get.lazyPut<IMessagingRepository>(
-        () => MessagingRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
+      () => MessagingRepositoryImpl(
+        apiProvider: Get.find<ApiProvider>(),
+        tokenStore: Get.find<AuthTokenStore>(),
+      ),
+    );
     Get.lazyPut(() => MessagesController(
           Get.find<IMessagingRepository>(),
           Get.find<IOfferRepository>(),
@@ -85,13 +102,11 @@ class HomeBinding extends Bindings {
     Get.lazyPut<ICommunityRepository>(
         () => CommunityRepositoryImpl(apiProvider: Get.find<ApiProvider>()));
     Get.lazyPut(() => CommunityController(Get.find<ICommunityRepository>()));
-    // Eager (pas lazy) : précharge les stories dès l'accueil → la barre est
-    // déjà prête quand on ouvre l'onglet Communauté (plus de chargement tardif).
-    Get.put(StoryController(Get.find<ICommunityRepository>()));
+    Get.lazyPut(() => StoryController(Get.find<ICommunityRepository>()),
+        fenix: true);
 
-    // Série quotidienne : eager → le check-in du jour est enregistré dès
-    // l'arrivée sur l'accueil (gamification de rétention).
-    Get.put(StreakController());
+    // Série quotidienne : lazy → instancié à la première ouverture.
+    Get.lazyPut(() => StreakController(), fenix: true);
 
     // TAB: Suivi (façade agrégeant offres + candidatures + communauté).
     Get.lazyPut(() => SuiviController(

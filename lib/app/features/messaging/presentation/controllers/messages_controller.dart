@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -8,14 +8,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:jobaway/app/core/services/location_service.dart';
-import 'package:jobaway/app/core/services/realtime_events.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
-import 'package:jobaway/app/features/offers/data/models/job_proposal_model.dart';
-import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
+import 'package:baara/app/core/services/location_service.dart';
+import 'package:baara/app/core/services/realtime_events.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:baara/app/features/offers/data/models/job_proposal_model.dart';
+import 'package:baara/app/features/offers/domain/repositories/i_offer_repository.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/i_messaging_repository.dart';
@@ -53,9 +53,10 @@ class MessagesController extends GetxController {
   final isLoadingConversations = false.obs;
   final isLoadingMoreConversations = false.obs;
   final hasMoreConversations = false.obs;
+  final conversationsError = ''.obs;
   final isLoadingMessages = false.obs;
+  final messagesError = ''.obs;
   final isSending = false.obs;
-  final showVoiceRecorder = false.obs;
   final activeConversationId = RxnString();
   int _convPage = 1;
 
@@ -78,6 +79,65 @@ class MessagesController extends GetxController {
   bool _myTyping = false; // mon dernier état envoyé.
 
   StreamSubscription<RealtimeEvent>? _realtimeSub;
+  Timer? _conversationsRefreshDebounce;
+
+  /// Met à jour localement l'aperçu d'une conversation (évite un GET complet).
+  void applyIncomingMessage({
+    required String? conversationId,
+    Message? message,
+  }) {
+    if (conversationId == null || conversationId.isEmpty) {
+      _scheduleConversationsRefresh();
+      return;
+    }
+
+    final idx = conversations.indexWhere((c) => c.id == conversationId);
+    if (message == null) {
+      _scheduleConversationsRefresh();
+      return;
+    }
+
+    final preview = message.text.trim().isNotEmpty
+        ? message.text
+        : switch (message.messageType) {
+            'image' => 'Photo',
+            'file' => message.fileName ?? 'Fichier',
+            'voice' => 'Message vocal',
+            'location' => 'Position',
+            _ => 'Nouveau message',
+          };
+
+    final isActive = activeConversationId.value == conversationId;
+    Conversation updated;
+    if (idx >= 0) {
+      final current = conversations[idx];
+      updated = current.copyWith(
+        lastMessage: preview,
+        lastMessageTime: message.sentAt,
+        unreadCount: isActive || message.isMine
+            ? current.unreadCount
+            : current.unreadCount + 1,
+      );
+      conversations.removeAt(idx);
+    } else {
+      updated = Conversation(
+        id: conversationId,
+        title: message.senderName,
+        lastMessage: preview,
+        lastMessageTime: message.sentAt,
+        unreadCount: isActive || message.isMine ? 0 : 1,
+        isOnline: false,
+      );
+    }
+    conversations.insert(0, updated);
+  }
+
+  void _scheduleConversationsRefresh() {
+    _conversationsRefreshDebounce?.cancel();
+    _conversationsRefreshDebounce = Timer(const Duration(milliseconds: 800), () {
+      if (!isClosed) loadConversations();
+    });
+  }
 
   @override
   void onInit() {
@@ -98,7 +158,7 @@ class MessagesController extends GetxController {
   void _handleRealtimeEvent(RealtimeEvent event) {
     switch (event) {
       case RealtimeMessageSent(:final conversationId, :final message):
-        loadConversations();
+        applyIncomingMessage(conversationId: conversationId, message: message);
         if (conversationId != null &&
             activeConversationId.value == conversationId) {
           if (message != null) {
@@ -127,7 +187,7 @@ class MessagesController extends GetxController {
         ):
         onMessageReaction(messageId, userId, emoji, removed);
       case RealtimeNotificationCreated():
-        loadConversations();
+        break;
       case RealtimeStoryCreated():
         break;
     }
@@ -162,9 +222,18 @@ class MessagesController extends GetxController {
       // `fallback` est géré silencieusement : on affiche quand même.
       smartReplies.assignAll(result.suggestions.take(3));
     } catch (e) {
-      // Indispo IA (502) : pas de bruit, on masque simplement les chips.
+      // Indispo IA (502) : repli local pour les entretiens structurés.
       if (kDebugMode) debugPrint('[Messages] smartReplies error: $e');
-      smartReplies.clear();
+      final last = activeMessages.last;
+      if (last.meta?.isInterview == true) {
+        smartReplies.assignAll(const [
+          'Merci pour l\'invitation, je confirme ma disponibilité.',
+          'Pourriez-vous me proposer un autre créneau ?',
+          'Je ne suis pas disponible à cette date.',
+        ]);
+      } else {
+        smartReplies.clear();
+      }
     } finally {
       isLoadingSmartReplies.value = false;
     }
@@ -176,6 +245,7 @@ class MessagesController extends GetxController {
   @override
   void onClose() {
     _realtimeSub?.cancel();
+    _conversationsRefreshDebounce?.cancel();
     searchCtrl.dispose();
     _peerTypingExpiry?.cancel();
     _typingStopTimer?.cancel();
@@ -234,12 +304,14 @@ class MessagesController extends GetxController {
   Future<void> loadConversations() async {
     try {
       isLoadingConversations.value = true;
+      conversationsError.value = '';
       _convPage = 1;
       final result =
           await _repository.getConversations(page: 1, perPage: _convPerPage);
       conversations.assignAll(result);
       hasMoreConversations.value = result.length >= _convPerPage;
     } catch (e) {
+      conversationsError.value = userFacingError(e);
       if (kDebugMode) debugPrint('[Messages] loadConversations error: $e');
     } finally {
       isLoadingConversations.value = false;
@@ -271,6 +343,7 @@ class MessagesController extends GetxController {
   Future<void> loadMessages(String conversationId) async {
     try {
       isLoadingMessages.value = true;
+      messagesError.value = '';
       activeConversationId.value = conversationId;
       // Réinitialise l'état temps réel de la conversation précédente.
       peerTyping.value = false;
@@ -283,6 +356,7 @@ class MessagesController extends GetxController {
       maybeLoadSmartReplies();
       await _repository.markAsRead(conversationId);
     } catch (e) {
+      messagesError.value = userFacingError(e);
       if (kDebugMode) debugPrint('[Messages] loadMessages error: $e');
     } finally {
       isLoadingMessages.value = false;
@@ -611,25 +685,6 @@ class MessagesController extends GetxController {
       activeMessages.add(msg);
     } catch (e) {
       if (kDebugMode) debugPrint('[Messages] sendFileMessage error: $e');
-      AppToast.error('Message non envoyé', userFacingError(e));
-    } finally {
-      isSending.value = false;
-    }
-  }
-
-  Future<void> sendVoiceMessage(String voicePath) async {
-    final convId = activeConversationId.value;
-    if (convId == null) return;
-    try {
-      isSending.value = true;
-      final msg = await _repository.sendMediaMessage(
-        convId,
-        'voice',
-        filePath: voicePath,
-      );
-      activeMessages.add(msg);
-    } catch (e) {
-      if (kDebugMode) debugPrint('[Messages] sendVoiceMessage error: $e');
       AppToast.error('Message non envoyé', userFacingError(e));
     } finally {
       isSending.value = false;

@@ -1,5 +1,6 @@
-﻿import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 import '../../domain/entities/saved_search.dart';
 import '../../domain/repositories/i_alerts_repository.dart';
@@ -33,13 +34,12 @@ class AlertsRepositoryImpl implements IAlertsRepository {
   @override
   Future<List<SavedSearch>> getSavedSearches() async {
     final response = await _api.getJson(ApiConstants.savedSearches);
-    if (response['success'] == true) {
-      return _extractList(response['data'])
-          .whereType<Map<String, dynamic>>()
-          .map(SavedSearchModel.fromJson)
-          .toList();
-    }
-    return [];
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger vos alertes.');
+    return _extractList(response['data'])
+        .whereType<Map<String, dynamic>>()
+        .map(SavedSearchModel.fromJson)
+        .toList();
   }
 
   @override
@@ -65,24 +65,20 @@ class AlertsRepositoryImpl implements IAlertsRepository {
 
   @override
   Future<bool> setNotify(String id, bool notify) async {
-    try {
-      final response = await _api.putJson(
-        ApiConstants.savedSearch(id),
-        {'notify': notify},
-      );
-      return response['success'] == true;
-    } catch (_) {
-      return false;
-    }
+    final response = await _api.putJson(
+      ApiConstants.savedSearch(id),
+      {'notify': notify},
+    );
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de mettre à jour cette alerte.');
+    return true;
   }
 
   @override
   Future<bool> deleteSavedSearch(String id) async {
-    try {
-      final response = await _api.deleteJson(ApiConstants.savedSearch(id));
-      return response['success'] == true;
-    } catch (_) {
-      return false;
-    }
+    final response = await _api.deleteJson(ApiConstants.savedSearch(id));
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de supprimer cette alerte.');
+    return true;
   }
 }

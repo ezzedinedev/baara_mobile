@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
 import '../../domain/entities/training.dart';
 import '../../domain/repositories/i_training_repository.dart';
 
@@ -32,7 +33,7 @@ class TrainingController extends GetxController {
         currentPage.value++;
       }
     } catch (e) {
-      errorMessage.value = "Erreur de chargement des formations";
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
     }

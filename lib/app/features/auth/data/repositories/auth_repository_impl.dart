@@ -1,6 +1,9 @@
-﻿import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/services/auth_token_store.dart';
+import 'package:baara/app/core/services/post_auth_bootstrap.dart';
+import 'package:baara/app/core/utils/candidate_access.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../models/user_model.dart';
@@ -22,11 +25,13 @@ class AuthRepositoryImpl implements IAuthRepository {
     });
 
     if (response['success'] == true) {
+      final user = UserModel.fromJson(response['data']['user'] ?? response['data']);
+      _ensureCandidateOnly(user);
       final token = _extractToken(response);
       if (token != null) {
-        await _tokenStore.saveSession(token: token, userType: 'candidate');
+        await _persistSession(token);
       }
-      return UserModel.fromJson(response['data']['user'] ?? response['data']);
+      return user;
     }
     throw Exception(response['message'] ?? 'Login failed');
   }
@@ -41,11 +46,13 @@ class AuthRepositoryImpl implements IAuthRepository {
     });
 
     if (response['success'] == true) {
+      final user = UserModel.fromJson(response['data']['user'] ?? response['data']);
+      _ensureCandidateOnly(user);
       final token = _extractToken(response);
       if (token != null) {
-        await _tokenStore.saveSession(token: token, userType: 'candidate');
+        await _persistSession(token);
       }
-      return UserModel.fromJson(response['data']['user'] ?? response['data']);
+      return user;
     }
     throw Exception(response['message'] ?? 'Login failed');
   }
@@ -60,11 +67,13 @@ class AuthRepositoryImpl implements IAuthRepository {
     });
 
     if (response['success'] == true) {
+      final user = UserModel.fromJson(response['data']['user'] ?? response['data']);
+      _ensureCandidateOnly(user);
       final token = _extractToken(response);
       if (token != null) {
-        await _tokenStore.saveSession(token: token, userType: 'candidate');
+        await _persistSession(token);
       }
-      return UserModel.fromJson(response['data']['user'] ?? response['data']);
+      return user;
     }
     throw Exception(response['message'] ?? 'Google Login failed');
   }
@@ -77,6 +86,10 @@ class AuthRepositoryImpl implements IAuthRepository {
       final validation = ApiValidationException.tryFrom(response);
       if (validation != null) throw validation;
       throw Exception(response['message'] ?? 'Registration failed');
+    }
+    final token = _extractToken(response);
+    if (token != null) {
+      await _persistSession(token);
     }
   }
 
@@ -166,13 +179,22 @@ class AuthRepositoryImpl implements IAuthRepository {
 
   @override
   Future<User?> getMe() async {
-    try {
-      final response = await _apiProvider.getJson(ApiConstants.me);
-      if (response['success'] == true && response['data'] != null) {
-        return UserModel.fromJson(response['data']);
-      }
-    } catch (_) {}
+    final response = await _apiProvider.getJson(ApiConstants.me);
+    ApiResponse.ensureSuccess(response, fallback: 'Session invalide.');
+    if (response['data'] != null) {
+      final user =
+          UserModel.fromJson(response['data'] as Map<String, dynamic>);
+      _ensureCandidateOnly(user);
+      return user;
+    }
     return null;
+  }
+
+  /// Bloque tout compte non-candidat (employeur, recruteur, admin…).
+  void _ensureCandidateOnly(User user) {
+    if (!CandidateAccess.isAllowed(user.userType)) {
+      throw const CandidateAccessDeniedException();
+    }
   }
 
   String? _extractToken(Map<String, dynamic> data) {
@@ -184,5 +206,10 @@ class AuthRepositoryImpl implements IAuthRepository {
     final token = data['token'];
     if (token is String && token.isNotEmpty) return token;
     return null;
+  }
+
+  Future<void> _persistSession(String token) async {
+    await _tokenStore.saveSession(token: token, userType: 'candidate');
+    await PostAuthBootstrap.syncPushToken();
   }
 }

@@ -19,7 +19,7 @@ import UIKit
     // seuil d'alerte et l'invalidation restent decides par le backend.
     if let controller = window?.rootViewController as? FlutterViewController {
       let channel = FlutterMethodChannel(
-        name: "jobaway/quiz_proctoring",
+        name: "baara/quiz_proctoring",
         binaryMessenger: controller.binaryMessenger
       )
       proctoringChannel = channel

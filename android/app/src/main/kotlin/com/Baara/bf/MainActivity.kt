@@ -1,4 +1,4 @@
-package com.JobAway.bf
+package com.Baara.bf
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -23,7 +23,7 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "jobaway/quiz_proctoring"
+            "baara/quiz_proctoring"
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "enableSecure" -> {

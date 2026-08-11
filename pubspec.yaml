@@ -1,5 +1,5 @@
-name: jobaway
-description: JobAway — Plateforme de recrutement du Burkina Faso
+name: baara
+description: Baara — Plateforme de recrutement du Burkina Faso
 publish_to: none
 version: 1.0.0+1
 
@@ -43,15 +43,14 @@ dependencies:
   permission_handler: ^11.3.0
   geolocator: ^12.0.0
   geocoding: ^3.0.0
-  record: ^7.0.0
   confetti: ^0.8.0
-  just_audio: ^0.10.5
   emoji_picker_flutter: ^4.3.0
   custom_refresh_indicator: ^4.0.1
   share_plus: ^10.1.4
   app_links: ^6.3.2
   sensors_plus: ^6.1.1
   connectivity_plus: ^6.1.0
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -59,14 +58,14 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
-# Icônes de lancement JobAway (remplacent le logo Flutter par défaut).
+# Icônes de lancement Baara (remplacent le logo Flutter par défaut).
 # Régénérer après modif : `dart run flutter_launcher_icons`.
 flutter_launcher_icons:
-  image_path: "assets/icon/jobaway_icon.png"
+  image_path: "assets/icon/baara_icon.png"
   # Android : icône adaptative (fond de marque + symbole détouré).
   android: "ic_launcher"
   adaptive_icon_background: "#0E8A4D"
-  adaptive_icon_foreground: "assets/icon/jobaway_icon_foreground.png"
+  adaptive_icon_foreground: "assets/icon/baara_icon_foreground.png"
   min_sdk_android: 21
   # iOS n'accepte pas la transparence : on aplatit sur le fond de marque.
   ios: true

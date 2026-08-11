@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter/services.dart';
-import 'package:iconly/iconly.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -134,7 +134,7 @@ class _InputFieldState extends State<InputField> {
             return field(
               suffix: IconButton(
                 icon: Icon(
-                  _obscure ? IconlyLight.show : IconlyLight.hide,
+                  _obscure ? AppIcons.show : AppIcons.hide,
                   color: AppColors.hintColor,
                   size: 20,
                 ),

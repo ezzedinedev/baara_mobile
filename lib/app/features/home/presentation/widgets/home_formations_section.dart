@@ -1,12 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
-import 'package:jobaway/app/features/trainings/presentation/widgets/training_card.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:baara/app/features/trainings/presentation/widgets/training_card.dart';
+import 'package:baara/routes/app_routes.dart';
 import '../controllers/home_controller.dart';
 
 /// Section « Formations pour toi » : aperçu vertical (jusqu'à 2 cartes) avec la
@@ -62,17 +62,19 @@ class HomeFormationsSection extends StatelessWidget {
                 AppSpacing.pageH,
                 i == preview.length - 1 ? 0 : AppSpacing.md,
               ),
-              child: TrainingCard(
-                training: preview[i],
-                // Tag Hero unique : évite un doublon avec l'onglet Formations
-                // (mêmes cartes montées en même temps).
-                heroTag: 'home-formation-${preview[i].id}',
-                onTap: () {
-                  AppHaptics.tap();
-                  Get.toNamed(
-                    AppRoutes.trainingDetail.replaceFirst(':id', preview[i].id),
-                  );
-                },
+              child: RepaintBoundary(
+                child: TrainingCard(
+                  training: preview[i],
+                  // Tag Hero unique : évite un doublon avec l'onglet Formations
+                  // (mêmes cartes montées en même temps).
+                  heroTag: 'home-formation-${preview[i].id}',
+                  onTap: () {
+                    AppHaptics.tap();
+                    Get.toNamed(
+                      AppRoutes.trainingDetail.replaceFirst(':id', preview[i].id),
+                    );
+                  },
+                ),
               ),
             ),
         ],

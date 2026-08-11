@@ -1,11 +1,11 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Appli Pour Lemploie</string>
+	<string>Baara.bf</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>appli_pour_lemploie</string>
+	<string>Baara.bf</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -42,25 +42,28 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>JobAway utilise votre position pour partager un lieu dans vos messages et vous guider vers vos entretiens.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>JobAway utilise le micro pour enregistrer vos messages vocaux.</string>
+	<string>Baara utilise votre position pour partager un lieu dans vos messages et vous guider vers vos entretiens.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Baara utilise Face ID ou Touch ID pour sécuriser l'accès à votre compte.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Deep link : schéma custom jobaway:// (ex. jobaway://profil/{id}).
-	     Doit rester identique à ApiConstants.deepLinkScheme. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<!-- Deep link : schéma baara:// -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>app.jobway.deeplink</string>
+			<string>app.baara.deeplink</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>jobaway</string>
+				<string>baara</string>
 			</array>
 		</dict>
 	</array>

@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/register_controller.dart';
 
 class RegisterScreen extends GetView<RegisterController> {
@@ -29,7 +29,7 @@ class RegisterScreen extends GetView<RegisterController> {
             WavyAuthHeader(
               height: 180,
               showLeading: true,
-              foregroundIcon: IconlyLight.profile,
+              foregroundIcon: AppIcons.person,
               onLeadingTap: () {
                 AppHaptics.tap();
                 if (controller.currentStep.value > 1) {
@@ -41,25 +41,28 @@ class RegisterScreen extends GetView<RegisterController> {
             ),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Obx(() {
-                final step = controller.currentStep.value;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _StepProgress(current: step, total: 3),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Inscription',
-                      style: AppTextStyles.displayHero.copyWith(fontSize: 30),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _titles[step - 1],
-                      style: AppTextStyles.bodyMd
-                          .copyWith(color: AppColors.bodyColor),
-                    ),
-                    const SizedBox(height: 24),
-                    AnimatedSwitcher(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Obx(() {
+                    final step = controller.currentStep.value;
+                    return _StepProgress(current: step, total: 3);
+                  }),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Inscription',
+                    style: AppTextStyles.displayHero.copyWith(fontSize: 30),
+                  ),
+                  const SizedBox(height: 6),
+                  Obx(() => Text(
+                        _titles[controller.currentStep.value - 1],
+                        style: AppTextStyles.bodyMd
+                            .copyWith(color: AppColors.bodyColor),
+                      )),
+                  const SizedBox(height: 24),
+                  Obx(() {
+                    final step = controller.currentStep.value;
+                    return AnimatedSwitcher(
                       duration: const Duration(milliseconds: 260),
                       switchInCurve: Curves.easeOut,
                       transitionBuilder: (child, animation) => FadeTransition(
@@ -76,20 +79,25 @@ class RegisterScreen extends GetView<RegisterController> {
                         key: ValueKey<int>(step),
                         child: _stepForm(step),
                       ),
-                    ),
-                    AuthErrorBanner(message: controller.errorMsg.value),
-                    const SizedBox(height: 28),
-                    AuthCtaButton(
+                    );
+                  }),
+                  Obx(() => AuthErrorBanner(
+                        message: controller.errorMsg.value,
+                      )),
+                  const SizedBox(height: 28),
+                  Obx(() {
+                    final step = controller.currentStep.value;
+                    return AuthCtaButton(
                       label: step == 3 ? 'Créer mon compte' : 'Continuer',
                       isLoading: controller.isLoading.value,
                       onPressed: () {
                         AppHaptics.tap();
                         controller.onContinue();
                       },
-                    ),
-                  ],
-                );
-              }),
+                    );
+                  }),
+                ],
+              ),
             ),
           ],
         ),
@@ -104,7 +112,7 @@ class RegisterScreen extends GetView<RegisterController> {
       case 2:
         return _buildStepTwo();
       default:
-        return _buildStepThree();
+        return _RegisterStepThree(controller: controller);
     }
   }
 
@@ -114,18 +122,20 @@ class RegisterScreen extends GetView<RegisterController> {
       child: Column(
         children: [
           AuthTextField(
-              label: 'Prénom',
-              hint: 'Votre prénom',
-              controller: controller.firstNameCtrl,
-              validator: controller.validateRequired,
-              icon: IconlyLight.profile),
+            label: 'Prénom',
+            hint: 'Votre prénom',
+            controller: controller.firstNameCtrl,
+            validator: controller.validateRequired,
+            icon: AppIcons.person,
+          ),
           const SizedBox(height: 16),
           AuthTextField(
-              label: 'Nom',
-              hint: 'Votre nom',
-              controller: controller.lastNameCtrl,
-              validator: controller.validateRequired,
-              icon: IconlyLight.profile),
+            label: 'Nom',
+            hint: 'Votre nom',
+            controller: controller.lastNameCtrl,
+            validator: controller.validateRequired,
+            icon: AppIcons.person,
+          ),
         ],
       ),
     );
@@ -137,12 +147,13 @@ class RegisterScreen extends GetView<RegisterController> {
       child: Column(
         children: [
           AuthTextField(
-              label: 'Email',
-              hint: 'nom@exemple.com',
-              controller: controller.emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              validator: controller.validateEmail,
-              icon: IconlyLight.message),
+            label: 'Email',
+            hint: 'nom@exemple.com',
+            controller: controller.emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            validator: controller.validateEmail,
+            icon: AppIcons.message,
+          ),
           const SizedBox(height: 16),
           Obx(() => AuthPhoneField(
                 controller: controller.phoneCtrl,
@@ -154,31 +165,67 @@ class RegisterScreen extends GetView<RegisterController> {
       ),
     );
   }
+}
 
-  Widget _buildStepThree() {
+/// Étape 3 isolée : la force du mot de passe ne reconstruit que ce bloc.
+class _RegisterStepThree extends StatefulWidget {
+  const _RegisterStepThree({required this.controller});
+  final RegisterController controller;
+
+  @override
+  State<_RegisterStepThree> createState() => _RegisterStepThreeState();
+}
+
+class _RegisterStepThreeState extends State<_RegisterStepThree> {
+  String _password = '';
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.passwordCtrl.addListener(_onPasswordChanged);
+    _password = widget.controller.passwordCtrl.text;
+  }
+
+  void _onPasswordChanged() {
+    final next = widget.controller.passwordCtrl.text;
+    if (next != _password) setState(() => _password = next);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.passwordCtrl.removeListener(_onPasswordChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller;
     return Form(
-      key: controller.stepThreeFormKey,
+      key: c.stepThreeFormKey,
       child: Column(
         children: [
           AuthTextField(
-              label: 'Mot de passe',
-              hint: 'Au moins 8 caractères',
-              controller: controller.passwordCtrl,
-              obscureText: true,
-              validator: controller.validatePassword,
-              icon: IconlyLight.lock),
+            label: 'Mot de passe',
+            hint: 'Au moins 8 caractères',
+            controller: c.passwordCtrl,
+            obscureText: true,
+            validator: c.validatePassword,
+            icon: AppIcons.lock,
+          ),
+          AuthPasswordStrength(password: _password),
           const SizedBox(height: 16),
           AuthTextField(
-              label: 'Confirmation',
-              hint: 'Retapez le mot de passe',
-              controller: controller.confirmPasswordCtrl,
-              obscureText: true,
-              validator: controller.validateConfirmPassword,
-              icon: IconlyLight.password),
+            label: 'Confirmation',
+            hint: 'Retapez le mot de passe',
+            controller: c.confirmPasswordCtrl,
+            obscureText: true,
+            validator: c.validateConfirmPassword,
+            icon: AppIcons.password,
+          ),
           const SizedBox(height: 16),
           Obx(() => _TermsTile(
-                value: controller.acceptedTerms.value,
-                onChanged: (v) => controller.acceptedTerms.value = v,
+                value: c.acceptedTerms.value,
+                onChanged: (v) => c.acceptedTerms.value = v,
               )),
         ],
       ),
@@ -227,8 +274,7 @@ class _StepProgress extends StatelessWidget {
   }
 }
 
-/// Case à cocher « conditions d'utilisation » sous forme de tuile carte :
-/// surface douce, coche carrée verte animée, zone tap large (>=44).
+/// Case à cocher « conditions d'utilisation » sous forme de tuile carte.
 class _TermsTile extends StatelessWidget {
   const _TermsTile({required this.value, required this.onChanged});
 
@@ -273,7 +319,7 @@ class _TermsTile extends StatelessWidget {
                 ),
               ),
               child: value
-                  ? const Icon(IconlyLight.tick_square,
+                  ? const Icon(AppIcons.tickSquare,
                       size: 16, color: AppColors.onPrimary)
                   : null,
             ),

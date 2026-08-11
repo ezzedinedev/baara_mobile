@@ -1,7 +1,7 @@
-﻿import 'package:get/get.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:get/get.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/network_user.dart';
 import '../../domain/entities/community_comment.dart';
@@ -51,7 +51,7 @@ class CommunityController extends GetxController {
       posts.assignAll(result.items);
       hasMore.value = result.hasMore;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
     }
@@ -127,7 +127,7 @@ class CommunityController extends GetxController {
       explorePosts.assignAll(result.items);
       exploreHasMore.value = result.hasMore;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     } finally {
       exploreLoading.value = false;
     }
@@ -173,7 +173,7 @@ class CommunityController extends GetxController {
       posts.insert(0, post);
       return true;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     } finally {
       isPublishing.value = false;
@@ -219,7 +219,7 @@ class CommunityController extends GetxController {
         final idx = list.indexWhere((p) => p.id == postId);
         if (idx >= 0) list[idx] = original; // rollback
       });
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     }
   }
 
@@ -342,7 +342,7 @@ class CommunityController extends GetxController {
           removedFromSaved,
         );
       }
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     }
   }
 
@@ -363,7 +363,7 @@ class CommunityController extends GetxController {
       savedPosts.assignAll(result.items);
       savedHasMore.value = result.hasMore;
     } catch (e) {
-      savedError.value = _friendlyError(e);
+      savedError.value = userFacingError(e);
     } finally {
       savedLoading.value = false;
     }
@@ -488,7 +488,7 @@ class CommunityController extends GetxController {
         final idx = list.indexWhere((p) => p.id == id);
         if (idx >= 0) list[idx] = original; // rollback
       });
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     }
   }
@@ -500,7 +500,7 @@ class CommunityController extends GetxController {
     try {
       return await _repository.updateComment(id, trimmed);
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return null;
     }
   }
@@ -579,7 +579,7 @@ class CommunityController extends GetxController {
       final post = await _repository.repost(postId, body: body);
       posts.insert(0, post);
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     }
   }
 
@@ -616,7 +616,7 @@ class CommunityController extends GetxController {
       if (willFollow) suggestions.removeWhere((u) => u.id == user.id);
     } catch (e) {
       _applyFollowState(user.id, !willFollow); // rollback
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
     }
   }
 
@@ -633,6 +633,7 @@ class CommunityController extends GetxController {
   // ── Connexions, signalement, recherche, profil ────────────────────────
   final pendingConnections = <ConnectionRequest>[].obs;
   final isLoadingConnections = false.obs;
+  final connectionsErrorMessage = RxnString();
 
   /// Envoie une demande de connexion (optimiste sur l'état du membre).
   Future<bool> connectUser(NetworkUser user) async {
@@ -642,7 +643,7 @@ class CommunityController extends GetxController {
       _applyConnectionState(user.id, 'pending_sent');
       return true;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     }
   }
@@ -667,7 +668,7 @@ class CommunityController extends GetxController {
       await _repository.report(postId, reason);
       return true;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     }
   }
@@ -708,7 +709,7 @@ class CommunityController extends GetxController {
       profilePostsHasMore.value = result.hasMore;
     } catch (e) {
       if (_profilePostsUserId != userId) return;
-      profilePostsError.value = _friendlyError(e);
+      profilePostsError.value = userFacingError(e);
     } finally {
       if (_profilePostsUserId == userId) profilePostsLoading.value = false;
     }
@@ -798,8 +799,10 @@ class CommunityController extends GetxController {
   Future<void> loadPendingConnections() async {
     try {
       isLoadingConnections.value = true;
+      connectionsErrorMessage.value = null;
       pendingConnections.assignAll(await _repository.getConnections());
-    } catch (_) {
+    } catch (e) {
+      connectionsErrorMessage.value = userFacingError(e);
     } finally {
       isLoadingConnections.value = false;
     }
@@ -813,7 +816,7 @@ class CommunityController extends GetxController {
       if (accept) showCelebration(particles: 16);
       return true;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     }
   }
@@ -830,7 +833,7 @@ class CommunityController extends GetxController {
       _bumpCommentCount(postId, 1);
       return comment;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return null;
     }
   }
@@ -841,7 +844,7 @@ class CommunityController extends GetxController {
       _bumpCommentCount(postId, -1);
       return true;
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return false;
     }
   }
@@ -853,7 +856,7 @@ class CommunityController extends GetxController {
     try {
       return await _repository.reactComment(commentId, type: type);
     } catch (e) {
-      errorMessage.value = _friendlyError(e);
+      errorMessage.value = userFacingError(e);
       return null;
     }
   }
@@ -880,17 +883,4 @@ class CommunityController extends GetxController {
         commentsCount: commentsCount,
         isLiked: isLiked,
       );
-
-  String _friendlyError(Object e) {
-    final msg = e.toString();
-    if (msg.contains('SocketException') ||
-        msg.contains('réseau') ||
-        msg.contains('network')) {
-      return 'Connexion impossible. Vérifiez votre réseau.';
-    }
-    if (msg.contains('vous-même')) {
-      return 'Action non autorisée sur votre propre profil.';
-    }
-    return 'Une erreur est survenue. Réessayez.';
-  }
 }

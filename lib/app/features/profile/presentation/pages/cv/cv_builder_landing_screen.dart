@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 /// Hub du créateur de CV : trois méthodes (assistant IA, éditeur manuel,
 /// import d'un CV existant) + accès à l'aperçu. Point d'entrée du flux CV.
@@ -68,13 +68,13 @@ class CvBuilderLandingScreen extends StatelessWidget {
                 AppSpacing.xl,
                 AppSpacing.xxl,
                 AppSpacing.xl,
-                40,
+                AppSpacing.md,
               ),
               children: [
                 RevealOnMount(
                   delay: Duration.zero,
                   child: _MethodCard(
-                    icon: IconlyBold.chat,
+                    icon: AppIcons.chatFilled,
                     iconColor: AppColors.primaryAccent,
                     title: 'Assistant IA',
                     subtitle:
@@ -83,11 +83,11 @@ class CvBuilderLandingScreen extends StatelessWidget {
                     onTap: () => Get.toNamed(AppRoutes.profileCvAssistant),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppSpacing.md),
                 RevealOnMount(
                   delay: const Duration(milliseconds: 80),
                   child: _MethodCard(
-                    icon: IconlyBold.edit,
+                    icon: AppIcons.edit,
                     iconColor: AppColors.secondary,
                     title: 'Éditeur manuel',
                     subtitle:
@@ -95,11 +95,11 @@ class CvBuilderLandingScreen extends StatelessWidget {
                     onTap: () => Get.toNamed(AppRoutes.profileCvManual),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppSpacing.md),
                 RevealOnMount(
                   delay: const Duration(milliseconds: 160),
                   child: _MethodCard(
-                    icon: IconlyBold.upload,
+                    icon: AppIcons.upload,
                     iconColor: AppColors.categoryPurple,
                     title: 'Importer un CV',
                     subtitle:
@@ -107,17 +107,14 @@ class CvBuilderLandingScreen extends StatelessWidget {
                     onTap: () => Get.toNamed(AppRoutes.profileCvImport),
                   ),
                 ),
-                const SizedBox(height: 24),
-                RevealOnMount(
-                  delay: const Duration(milliseconds: 220),
-                  child: _SecondaryAction(
-                    icon: IconlyLight.show,
-                    label: "Voir l'aperçu de mon CV",
-                    onTap: () => Get.toNamed(AppRoutes.profileCvPreview),
-                  ),
-                ),
               ],
             ),
+          ),
+          CvStickyActionBar(
+            primaryLabel: "Voir l'aperçu de mon CV",
+            onPrimary: () => Get.toNamed(AppRoutes.profileCvPreview),
+            secondaryLabel: 'Assistant IA',
+            onSecondary: () => Get.toNamed(AppRoutes.profileCvAssistant),
           ),
         ],
       ),
@@ -221,49 +218,8 @@ class _MethodCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(IconlyLight.arrow_right_2,
+              Icon(AppIcons.arrowRight,
                   color: AppColors.primaryAccent, size: 22),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SecondaryAction extends StatelessWidget {
-  const _SecondaryAction(
-      {required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return PressScale(
-      onTap: () {
-        AppHaptics.tap();
-        onTap();
-      },
-      curve: AppMotion.spring,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceLow,
-          borderRadius: AppShapes.squircleRadius(AppRadius.md),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: AppColors.primaryAccent),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.primaryAccent,
-                    fontWeight: FontWeight.w700),
-              ),
             ],
           ),
         ),

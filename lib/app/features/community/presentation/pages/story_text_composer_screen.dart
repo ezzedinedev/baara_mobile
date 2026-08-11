@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../controllers/story_controller.dart';
 import '../widgets/story_mention_autocomplete.dart';
@@ -107,7 +107,7 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
                           width: 1,
                         ),
                       ),
-                      child: const Icon(IconlyLight.close_square,
+                      child: const Icon(AppIcons.closeSquare,
                           color: AppColors.onPrimary, size: 22),
                     ),
                   ),
@@ -189,7 +189,7 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
                   children: [
                     _VisChip(
                       label: 'Connexions',
-                      icon: IconlyLight.user_1,
+                      icon: AppIcons.network,
                       selected: _visibility == 'connections',
                       onTap: () => setState(() => _visibility = 'connections'),
                     ),
@@ -223,8 +223,10 @@ class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
                                 ? SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: bg),
+                                    child: AppLoader(
+                                      color: bg,
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Text('Publier',
                                     style: AppTextStyles.buttonMd

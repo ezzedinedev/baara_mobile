@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:jobaway/app/features/trainings/presentation/controllers/trainings_controller.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/app/features/trainings/presentation/controllers/trainings_controller.dart';
 import 'home_accueil_top_bar.dart';
 import 'home_formations_section.dart';
 import 'home_match_section.dart';
@@ -60,6 +60,8 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> {
             parallaxFactor: 0.5,
             child: const HomeAccueilTopBar(),
           ),
+          const OfflineApplyBanner(),
+          const ProfileCompletionCard(),
           const SizedBox(height: AppSpacing.lg),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.pageH),

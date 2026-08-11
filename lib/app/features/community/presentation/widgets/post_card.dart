@@ -1,18 +1,18 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/relative_time.dart';
-import 'package:jobaway/app/core/widgets/common/app_card.dart';
-import 'package:jobaway/app/core/widgets/common/brand_avatar.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/relative_time.dart';
+import 'package:baara/app/core/widgets/common/app_card.dart';
+import 'package:baara/app/core/widgets/common/brand_avatar.dart';
+import 'package:baara/app/core/widgets/common/press_scale.dart';
 import 'ai_post_sheets.dart';
 import '../../domain/entities/post.dart';
 import 'poll_view.dart';
@@ -70,10 +70,10 @@ class PostCard extends StatelessWidget {
     'evenement': 'Événement',
   };
   static const _catIcons = {
-    'emploi': IconlyLight.work,
+    'emploi': AppIcons.work,
     'formation': Icons.school_outlined,
-    'article': IconlyLight.edit,
-    'evenement': IconlyLight.calendar,
+    'article': AppIcons.edit,
+    'evenement': AppIcons.calendar,
   };
 
   @override
@@ -84,7 +84,8 @@ class PostCard extends StatelessWidget {
     final videos = post.videos;
     final showCounts = post.reactionsCount > 0 || post.commentsCount > 0;
 
-    return AppCard(
+    return RepaintBoundary(
+      child: AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -135,6 +136,7 @@ class PostCard extends StatelessWidget {
           _actions(),
         ],
       ),
+    ),
     );
   }
 
@@ -199,7 +201,7 @@ class PostCard extends StatelessWidget {
                   ],
                   if (author?.isVerified ?? false) ...[
                     const SizedBox(width: 4),
-                    const Icon(IconlyBold.shield_done,
+                    const Icon(AppIcons.shieldDone,
                         size: 15, color: AppColors.verified),
                   ],
                   if (canFollow) ...[
@@ -231,7 +233,7 @@ class PostCard extends StatelessWidget {
             height: 32,
             child: PopupMenuButton<String>(
               padding: EdgeInsets.zero,
-              icon: Icon(IconlyLight.more_circle,
+              icon: Icon(AppIcons.moreCircle,
                   size: 20, color: AppColors.hintColor),
               onSelected: (v) {
                 switch (v) {
@@ -256,12 +258,12 @@ class PostCard extends StatelessWidget {
                 // ── Assistant IA (lecture seule, sur toute publication) ──────
                 _aiMenuItem(
                   value: 'summarize',
-                  icon: IconlyLight.document,
+                  icon: AppIcons.document,
                   label: 'Résumer (IA)',
                 ),
                 _aiMenuItem(
                   value: 'translate',
-                  icon: IconlyLight.swap,
+                  icon: AppIcons.swap,
                   label: 'Traduire (IA)',
                 ),
                 if (author?.isSelf == true) ...[
@@ -271,7 +273,7 @@ class PostCard extends StatelessWidget {
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(IconlyLight.edit,
+                          Icon(AppIcons.edit,
                               size: 18, color: AppColors.bodyColor),
                           const SizedBox(width: 10),
                           const Text('Modifier'),
@@ -283,7 +285,7 @@ class PostCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(IconlyLight.delete,
+                          Icon(AppIcons.delete,
                               size: 18, color: AppColors.errorAccent),
                           const SizedBox(width: 10),
                           const Text('Supprimer'),
@@ -296,7 +298,7 @@ class PostCard extends StatelessWidget {
                     value: 'report',
                     child: Row(
                       children: [
-                        Icon(IconlyLight.danger,
+                        Icon(AppIcons.danger,
                             size: 18, color: AppColors.errorAccent),
                         const SizedBox(width: 10),
                         const Text('Signaler'),
@@ -347,7 +349,7 @@ class PostCard extends StatelessWidget {
             Text('·  ',
                 style:
                     AppTextStyles.bodySm.copyWith(color: AppColors.hintColor)),
-            const Icon(IconlyLight.plus,
+            const Icon(AppIcons.add,
                 size: 15, color: AppColors.primaryDark),
             const SizedBox(width: 2),
             Text(
@@ -381,7 +383,7 @@ class PostCard extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Icon(
-          isPublic ? Icons.public_rounded : IconlyLight.user_1,
+          isPublic ? Icons.public_rounded : AppIcons.network,
           size: 12,
           color: AppColors.hintColor,
         ),
@@ -636,7 +638,7 @@ class PostCard extends StatelessWidget {
                 color: AppColors.errorSoft,
                 borderRadius: AppShapes.squircleRadius(AppRadius.xs),
               ),
-              child: Icon(IconlyLight.paper,
+              child: Icon(AppIcons.paper,
                   color: AppColors.errorAccent, size: 20),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -650,7 +652,7 @@ class PostCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Icon(IconlyLight.download, size: 18, color: AppColors.hintColor),
+            Icon(AppIcons.download, size: 18, color: AppColors.hintColor),
           ],
         ),
       ),
@@ -716,7 +718,7 @@ class PostCard extends StatelessWidget {
         ),
         Expanded(
           child: _actionBtn(
-            icon: IconlyLight.message,
+            icon: AppIcons.message,
             label: 'Commenter',
             onTap: onComment,
           ),
@@ -912,7 +914,7 @@ class _SaveButtonState extends State<_SaveButton>
         child: ScaleTransition(
           scale: _scale,
           child: Icon(
-            widget.saved ? IconlyBold.bookmark : IconlyLight.bookmark,
+            widget.saved ? AppIcons.bookmarkFilled : AppIcons.bookmark,
             size: 19,
             color: color,
           ),

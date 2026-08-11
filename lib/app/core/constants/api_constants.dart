@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   ApiConstants._();
@@ -13,16 +13,13 @@ class ApiConstants {
     defaultValue: '',
   );
 
-  // L'API v1 est servie par l'app Laravel elle-meme (routes/api.php monte
-  // /api/v1 sur l'hote principal). Il n'existe PAS de sous-domaine `api.` :
-  // APP_URL=https://jobway.app, le CORS n'autorise que jobway.app/app.jobway.app
-  // et nginx n'expose qu'un seul vhost.
+
   static const String productionBaseUrl = String.fromEnvironment(
     'PRODUCTION_API_BASE_URL',
-    defaultValue: 'https://jobway.app',
+    defaultValue: 'https://baara.bf',
   );
 
-  static const String authDeviceName = 'JobAway-mobile';
+  static const String authDeviceName = 'Baara-mobile';
 
   static String get _defaultHost {
     if (!kDebugMode) {
@@ -87,13 +84,13 @@ class ApiConstants {
   static String get baseUrl => '$resolvedHost/api/v1';
 
   // ── Liens publics (partage & deep links) ────────────────────────────────
-  /// Schéma custom des deep links de l'app (jobaway://…).
+  /// Schéma custom des deep links de l'app (baara://…).
   /// Doit rester identique à AndroidManifest.xml (`android:scheme`) et à
   /// Info.plist (`CFBundleURLSchemes`) : les trois sont lus séparément.
-  static const String deepLinkScheme = 'jobaway';
+  static const String deepLinkScheme = 'baara';
 
   /// Base du site web public. L'API et le site partagent le même hôte
-  /// (jobway.app en prod, Laravel :8000 en dev). Le retrait d'un éventuel
+  /// (baara.bf en prod, Laravel :8000 en dev). Le retrait d'un éventuel
   /// préfixe `api.` reste par sécurité si un hôte dédié est fourni via
   /// --dart-define.
   static String get siteBaseUrl {
@@ -220,7 +217,7 @@ class ApiConstants {
   static String profileDocumentDownload(String id) =>
       '/profile/documents/$id/download';
 
-  // Certificats de formation JobAway obtenus
+  // Certificats de formation Baara obtenus
   static const String profileCertificates = '/profile/certificates';
 
   static const String offers = '/offers';
@@ -286,6 +283,7 @@ class ApiConstants {
   static const String contests = '/contests';
   static String contest(String id) => '/contests/$id';
   static String contestSave(String id) => '/contests/$id/save';
+  static String contestUnsave(String id) => '/contests/$id/save';
 
   // Stats publiques pour la home / landing.
   static const String statsPublic = '/stats/public';
@@ -331,9 +329,6 @@ class ApiConstants {
       '/messages/$conversationId/accept';
   static String conversationDecline(String conversationId) =>
       '/messages/$conversationId/decline';
-  // Autoriser/refuser les notes vocales dans une conversation : body {allowed}.
-  static String conversationVoiceNotes(String conversationId) =>
-      '/messages/$conversationId/voice-notes';
 
   static const String notifications = '/notifications';
   static String notification(String id) => '/notifications/$id';
@@ -438,11 +433,11 @@ class ApiConstants {
   // + Bearer token. cf. routes/api.php → api.v1.broadcasting.auth.
   static String get broadcastingAuthUrl => '$baseUrl/broadcasting/auth';
 
-  // Clé applicative Reverb (= REVERB_APP_KEY backend). En release, fournir via
-  // --dart-define=REVERB_APP_KEY=... (aucune valeur par défaut en prod).
+  // Clé applicative Reverb (= REVERB_APP_KEY backend). Fournir via
+  // --dart-define=REVERB_APP_KEY=... (obligatoire pour le temps réel).
   static const String reverbAppKey = String.fromEnvironment(
     'REVERB_APP_KEY',
-    defaultValue: kDebugMode ? 'r2isgakfkwfkjt14gupd' : '',
+    defaultValue: '',
   );
 
   // Hôte du daemon Reverb. Vide => dérivé de l'hôte API (même machine que
@@ -480,6 +475,9 @@ class ApiConstants {
   // Emulateur Android -> 10.0.2.2 redirige vers le localhost PC.
   static String get companyRegisterWebUrl =>
       '$resolvedHost/entreprise/inscription';
+
+  /// Portail employeur / recruteur (connexion web).
+  static String get companyPortalWebUrl => '$resolvedHost/entreprise/connexion';
 
   static Map<String, String> get jsonHeaders => {
         'Content-Type': 'application/json',

@@ -1,15 +1,15 @@
-﻿import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 /// Lecteur vidéo inline premium pour la carte de publication.
 ///
@@ -160,11 +160,14 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   // ── Poster (avant 1er tap / chargement / erreur) ───────────────────────────
   Widget _poster() {
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1B1B1F), Color(0xFF2A2A30)],
+          colors: [
+            AppColors.surfaceHighest,
+            AppColors.onDark.withValues(alpha: 0.92),
+          ],
         ),
       ),
       child: Stack(
@@ -179,23 +182,23 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.42),
+                    color: AppColors.onDark.withValues(alpha: 0.42),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.22),
+                      color: AppColors.onPrimary.withValues(alpha: 0.22),
                       width: 1,
                     ),
                   ),
                   child: _initializing
                       ? const Padding(
                           padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(
+                          child: AppLoader(
+                            color: AppColors.onPrimary,
                             strokeWidth: 2,
-                            color: Colors.white,
                           ),
                         )
-                      : const Icon(IconlyLight.play,
-                          color: Colors.white, size: 38),
+                      : const Icon(AppIcons.play,
+                          color: AppColors.onPrimary, size: 38),
                 ),
               ),
             )
@@ -204,13 +207,15 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline_rounded,
-                      color: Colors.white70, size: 30),
+                  Icon(Icons.error_outline_rounded,
+                      color: AppColors.onPrimary.withValues(alpha: 0.7),
+                      size: 30),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Vidéo indisponible',
-                    style:
-                        AppTextStyles.labelMd.copyWith(color: Colors.white70),
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.onPrimary.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),
@@ -228,7 +233,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(IconlyLight.video, size: 13, color: Colors.white),
+                  Icon(AppIcons.video, size: 13, color: Colors.white),
                   SizedBox(width: 4),
                   Text('Vidéo',
                       style: TextStyle(
@@ -279,7 +284,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    playing ? Icons.pause_rounded : IconlyLight.play,
+                    playing ? Icons.pause_rounded : AppIcons.play,
                     color: Colors.white,
                     size: 34,
                   ),
@@ -308,7 +313,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                   const SizedBox(width: 4),
                   _RoundCtrl(
                     icon:
-                        _muted ? IconlyLight.volume_off : IconlyLight.volume_up,
+                        _muted ? AppIcons.volumeOff : AppIcons.volumeUp,
                     onTap: _toggleMute,
                   ),
                   _RoundCtrl(
@@ -423,7 +428,7 @@ class _FullscreenVideoState extends State<_FullscreenVideo> {
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: _RoundCtrl(
-                  icon: IconlyLight.close_square,
+                  icon: AppIcons.closeSquare,
                   onTap: () => Navigator.of(context).pop(),
                 ),
               ),

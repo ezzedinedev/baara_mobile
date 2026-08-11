@@ -1,22 +1,21 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/entities/message.dart';
 import '../controllers/messages_controller.dart';
 import 'chat_structured_actions.dart';
-import 'voice_message_player.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final Message message;
@@ -235,7 +234,7 @@ class ChatMessageBubble extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Icon(
-        snap?.type == 'video' ? IconlyLight.play : Icons.auto_stories_rounded,
+        snap?.type == 'video' ? AppIcons.play : Icons.auto_stories_rounded,
         size: 16,
         color: AppColors.onPrimary,
       ),
@@ -284,17 +283,20 @@ class ChatMessageBubble extends StatelessWidget {
   }
 
   Widget _buildVoice(bool isMine) {
-    final url = message.attachmentUrl;
-    if (url == null || url.isEmpty) {
-      return Text('Message vocal',
-          style: AppTextStyles.bodySm.copyWith(
-              color: isMine
-                  ? AppColors.onPrimary.withValues(alpha: 0.7)
-                  : AppColors.bodyColor));
-    }
-    // Lecteur in-app : play/pause + progression + durée (plus d'ouverture
-    // externe).
-    return VoiceMessagePlayer(url: url, isMine: isMine);
+    final color = isMine
+        ? AppColors.onPrimary.withValues(alpha: 0.85)
+        : AppColors.bodyColor;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.mic_rounded, size: 18, color: color),
+        const SizedBox(width: 6),
+        Text(
+          'Message vocal',
+          style: AppTextStyles.bodySm.copyWith(color: color),
+        ),
+      ],
+    );
   }
 
   Widget _buildFile(BuildContext context, bool isMine) {
@@ -350,7 +352,7 @@ class ChatMessageBubble extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(IconlyLight.location,
+          Icon(AppIcons.location,
               color: isMine ? AppColors.onPrimary : AppColors.errorAccent,
               size: 22),
           const SizedBox(width: 6),
@@ -374,10 +376,10 @@ class ChatMessageBubble extends StatelessWidget {
     final ext = name.split('.').last.toLowerCase();
     switch (ext) {
       case 'pdf':
-        return IconlyLight.paper;
+        return AppIcons.paper;
       case 'doc':
       case 'docx':
-        return IconlyLight.paper;
+        return AppIcons.paper;
       case 'xls':
       case 'xlsx':
         return Icons.table_chart;
@@ -386,9 +388,9 @@ class ChatMessageBubble extends StatelessWidget {
         return Icons.slideshow;
       case 'zip':
       case 'rar':
-        return IconlyLight.folder;
+        return AppIcons.folder;
       default:
-        return IconlyLight.paper;
+        return AppIcons.paper;
     }
   }
 
@@ -500,7 +502,7 @@ class ChatReadReceipt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Icon(
-      isRead ? IconlyBold.tick_square : IconlyLight.tick_square,
+      isRead ? AppIcons.tickSquare : AppIcons.tickSquare,
       size: 13,
       color: isRead
           ? AppColors.successAccent

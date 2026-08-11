@@ -1,3 +1,5 @@
+import 'package:baara/app/core/utils/money.dart';
+
 import '../../domain/entities/offer.dart';
 
 /// Modèle de données pour les offres, incluant le parsing JSON.
@@ -142,13 +144,14 @@ class OfferModel extends Offer {
 
   static String _formatSalary(Map<String, dynamic> json) {
     if (json['salary_visible'] != true) return 'Salaire à négocier';
-    final min = json['salary_min'];
-    final max = json['salary_max'];
-    final currency = json['salary_currency'] ?? 'XOF';
-    if (min != null && max != null) return '$min - $max $currency';
-    if (min != null) return 'À partir de $min $currency';
-    if (max != null) return 'Jusqu\'à $max $currency';
-    return 'Salaire non précisé';
+    // Les montants arrivent en décimaux Laravel (`350000.00`) : sans mise en
+    // forme on affichait « 350000.00 - 600000.00 XOF ».
+    return formatMoneyRange(
+          json['salary_min'],
+          json['salary_max'],
+          currency: json['salary_currency']?.toString(),
+        ) ??
+        'Salaire non précisé';
   }
 
   static List<String> _parseSkills(dynamic skills) {

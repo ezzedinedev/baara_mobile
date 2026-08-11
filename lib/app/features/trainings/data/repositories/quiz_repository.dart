@@ -1,5 +1,6 @@
-import 'package:jobaway/app/core/constants/api_constants.dart';
-import 'package:jobaway/app/core/network/api_provider.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
 
 import '../../domain/entities/quiz.dart';
 
@@ -69,16 +70,7 @@ class QuizRepository {
   }
 
   Map<String, dynamic> _unwrap(Map<String, dynamic> response) {
-    final statusCode = response['statusCode'] as int?;
-    final success = response['success'] as bool? ??
-        (statusCode != null && statusCode < 400);
-    if (!success) {
-      throw ApiException(
-        message: response['message']?.toString() ?? 'Quiz indisponible.',
-        statusCode: statusCode,
-      );
-    }
-    final data = response['data'];
-    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    ApiResponse.ensureSuccess(response, fallback: 'Quiz indisponible.');
+    return ApiResponse.dataMap(response);
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:intl/intl.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/message.dart';
 
@@ -70,7 +70,7 @@ class _ProposedDateBanner extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(IconlyLight.calendar, size: 14, color: AppColors.primaryAccent),
+        Icon(AppIcons.calendar, size: 14, color: AppColors.primaryAccent),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
@@ -136,12 +136,12 @@ class _ActionButton extends StatelessWidget {
     return switch (action) {
       MessageAction.accept => (
           'Accepter',
-          IconlyLight.tick_square,
+          AppIcons.tickSquare,
           AppColors.successAccent
         ),
       MessageAction.acceptNewDate => (
           'Accepter la date',
-          IconlyLight.tick_square,
+          AppIcons.tickSquare,
           AppColors.successAccent
         ),
       MessageAction.decline => (
@@ -156,17 +156,17 @@ class _ActionButton extends StatelessWidget {
         ),
       MessageAction.reschedule => (
           'Reprogrammer',
-          IconlyLight.time_circle,
+          AppIcons.time,
           AppColors.warningAccent
         ),
       MessageAction.proposeOther => (
           'Proposer une autre date',
-          IconlyLight.time_circle,
+          AppIcons.time,
           AppColors.warningAccent
         ),
       MessageAction.negotiate => (
           'Négocier',
-          IconlyLight.chat,
+          AppIcons.chat,
           AppColors.primaryAccent
         ),
     };

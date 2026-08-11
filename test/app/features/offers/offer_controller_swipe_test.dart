@@ -1,19 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/features/offers/data/models/application_model.dart';
-import 'package:jobaway/app/features/offers/data/models/upcoming_interview_model.dart';
-import 'package:jobaway/app/features/offers/data/models/interview_detail_model.dart';
-import 'package:jobaway/app/features/offers/data/models/job_proposal_model.dart';
-import 'package:jobaway/app/features/offers/domain/entities/apply_result.dart';
-import 'package:jobaway/app/features/offers/domain/entities/offer.dart';
-import 'package:jobaway/app/features/offers/domain/entities/matched_offer.dart';
-import 'package:jobaway/app/features/offers/domain/entities/sector_option.dart';
-import 'package:jobaway/app/features/offers/domain/repositories/i_offer_repository.dart';
-import 'package:jobaway/app/features/offers/presentation/controllers/offer_controller.dart';
-import 'package:jobaway/app/features/offers/presentation/pages/match_celebration_screen.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/features/offers/data/models/application_model.dart';
+import 'package:baara/app/features/offers/data/models/upcoming_interview_model.dart';
+import 'package:baara/app/features/offers/data/models/interview_detail_model.dart';
+import 'package:baara/app/features/offers/data/models/job_proposal_model.dart';
+import 'package:baara/app/features/offers/domain/entities/apply_result.dart';
+import 'package:baara/app/features/offers/domain/entities/offer.dart';
+import 'package:baara/app/features/offers/domain/entities/matched_offer.dart';
+import 'package:baara/app/features/offers/domain/entities/sector_option.dart';
+import 'package:baara/app/features/offers/domain/repositories/i_offer_repository.dart';
+import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
+import 'package:baara/app/features/offers/presentation/pages/match_celebration_screen.dart';
+import 'package:baara/routes/app_routes.dart';
 
 class _FakeOfferRepository implements IOfferRepository {
   _FakeOfferRepository({this.isMatch = false, this.score = 0});
@@ -47,7 +47,7 @@ class _FakeOfferRepository implements IOfferRepository {
   Future<Offer?> getOfferById(String id) async => null;
 
   @override
-  Future<List<Offer>> getOffers({
+  Future<OfferPage> getOffers({
     int page = 1,
     int perPage = 20,
     String? search,
@@ -59,7 +59,7 @@ class _FakeOfferRepository implements IOfferRepository {
     int? salaryMin,
     String? sort,
   }) async =>
-      [];
+      const OfferPage(items: [], currentPage: 1, hasMore: false);
 
   @override
   Future<List<SectorOption>> getSectors() async => [];
@@ -128,7 +128,7 @@ class _FakeOfferRepository implements IOfferRepository {
 const _offer = Offer(
   id: '42',
   title: 'Dev Flutter',
-  company: 'JobAway',
+  company: 'Baara',
   description: 'Desc',
   location: 'Ouaga',
   salary: '400 000 FCFA',
@@ -166,7 +166,7 @@ Future<OfferController> _pumpShell(
 Future<void> _answerConfirmSheet(WidgetTester tester,
     {required bool confirm}) async {
   await tester.pumpAndSettle();
-  expect(find.text('Postuler chez JobAway ?'), findsOneWidget);
+  expect(find.text('Postuler chez Baara ?'), findsOneWidget);
   await tester.tap(find.text(confirm ? 'Postuler' : 'Annuler'));
   await tester.pumpAndSettle();
 }
@@ -208,7 +208,7 @@ void main() {
       final args = Get.arguments as Map<String, dynamic>;
       expect(args['score'], 82);
       expect(args['offerTitle'], 'Dev Flutter');
-      expect(args['company'], 'JobAway');
+      expect(args['company'], 'Baara');
     });
 
     testWidgets('confirmée sans match, on reste sur le deck', (tester) async {
@@ -253,7 +253,7 @@ void main() {
       controller.swipeOfferLeft();
       await _settleSwipe(tester);
 
-      expect(find.text('Postuler chez JobAway ?'), findsNothing);
+      expect(find.text('Postuler chez Baara ?'), findsNothing);
       expect(repo.applyCallCount, 0);
       expect(Get.currentRoute, '/accueil');
     });

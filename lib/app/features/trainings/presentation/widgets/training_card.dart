@@ -1,12 +1,12 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:iconly/iconly.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 
 import '../../domain/entities/training.dart';
 
@@ -178,7 +178,7 @@ class TrainingCard extends StatelessWidget {
                           ),
                         if (training.rating > 0)
                           _MetaStat(
-                            icon: IconlyBold.star,
+                            icon: AppIcons.starFilled,
                             label: training.rating.toStringAsFixed(1),
                             iconColor: AppColors.warningAccent,
                           ),
@@ -444,7 +444,7 @@ class _EnrolledBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(IconlyBold.tick_square, size: 12, color: AppColors.onPrimary),
+          Icon(AppIcons.tickSquare, size: 12, color: AppColors.onPrimary),
           const SizedBox(width: 4),
           Text(
             'Inscrit',

@@ -7,11 +7,24 @@ import '../../data/models/upcoming_interview_model.dart';
 import '../../data/models/interview_detail_model.dart';
 import '../../data/models/job_proposal_model.dart';
 
+/// Résultat paginé de la liste d'offres (parité `OfferApiController@index`).
+class OfferPage {
+  final List<Offer> items;
+  final int currentPage;
+  final bool hasMore;
+
+  const OfferPage({
+    required this.items,
+    required this.currentPage,
+    required this.hasMore,
+  });
+}
+
 abstract class IOfferRepository {
   /// Liste paginée des offres. Tous les filtres sont appliqués côté serveur
   /// (parité web — cf. OfferApiController@index : search, sector_id,
   /// contract_type, city, region, is_remote, salary_min, sort).
-  Future<List<Offer>> getOffers({
+  Future<OfferPage> getOffers({
     int page = 1,
     int perPage = 20,
     String? search,

@@ -1,17 +1,18 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_motion.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/brand_avatar.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
-import 'package:jobaway/app/core/widgets/common/sheet_handle.dart';
-import 'package:jobaway/app/core/widgets/skeletons/skeleton_box.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_motion.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/common/app_loader.dart';
+import 'package:baara/app/core/widgets/common/brand_avatar.dart';
+import 'package:baara/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/widgets/common/sheet_handle.dart';
+import 'package:baara/app/core/widgets/skeletons/skeleton_box.dart';
 
 import '../controllers/story_controller.dart';
 import '../../domain/entities/story.dart';
@@ -81,17 +82,17 @@ class StoryBar extends StatelessWidget {
             const SheetHandle(),
             const SizedBox(height: 8),
             ListTile(
-              leading: Icon(IconlyLight.image, color: AppColors.primaryAccent),
+              leading: Icon(AppIcons.image, color: AppColors.primaryAccent),
               title: Text('Photo', style: AppTextStyles.titleMd),
               onTap: () => Navigator.of(ctx).pop('photo'),
             ),
             ListTile(
-              leading: Icon(IconlyLight.video, color: AppColors.primaryAccent),
+              leading: Icon(AppIcons.video, color: AppColors.primaryAccent),
               title: Text('Vidéo', style: AppTextStyles.titleMd),
               onTap: () => Navigator.of(ctx).pop('video'),
             ),
             ListTile(
-              leading: Icon(IconlyLight.paper, color: AppColors.primaryAccent),
+              leading: Icon(AppIcons.paper, color: AppColors.primaryAccent),
               title: Text('Texte', style: AppTextStyles.titleMd),
               onTap: () => Navigator.of(ctx).pop('text'),
             ),
@@ -191,7 +192,7 @@ class _CreateTile extends StatelessWidget {
                         color: AppColors.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ),
-                    child: Icon(IconlyLight.profile,
+                    child: Icon(AppIcons.profile,
                         size: 34, color: AppColors.hintColor),
                   ),
                   Container(
@@ -202,18 +203,15 @@ class _CreateTile extends StatelessWidget {
                           Border.all(color: AppColors.surfaceCard, width: 2),
                     ),
                     child: isPublishing
-                        ? const Padding(
-                            padding: EdgeInsets.all(2.0),
-                            child: SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: AppColors.onPrimary,
-                              ),
+                        ? Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: AppLoader(
+                              size: 12,
+                              strokeWidth: 1.5,
+                              color: AppColors.onPrimary,
                             ),
                           )
-                        : const Icon(IconlyLight.plus,
+                        : const Icon(AppIcons.add,
                             size: 16, color: AppColors.onPrimary),
                   ),
                 ],

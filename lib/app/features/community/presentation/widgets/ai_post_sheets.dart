@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/common/glass_surface.dart';
-import 'package:jobaway/app/core/widgets/common/press_scale.dart';
-import 'package:jobaway/app/core/widgets/common/sheet_handle.dart';
-import 'package:jobaway/app/core/widgets/skeletons/skeleton_box.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/common/glass_surface.dart';
+import 'package:baara/app/core/widgets/common/press_scale.dart';
+import 'package:baara/app/core/widgets/common/sheet_handle.dart';
+import 'package:baara/app/core/widgets/skeletons/skeleton_box.dart';
 import '../controllers/community_controller.dart';
 
 /// Langues proposées pour la traduction IA (FR/EN au minimum).
@@ -35,7 +35,7 @@ Future<void> showPostSummarySheet(BuildContext context, String postId) {
           BorderRadius.vertical(top: Radius.circular(AppRadius.xxl * 1.7)),
     ),
     builder: (_) => _AiResultSheet(
-      icon: IconlyLight.document,
+      icon: AppIcons.document,
       title: 'Résumé IA',
       loader: () => controller.summarizePost(postId),
     ),
@@ -154,7 +154,7 @@ class _AiResultBody extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           OutlinedButton.icon(
             onPressed: onRetry,
-            icon: Icon(IconlyLight.arrow_right_circle,
+            icon: Icon(AppIcons.arrowRightCircle,
                 size: 18, color: AppColors.primaryAccent),
             label: Text(
               'Réessayer',
@@ -313,7 +313,7 @@ class _TranslateSheetState extends State<_TranslateSheet> {
           children: [
             const SheetHandle(),
             const SizedBox(height: 14),
-            const _AiHeader(icon: IconlyLight.swap, title: 'Traduire (IA)'),
+            const _AiHeader(icon: AppIcons.swap, title: 'Traduire (IA)'),
             const SizedBox(height: AppSpacing.lg),
             Wrap(
               spacing: AppSpacing.sm,

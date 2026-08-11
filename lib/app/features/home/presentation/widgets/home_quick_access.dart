@@ -1,14 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
-import 'package:iconly/iconly.dart';
 
-import 'package:jobaway/app/core/theme/app_colors.dart';
-import 'package:jobaway/app/core/theme/app_dimens.dart';
-import 'package:jobaway/app/core/theme/app_shapes.dart';
-import 'package:jobaway/app/core/theme/app_text_styles.dart';
-import 'package:jobaway/app/core/utils/haptics.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/theme/app_colors.dart';
+import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
+import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
+import 'package:baara/routes/app_routes.dart';
 
 /// Accès rapides en BENTO : raccourcis vers les actions profondes (gain de
 /// taps), tuiles de tailles variées (squircle, profondeur douce, icônes
@@ -26,7 +26,7 @@ class HomeQuickAccessRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: HomeBentoTile(
-              icon: IconlyBold.work,
+              icon: AppIcons.workFilled,
               color: AppColors.categoryBlue,
               label: 'home.quick_applications'.tr,
               caption: 'home.quick_applications_caption'.tr,
@@ -40,21 +40,21 @@ class HomeQuickAccessRow extends StatelessWidget {
             child: Column(
               children: [
                 HomeBentoTile(
-                  icon: IconlyBold.document,
+                  icon: AppIcons.document,
                   color: AppColors.categoryPurple,
                   label: 'home.quick_cv'.tr,
                   route: AppRoutes.profileCv,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 HomeBentoTile(
-                  icon: IconlyBold.folder,
+                  icon: AppIcons.folder,
                   color: AppColors.categoryCyan,
                   label: 'home.quick_documents'.tr,
                   route: AppRoutes.profileDocuments,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 HomeBentoTile(
-                  icon: IconlyBold.bookmark,
+                  icon: AppIcons.bookmarkFilled,
                   color: AppColors.categoryOrange,
                   label: 'home.quick_portfolio'.tr,
                   route: AppRoutes.profilePortfolio,

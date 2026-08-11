@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jobaway/app/core/services/google_auth_service.dart';
-import 'package:jobaway/app/core/utils/user_facing_error.dart';
-import 'package:jobaway/app/core/utils/validators.dart';
-import 'package:jobaway/app/core/widgets/widgets.dart';
-import 'package:jobaway/routes/app_routes.dart';
+import 'package:baara/app/core/services/google_auth_service.dart';
+import 'package:baara/app/core/services/onboarding_service.dart';
+import 'package:baara/app/core/utils/candidate_access.dart';
+import 'package:baara/app/core/utils/user_facing_error.dart';
+import 'package:baara/app/core/utils/validators.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 
 class CandidateLoginController extends GetxController {
@@ -78,7 +79,11 @@ class CandidateLoginController extends GetxController {
             emailCtrl.text.trim(), passwordCtrl.text);
       }
       _loginAttempts.value = 0;
-      Get.offAllNamed(AppRoutes.home);
+      await Get.find<OnboardingService>().navigateAfterAuth();
+    } on CandidateAccessDeniedException {
+      await _authRepository.logout();
+      errorMsg.value = CandidateAccess.blockedMessage;
+      AppToast.info('Espace employeur', CandidateAccess.blockedMessage);
     } catch (e) {
       _loginAttempts.value++;
       errorMsg.value = userFacingError(e);
@@ -106,7 +111,11 @@ class CandidateLoginController extends GetxController {
       }
       await _authRepository.loginWithGoogle(result.idToken!,
           email: result.email);
-      Get.offAllNamed(AppRoutes.home);
+      await Get.find<OnboardingService>().navigateAfterAuth();
+    } on CandidateAccessDeniedException {
+      await _authRepository.logout();
+      errorMsg.value = CandidateAccess.blockedMessage;
+      AppToast.info('Espace employeur', CandidateAccess.blockedMessage);
     } catch (e) {
       errorMsg.value = "Échec de connexion Google";
     } finally {

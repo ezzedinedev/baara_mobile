@@ -1,5 +1,6 @@
-﻿import 'package:jobaway/app/core/network/api_provider.dart';
-import 'package:jobaway/app/core/constants/api_constants.dart';
+import 'package:baara/app/core/network/api_provider.dart';
+import 'package:baara/app/core/network/api_response.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import '../../domain/repositories/i_dashboard_repository.dart';
 
 class DashboardRepositoryImpl implements IDashboardRepository {
@@ -12,12 +13,16 @@ class DashboardRepositoryImpl implements IDashboardRepository {
   Future<Map<String, dynamic>> getCandidateDashboard() async {
     final response =
         await _apiProvider.getJson(ApiConstants.candidateDashboard);
-    return response['data'] ?? {};
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger votre tableau de bord.');
+    return ApiResponse.dataMap(response);
   }
 
   @override
   Future<Map<String, dynamic>> getPublicStats() async {
     final response = await _apiProvider.getJson(ApiConstants.statsPublic);
-    return response['data'] ?? {};
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de charger les statistiques.');
+    return ApiResponse.dataMap(response);
   }
 }
