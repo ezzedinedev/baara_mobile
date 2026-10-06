@@ -52,6 +52,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '474816588506',
     projectId: 'flutter-ai-playground-e84b5',
     storageBucket: 'flutter-ai-playground-e84b5.firebasestorage.app',
-    iosBundleId: 'com.opportune.bf',
+    iosBundleId: 'com.stratetix.baara',
   );
 }

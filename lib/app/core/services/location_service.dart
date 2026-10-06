@@ -58,7 +58,9 @@ class LocationService {
 
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        // Position approximative (permission COARSE seule) : la ville suffit
+        // pour les offres et formations proches.
+        desiredAccuracy: LocationAccuracy.low,
         timeLimit: _timeout,
       );
       final address = withAddress ? await _reverseGeocode(position) : null;

@@ -1,5 +1,7 @@
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../constants/api_constants.dart';
+
 /// Résultat d'une tentative de sign-in Google.
 class GoogleAuthResult {
   const GoogleAuthResult._(
@@ -49,9 +51,16 @@ class GoogleAuthService {
 
   final GoogleSignIn _googleSignIn;
 
+  /// `initialize` ne doit être appelé qu'une fois par processus.
+  static Future<void>? _initialized;
+
   Future<GoogleAuthResult> signIn() async {
     try {
-      await _googleSignIn.initialize();
+      // serverClientId = client OAuth « Web » du site : le jeton obtenu porte
+      // cet identifiant en audience, celui que l'API vérifie (GOOGLE_CLIENT_ID).
+      await (_initialized ??= _googleSignIn.initialize(
+        serverClientId: ApiConstants.googleServerClientId,
+      ));
       final account = await _googleSignIn.authenticate();
       final auth = account.authentication;
       final idToken = auth.idToken;

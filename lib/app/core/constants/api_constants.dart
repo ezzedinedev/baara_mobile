@@ -16,26 +16,31 @@ class ApiConstants {
 
   static const String productionBaseUrl = String.fromEnvironment(
     'PRODUCTION_API_BASE_URL',
-    defaultValue: 'https://baara.bf',
+    // Hote provisoire (hebergement mutualise). A remplacer par le vrai domaine
+    // au passage sur le VPS.
+    defaultValue: 'https://baara.strateapps.com',
+  );
+
+  /// Nom d'hôte du site public affiché aux utilisateurs (ex. pour renvoyer
+  /// les employeurs vers le web). Suit [productionBaseUrl].
+  static String get publicSiteHost =>
+      Uri.tryParse(productionBaseUrl)?.host ?? productionBaseUrl;
+
+  /// Client OAuth « Web » de Google (le même que la connexion Google du site,
+  /// `GOOGLE_CLIENT_ID` côté Laravel). Valeur publique, pas un secret.
+  static const String googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue:
+        '514652349175-vc72d4k6t5sjmqri56gko0smo214t9v1.apps.googleusercontent.com',
   );
 
   static const String authDeviceName = 'Baara-mobile';
 
-  static String get _defaultHost {
-    if (!kDebugMode) {
-      return productionBaseUrl;
-    }
-
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-
-    return 'http://127.0.0.1:8000';
-  }
+  /// Serveur par défaut : la production, quel que soit le mode (debug,
+  /// profile, release). Le développement local passe explicitement son
+  /// adresse via `--dart-define=API_BASE_URL=...`
+  /// (`scripts/flutter_run_android_dev.ps1` le fait déjà).
+  static String get _defaultHost => productionBaseUrl;
 
   static bool _isLocalDevHost(String host) {
     if (host == 'localhost' || host == '127.0.0.1' || host == '10.0.2.2') {
@@ -90,7 +95,7 @@ class ApiConstants {
   static const String deepLinkScheme = 'baara';
 
   /// Base du site web public. L'API et le site partagent le même hôte
-  /// (baara.bf en prod, Laravel :8000 en dev). Le retrait d'un éventuel
+  /// ([productionBaseUrl] en prod, Laravel :8000 en dev). Le retrait d'un éventuel
   /// préfixe `api.` reste par sécurité si un hôte dédié est fourni via
   /// --dart-define.
   static String get siteBaseUrl {
@@ -483,6 +488,9 @@ class ApiConstants {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
+
+  /// Header standard pour l'idempotence (middleware Laravel `EnsureIdempotency`).
+  static const String idempotencyKeyHeader = 'Idempotency-Key';
 
   static Map<String, String> authHeaders(String token) => {
         ...jsonHeaders,

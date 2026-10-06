@@ -1,4 +1,4 @@
-package com.Baara.bf
+package com.stratetix.baara
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity

@@ -64,7 +64,7 @@ class ReviewPromptService {
     final uri = Platform.isIOS
         ? Uri.parse('https://apps.apple.com/search?term=Baara%20bf')
         : Uri.parse(
-            'https://play.google.com/store/apps/details?id=com.Baara.bf');
+            'https://play.google.com/store/apps/details?id=com.stratetix.baara');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

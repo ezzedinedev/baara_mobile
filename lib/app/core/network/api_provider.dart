@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/api_constants.dart';
+import '../utils/idempotency_key.dart';
 
 abstract class ApiInterceptor {
   void onRequest(http.BaseRequest request);
@@ -177,6 +178,38 @@ class ApiProvider {
     }
   }
 
+  static bool _isMutationMethod(String method) {
+    switch (method.toUpperCase()) {
+      case 'POST':
+      case 'PUT':
+      case 'PATCH':
+      case 'DELETE':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /// Clé stable pour toute la chaîne retry (réseau / refresh token).
+  String? _resolveIdempotencyKey(
+    String method,
+    String? idempotencyKey, {
+    required bool idempotent,
+  }) {
+    if (!idempotent || !_isMutationMethod(method)) return null;
+    final explicit = idempotencyKey?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    return newIdempotencyKey();
+  }
+
+  Map<String, String> _mergeIdempotencyKey(
+    Map<String, String> headers,
+    String? idempotencyKey,
+  ) {
+    if (idempotencyKey == null || idempotencyKey.isEmpty) return headers;
+    return {...headers, ApiConstants.idempotencyKeyHeader: idempotencyKey};
+  }
+
   void addInterceptor(ApiInterceptor interceptor) {
     _interceptors.add(interceptor);
   }
@@ -279,12 +312,20 @@ class ApiProvider {
     String endpoint,
     Map<String, dynamic> payload, {
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) {
+    final key = _resolveIdempotencyKey(
+      'POST',
+      idempotencyKey,
+      idempotent: idempotent,
+    );
     return _sendJsonRequest(
       method: 'POST',
       endpoint: endpoint,
       headers: headers ?? ApiConstants.jsonHeaders,
       body: payload,
+      idempotencyKey: key,
     );
   }
 
@@ -292,23 +333,39 @@ class ApiProvider {
     String endpoint,
     Map<String, dynamic> payload, {
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) {
+    final key = _resolveIdempotencyKey(
+      'PUT',
+      idempotencyKey,
+      idempotent: idempotent,
+    );
     return _sendJsonRequest(
       method: 'PUT',
       endpoint: endpoint,
       headers: headers ?? ApiConstants.jsonHeaders,
       body: payload,
+      idempotencyKey: key,
     );
   }
 
   Future<Map<String, dynamic>> deleteJson(
     String endpoint, {
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) {
+    final key = _resolveIdempotencyKey(
+      'DELETE',
+      idempotencyKey,
+      idempotent: idempotent,
+    );
     return _sendJsonRequest(
       method: 'DELETE',
       endpoint: endpoint,
       headers: headers ?? const {'Accept': 'application/json'},
+      idempotencyKey: key,
     );
   }
 
@@ -317,7 +374,14 @@ class ApiProvider {
     required Map<String, String> fields,
     required List<http.MultipartFile> files,
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) async {
+    final key = _resolveIdempotencyKey(
+      'POST',
+      idempotencyKey,
+      idempotent: idempotent,
+    );
     final candidateBaseUrls = _orderedBaseUrls();
     Exception? lastError;
 
@@ -325,10 +389,13 @@ class ApiProvider {
       try {
         final uri = _buildUri(baseUrl, endpoint);
         final request = http.MultipartRequest('POST', uri);
-        final mergedHeaders = await _withAuth({
-          'Accept': 'application/json',
-          ...?headers,
-        });
+        final mergedHeaders = _mergeIdempotencyKey(
+          await _withAuth({
+            'Accept': 'application/json',
+            ...?headers,
+          }),
+          key,
+        );
         request.headers.addAll(mergedHeaders);
         request.fields.addAll(fields);
         request.files.addAll(files);
@@ -358,7 +425,14 @@ class ApiProvider {
     Map<String, String>? headers,
     Map<String, String>? fields,
     List<ApiMultipartFile> files = const [],
+    String? idempotencyKey,
+    bool idempotent = true,
   }) async {
+    final key = _resolveIdempotencyKey(
+      method,
+      idempotencyKey,
+      idempotent: idempotent,
+    );
     final candidateBaseUrls = _orderedBaseUrls();
     Exception? lastError;
 
@@ -367,10 +441,13 @@ class ApiProvider {
         final uri = _buildUri(baseUrl, endpoint);
         final request = http.MultipartRequest(method, uri);
 
-        final mergedHeaders = await _withAuth({
-          'Accept': 'application/json',
-          ...?headers,
-        });
+        final mergedHeaders = _mergeIdempotencyKey(
+          await _withAuth({
+            'Accept': 'application/json',
+            ...?headers,
+          }),
+          key,
+        );
         request.headers.addAll(mergedHeaders);
 
         if (fields != null) {
@@ -431,12 +508,42 @@ class ApiProvider {
     );
   }
 
+  /// Au plus [_maxConcurrentRequests] requêtes JSON en vol : au lancement,
+  /// l'app déclenche une rafale (profil, tableau de bord, offres, messages…)
+  /// que l'hébergement mutualisé ne tient pas (erreurs 500 observées dès ~15
+  /// requêtes simultanées). Les suivantes attendent leur tour, sans rien
+  /// changer pour les appelants.
+  static const int _maxConcurrentRequests = 4;
+  static final _requestSlots = _AsyncSemaphore(_maxConcurrentRequests);
+
   Future<Map<String, dynamic>> _sendJsonRequest({
     required String method,
     required String endpoint,
     required Map<String, String> headers,
     Map<String, dynamic>? body,
+    String? idempotencyKey,
+  }) {
+    return _requestSlots.run(
+      () => _sendJsonRequestRaw(
+        method: method,
+        endpoint: endpoint,
+        headers: headers,
+        body: body,
+        idempotencyKey: idempotencyKey,
+      ),
+    );
+  }
+
+  /// Envoi réel. Le rejeu après rafraîchissement du jeton rappelle cette
+  /// version (déjà sous permis) et non [_sendJsonRequest], sinon il pourrait
+  /// attendre un créneau qu'il occupe lui-même.
+  Future<Map<String, dynamic>> _sendJsonRequestRaw({
+    required String method,
+    required String endpoint,
+    required Map<String, String> headers,
+    Map<String, dynamic>? body,
     bool afterRefresh = false,
+    String? idempotencyKey,
   }) async {
     final candidateBaseUrls = _orderedBaseUrls();
     Exception? lastError;
@@ -450,7 +557,10 @@ class ApiProvider {
         try {
           final uri = _buildUri(baseUrl, endpoint);
           final request = http.Request(method, uri);
-          final authedHeaders = await _withAuth(headers);
+          final authedHeaders = _mergeIdempotencyKey(
+            await _withAuth(headers),
+            idempotencyKey,
+          );
           request.headers.addAll(authedHeaders);
 
           if (body != null) {
@@ -478,12 +588,13 @@ class ApiProvider {
               _isAuthenticatedEndpoint(endpoint)) {
             final refreshed = await _refreshTokenOnce();
             if (refreshed != null && refreshed.isNotEmpty) {
-              return _sendJsonRequest(
+              return _sendJsonRequestRaw(
                 method: method,
                 endpoint: endpoint,
                 headers: headers,
                 body: body,
                 afterRefresh: true,
+                idempotencyKey: idempotencyKey,
               );
             }
             // Refresh échoué : on prévient le shell pour déconnecter,
@@ -615,5 +726,35 @@ class ApiProvider {
 
   void dispose() {
     _client.close();
+  }
+}
+
+/// Sémaphore asynchrone minimal : [run] attend un créneau libre, exécute la
+/// tâche et libère le créneau même en cas d'erreur.
+class _AsyncSemaphore {
+  _AsyncSemaphore(this._max);
+
+  final int _max;
+  int _inFlight = 0;
+  final _waiters = <Completer<void>>[];
+
+  Future<T> run<T>(Future<T> Function() task) async {
+    if (_inFlight >= _max) {
+      final ticket = Completer<void>();
+      _waiters.add(ticket);
+      await ticket.future;
+    } else {
+      _inFlight++;
+    }
+    try {
+      return await task();
+    } finally {
+      if (_waiters.isNotEmpty) {
+        // Le créneau passe directement au suivant : _inFlight ne bouge pas.
+        _waiters.removeAt(0).complete();
+      } else {
+        _inFlight--;
+      }
+    }
   }
 }
