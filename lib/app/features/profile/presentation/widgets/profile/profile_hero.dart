@@ -284,9 +284,9 @@ class ProfileMemberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isComplete ? AppColors.successAccent : AppColors.warningAccent;
-    final bg = isComplete ? AppColors.successSoft : AppColors.warningSoft;
+    // Statut de membre, pas une alerte : couleurs de la marque.
+    final color = AppColors.primaryAccent;
+    final bg = AppColors.surfaceIconSoft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(

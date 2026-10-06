@@ -1281,7 +1281,7 @@ class _AdaptGaps extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(AppIcons.arrowRight,
+                ListNavChevron(
                     size: 16, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(

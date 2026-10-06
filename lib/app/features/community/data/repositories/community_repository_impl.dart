@@ -98,12 +98,16 @@ class CommunityRepositoryImpl implements ICommunityRepository {
     String visibility = 'public',
     List<String> mediaPaths = const [],
     PollDraft? poll,
+    String? idempotencyKey,
   }) async {
     final fields = <String, String>{
       'body': body,
       'category': category,
       'visibility': visibility,
     };
+    if (idempotencyKey != null && idempotencyKey.isNotEmpty) {
+      fields['client_request_id'] = idempotencyKey;
+    }
     // Sondage : envoyé en champs multipart "à la PHP" (poll[...]) — c'est la
     // forme attendue par Laravel sur un POST multipart (validation `poll.options`).
     if (poll != null) {
@@ -126,6 +130,7 @@ class CommunityRepositoryImpl implements ICommunityRepository {
       ApiConstants.communityPosts,
       fields: fields,
       files: files,
+      idempotencyKey: idempotencyKey,
     );
     ApiResponse.ensureSuccess(res,
         fallback: 'Impossible de publier votre post.');

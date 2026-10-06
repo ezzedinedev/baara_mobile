@@ -26,7 +26,7 @@ class StoryTextComposerScreen extends StatefulWidget {
 class _StoryTextComposerScreenState extends State<StoryTextComposerScreen>
     with StoryMentionAutocomplete {
   static const _palette = <String>[
-    '#0E8A4D',
+    '#26472B',
     '#2BA55B',
     '#0A5E36',
     '#2B7FFF',

@@ -19,6 +19,7 @@ import '../controllers/story_controller.dart';
 import 'compose_post_screen.dart';
 import 'explore_screen.dart';
 import 'saved_posts_screen.dart';
+import 'package:baara/app/features/profile/presentation/controllers/profile_controller.dart';
 
 class CommunityFeedScreen extends StatefulWidget {
   const CommunityFeedScreen({super.key});
@@ -137,6 +138,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         body: Column(
           children: [
             _feedTabs(),
+            _composePrompt(),
             _filterBar(),
             Expanded(child: _FeedBody(scrollController: _scrollController)),
           ],
@@ -218,6 +220,53 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
       transition: Transition.downToUp,
     );
   }
+
+  Widget _composePrompt() {
+    final profile = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>().profile.value
+        : null;
+    final name = profile?.fullName.trim().isNotEmpty == true
+        ? profile!.fullName
+        : 'Vous';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageH, AppSpacing.sm, AppSpacing.pageH, 0),
+      child: Material(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(
+          onTap: _openComposer,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            child: Row(
+              children: [
+                BrandAvatar(
+                  seed: profile?.email ?? name,
+                  label: name,
+                  size: 40,
+                  imageUrl: profile?.avatarUrl,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Quoi de neuf, ${name.split(' ').first} ?',
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.hintColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(AppIcons.edit, size: 20, color: AppColors.primary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> _refreshFeedWithStories(CommunityController controller) async {
@@ -265,16 +314,9 @@ class _FeedBody extends StatelessWidget {
               EmptyState(
                 illustration: const EmptyFeedIllustration(),
                 title: 'Le fil est vide',
+                // Pas de bouton ici : « Quoi de neuf ? » et le bouton
+                // flottant « Publier » proposent déjà l'action.
                 subtitle: 'Soyez le premier à publier dans la communauté.',
-                actionLabel: 'Publier',
-                onAction: () {
-                  AppHaptics.tap();
-                  Get.to<void>(
-                    () => const ComposePostScreen(),
-                    fullscreenDialog: true,
-                    transition: Transition.downToUp,
-                  );
-                },
               ),
             ],
           ),

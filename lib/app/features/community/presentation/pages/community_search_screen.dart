@@ -133,7 +133,7 @@ class _CommunitySearchScreenState extends State<CommunitySearchScreen> {
                   prefixIcon:
                       Icon(AppIcons.search, color: AppColors.hintColor),
                   suffixIcon: IconButton(
-                    icon: Icon(AppIcons.arrowRight,
+                    icon: Icon(AppIcons.actionForward,
                         color: AppColors.primaryAccent),
                     onPressed: () => _search(_input.text),
                   ),

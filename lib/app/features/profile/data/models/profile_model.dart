@@ -135,7 +135,16 @@ class ProfileModel extends Profile {
   static List<ExperienceModel> _parseExperiences(dynamic value) {
     if (value == null) return [];
     if (value is List) {
-      return value.map((e) => ExperienceModel.fromJson(e)).toList();
+      return value
+          .map((e) {
+            if (e is Map<String, dynamic>) return ExperienceModel.fromJson(e);
+            if (e is Map) {
+              return ExperienceModel.fromJson(Map<String, dynamic>.from(e));
+            }
+            return null;
+          })
+          .whereType<ExperienceModel>()
+          .toList();
     }
     return [];
   }
@@ -143,7 +152,16 @@ class ProfileModel extends Profile {
   static List<EducationModel> _parseEducations(dynamic value) {
     if (value == null) return [];
     if (value is List) {
-      return value.map((e) => EducationModel.fromJson(e)).toList();
+      return value
+          .map((e) {
+            if (e is Map<String, dynamic>) return EducationModel.fromJson(e);
+            if (e is Map) {
+              return EducationModel.fromJson(Map<String, dynamic>.from(e));
+            }
+            return null;
+          })
+          .whereType<EducationModel>()
+          .toList();
     }
     return [];
   }
@@ -151,7 +169,18 @@ class ProfileModel extends Profile {
   static List<LanguageModel> _parseLanguages(dynamic value) {
     if (value == null) return [];
     if (value is List) {
-      return value.map((e) => LanguageModel.fromJson(e)).toList();
+      return value
+          .map((e) {
+            if (e is Map<String, dynamic>) return LanguageModel.fromJson(e);
+            if (e is Map) {
+              return LanguageModel.fromJson(Map<String, dynamic>.from(e));
+            }
+            final name = e.toString().trim();
+            if (name.isEmpty) return null;
+            return LanguageModel(id: name, name: name, level: 'Courant');
+          })
+          .whereType<LanguageModel>()
+          .toList();
     }
     return [];
   }
@@ -175,9 +204,13 @@ class ExperienceModel extends Experience {
       title: json['title'] ?? json['job_title'] ?? '',
       company: json['company'] ?? json['company_name'] ?? '',
       location: json['location'] ?? '',
-      startDate: _parseDate(json['start_date']),
-      endDate: json['end_date'] != null ? _parseDate(json['end_date']) : null,
-      isCurrent: json['is_current'] ?? json['current'] ?? false,
+      startDate: _parseDate(json['start_date'] ?? json['from']),
+      endDate: json['end_date'] != null || json['to'] != null
+          ? _parseDate(json['end_date'] ?? json['to'])
+          : null,
+      isCurrent: json['is_current'] ??
+          json['current'] ??
+          json['to']?.toString().toLowerCase() == 'present',
       description: json['description'] ?? json['responsibilities'],
     );
   }
@@ -207,10 +240,12 @@ class EducationModel extends Education {
       institution:
           json['institution'] ?? json['school'] ?? json['university'] ?? '',
       location: json['location'] ?? '',
-      startDate: _parseDate(json['start_date']),
-      endDate: json['end_date'] != null ? _parseDate(json['end_date']) : null,
+      startDate: _parseDate(json['start_date'] ?? json['year']),
+      endDate: json['end_date'] != null
+          ? _parseDate(json['end_date'])
+          : (json['year'] != null ? _parseDate(json['year']) : null),
       fieldOfStudy: json['field_of_study'] ?? json['major'],
-      grade: json['grade'] ?? json['gpa'],
+      grade: json['grade'] ?? json['gpa'] ?? json['mention'],
     );
   }
 

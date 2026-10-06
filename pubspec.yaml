@@ -64,18 +64,18 @@ flutter_launcher_icons:
   image_path: "assets/icon/baara_icon.png"
   # Android : icône adaptative (fond de marque + symbole détouré).
   android: "ic_launcher"
-  adaptive_icon_background: "#0E8A4D"
+  adaptive_icon_background: "#78EB54"
   adaptive_icon_foreground: "assets/icon/baara_icon_foreground.png"
   min_sdk_android: 21
   # iOS n'accepte pas la transparence : on aplatit sur le fond de marque.
   ios: true
   remove_alpha_ios: true
-  background_color_ios: "#0E8A4D"
+  background_color_ios: "#78EB54"
   # Web + PWA.
   web:
     generate: true
-    background_color: "#0E8A4D"
-    theme_color: "#0E8A4D"
+    background_color: "#26472B"
+    theme_color: "#26472B"
 
 flutter:
   uses-material-design: true

@@ -71,7 +71,11 @@ class AppThemeController extends GetxController with WidgetsBindingObserver {
     isDarkMode.value = source == 'system' ? _platformIsDark : source == 'dark';
     amoled.value = prefs.getBool(_amoledKey) ?? false;
     final storedAccent = prefs.getInt(_accentKey);
-    if (storedAccent != null) accentSeed.value = Color(storedAccent);
+    // 0xFF0E8A4D = ancien vert de marque, enregistré quand l'utilisateur
+    // gardait l'accent par défaut : il suit la nouvelle charte.
+    if (storedAccent != null && storedAccent != 0xFF0E8A4D) {
+      accentSeed.value = Color(storedAccent);
+    }
     _applySystemOverlay();
   }
 

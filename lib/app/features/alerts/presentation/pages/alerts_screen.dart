@@ -226,7 +226,7 @@ class _AlertCard extends StatelessWidget {
                       style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.primaryAccent,
                           fontWeight: FontWeight.w700)),
-                  Icon(AppIcons.arrowRight,
+                  ListNavChevron(
                       size: 16, color: AppColors.primaryAccent),
                 ],
               ),

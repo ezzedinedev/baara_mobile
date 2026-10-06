@@ -44,6 +44,13 @@ class RealtimeService extends GetxService {
   /// Démarre le temps réel si une session existe. Idempotent.
   Future<void> start() async {
     if (_started) return;
+    if (ApiConstants.reverbAppKey.isEmpty) {
+      _debug(
+        'disabled: REVERB_APP_KEY manquante '
+        '(ajoutez --dart-define=REVERB_APP_KEY=... ou utilisez scripts/flutter_run_android_dev.ps1)',
+      );
+      return;
+    }
     final token = await _tokenStore.readTokenOrNull();
     if (token == null || token.isEmpty) return; // pas connecté → no-op
     _token = token;

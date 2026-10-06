@@ -1,0 +1,4 @@
+{
+  "API_BASE_URL": "http://127.0.0.1:8000",
+  "REVERB_APP_KEY": "copiez REVERB_APP_KEY depuis projet_de_l-emploi/.env"
+}

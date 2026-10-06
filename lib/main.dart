@@ -122,10 +122,20 @@ class _BaaraAppState extends State<BaaraApp> {
         themeController.amoled.value;
         themeController.accentSeed.value;
         return GetMaterialApp(
-          title: 'Baara.bf',
+          title: 'Baara',
           debugShowCheckedModeBanner: false,
-          builder: (context, child) =>
-              NetworkStatusBanner(child: child ?? const SizedBox.shrink()),
+          // Style de barre d'état par défaut, selon le thème. Sans lui, un
+          // écran au fond sombre (splash, landing) laissait ses icônes
+          // blanches aux écrans clairs suivants, qui n'en déclarent pas.
+          // Un AnnotatedRegion posé par un écran reste prioritaire.
+          builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: themeController.isDarkMode.value
+                ? SystemUiOverlayStyle.light
+                    .copyWith(statusBarColor: Colors.transparent)
+                : SystemUiOverlayStyle.dark
+                    .copyWith(statusBarColor: Colors.transparent),
+            child: NetworkStatusBanner(child: child ?? const SizedBox.shrink()),
+          ),
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeController.themeMode,

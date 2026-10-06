@@ -44,6 +44,8 @@ class AuthPhoneField extends StatefulWidget {
 }
 
 class _AuthPhoneFieldState extends State<AuthPhoneField> {
+  // Même règle que AuthTextField : un champ en erreur se revalide à la frappe.
+  final _fieldKey = GlobalKey<FormFieldState<String>>();
   final FocusNode _focusNode = FocusNode();
   bool _focused = false;
 
@@ -109,10 +111,15 @@ class _AuthPhoneFieldState extends State<AuthPhoneField> {
                 : const [],
           ),
           child: TextFormField(
+            key: _fieldKey,
             controller: widget.controller,
             focusNode: _focusNode,
             keyboardType: TextInputType.phone,
             validator: widget.validator,
+            onChanged: (_) {
+              final field = _fieldKey.currentState;
+              if (field != null && field.hasError) field.validate();
+            },
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]')),
               LengthLimitingTextInputFormatter(14),

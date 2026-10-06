@@ -15,18 +15,24 @@ class OnboardingController extends GetxController {
   final OnboardingService _onboarding;
   final IProfileRepository _profileRepository;
 
+  /// Profil, CV, opportunités, puis notifications (la demande système ne part
+  /// qu'après avoir expliqué son intérêt, jamais à froid).
+  static const stepCount = 4;
+
   final currentStep = 0.obs;
   final isBusy = false.obs;
 
   /// Message sous le corps de l'étape (ex. rappel « finir plus tard »).
   final stepHint = RxnString();
 
-  Future<void> skip() => _finish();
+  /// « Passer » / « Plus tard » : on termine sans ouvrir la demande de
+  /// notifications (activable ensuite depuis les Réglages).
+  Future<void> skip() => _finish(askPush: false);
 
   Future<void> next({required bool isLast}) async {
     if (isBusy.value) return;
     if (isLast) {
-      await _finish();
+      await _finish(askPush: true);
       return;
     }
 
@@ -43,7 +49,7 @@ class OnboardingController extends GetxController {
         if (!await _tryAdvanceCvStep()) return;
       }
 
-      if (step < 2) currentStep.value = step + 1;
+      if (step < stepCount - 1) currentStep.value = step + 1;
     } catch (e) {
       AppToast.error('Erreur', userFacingError(e));
     } finally {
@@ -54,7 +60,7 @@ class OnboardingController extends GetxController {
   Future<bool> _tryAdvanceProfileStep() async {
     final profile = await _profileRepository.getProfile();
     if (onboardingProfileStepDone(profile)) {
-      stepHint.value = 'Profil mis à jour — bravo !';
+      stepHint.value = 'Profil mis à jour, bravo !';
       return true;
     }
     return _confirmSkipStep(
@@ -71,7 +77,7 @@ class OnboardingController extends GetxController {
   Future<bool> _tryAdvanceCvStep() async {
     final profile = await _profileRepository.getProfile();
     if (onboardingCvStepDone(profile)) {
-      stepHint.value = 'CV ou parcours enregistré — parfait !';
+      stepHint.value = 'CV ou parcours enregistré, parfait !';
       return true;
     }
     return _confirmSkipStep(
@@ -113,9 +119,13 @@ class OnboardingController extends GetxController {
     return false;
   }
 
-  Future<void> _finish() async {
+  Future<void> _finish({required bool askPush}) async {
     await _onboarding.markCompleted();
-    await PostAuthBootstrap.activatePushAfterLogin();
+    if (askPush) {
+      await PostAuthBootstrap.activatePushAfterLogin();
+    } else {
+      await PostAuthBootstrap.syncPushToken();
+    }
 
     final pending = await _onboarding.consumePendingRoute();
     if (pending != null && pending.isNotEmpty) {

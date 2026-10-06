@@ -450,7 +450,7 @@ class _CtaButton extends StatelessWidget {
                     AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(AppIcons.arrowRight,
+              Icon(AppIcons.actionForward,
                   size: 14, color: AppColors.onPrimary),
             ],
           ),

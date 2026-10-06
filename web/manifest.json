@@ -1,11 +1,11 @@
 {
-    "name": "Baara.bf",
-    "short_name": "Baara.bf",
+    "name": "Baara",
+    "short_name": "Baara",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0E8A4D",
-    "theme_color": "#0E8A4D",
-    "description": "Baara.bf — Emploi, formation et réseau professionnel au Burkina Faso.",
+    "background_color": "#26472B",
+    "theme_color": "#26472B",
+    "description": "Baara — Emploi, formation et réseau professionnel au Burkina Faso.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

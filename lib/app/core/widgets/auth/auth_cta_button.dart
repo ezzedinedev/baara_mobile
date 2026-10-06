@@ -15,7 +15,7 @@ class AuthCtaButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
-    this.trailing = AppIcons.arrowRight,
+    this.trailing = AppIcons.actionForward,
     this.backgroundColor,
     this.foregroundColor,
   });
@@ -39,6 +39,10 @@ class _AuthCtaButtonState extends State<AuthCtaButton> {
     final bg = widget.backgroundColor ?? AppColors.primary;
     final fg = widget.foregroundColor ?? AppColors.onPrimary;
     final disabled = widget.onPressed == null || widget.isLoading;
+    // Inactif (pas d'action) : surface neutre et texte atténué, plutôt qu'une
+    // couleur de marque délavée. En chargement, le bouton garde sa couleur.
+    final inactive = widget.onPressed == null && !widget.isLoading;
+    final ink = inactive ? AppColors.hintColor : fg;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -60,16 +64,23 @@ class _AuthCtaButtonState extends State<AuthCtaButton> {
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            gradient: disabled ? null : AppColors.landingCtaGradient,
-            color: disabled ? bg.withValues(alpha: 0.55) : null,
+            // Couleur explicite = aplat ; sinon dégradé de marque.
+            gradient: inactive || widget.backgroundColor != null
+                ? null
+                : AppColors.landingCtaGradient,
+            color: inactive ? AppColors.surfaceHigh : widget.backgroundColor,
             borderRadius: AppShapes.pill,
-            boxShadow: disabled
+            boxShadow: inactive
                 ? null
                 : [
                     BoxShadow(
-                      color: bg.withValues(alpha: _isHovered ? 0.32 : 0.22),
-                      blurRadius: _isHovered ? 30 : 22,
-                      offset: const Offset(0, 10),
+                      // Sur un aplat clair, une ombre teintée ferait une bande
+                      // colorée : ombre neutre à la place.
+                      color: widget.backgroundColor != null
+                          ? Colors.black.withValues(alpha: _isHovered ? 0.26 : 0.18)
+                          : bg.withValues(alpha: _isHovered ? 0.26 : 0.16),
+                      blurRadius: _isHovered ? 28 : 20,
+                      offset: const Offset(0, 6),
                     ),
                   ],
           ),
@@ -86,7 +97,9 @@ class _AuthCtaButtonState extends State<AuthCtaButton> {
                 : AnimatedDefaultTextStyle(
                     duration: AppMotion.short,
                     style: AppTextStyles.buttonLg.copyWith(
-                      color: fg.withValues(alpha: _isHovered ? 1.0 : 0.90),
+                      color: inactive
+                          ? ink
+                          : fg.withValues(alpha: _isHovered ? 1.0 : 0.90),
                       letterSpacing: 0,
                       fontSize: 15,
                     ),
@@ -101,8 +114,12 @@ class _AuthCtaButtonState extends State<AuthCtaButton> {
                           ),
                         ),
                         if (widget.trailing != null) ...[
-                          const SizedBox(width: 10),
-                          Icon(widget.trailing, color: fg, size: 20),
+                          const SizedBox(width: 8),
+                          Icon(
+                            widget.trailing ?? AppIcons.actionForward,
+                            color: ink,
+                            size: 18,
+                          ),
                         ],
                       ],
                     ),

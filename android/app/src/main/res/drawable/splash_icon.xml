@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône du splash système Android 12+ : boîte de 288 dp (taille attendue
+     par le système, affichée sans mise à l'échelle) avec le symbole de 96 dp
+     au centre, comme sur le splash Flutter. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="288dp"
+        android:height="288dp"
+        android:drawable="@android:color/transparent" />
+    <item
+        android:width="83dp"
+        android:height="96dp"
+        android:gravity="center"
+        android:drawable="@drawable/splash_mark" />
+</layer-list>

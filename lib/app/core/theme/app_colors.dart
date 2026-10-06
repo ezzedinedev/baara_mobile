@@ -4,15 +4,17 @@ import 'app_theme_controller.dart';
 
 class AppColors {
   AppColors._();
-  static const Color primary = Color(0xFF0E8A4D);
-  static const Color primaryLight = Color(0xFFB7ECC9);
-  static const Color primaryMedium = Color(0xFF2BA55B);
-  static const Color primaryDark = Color(0xFF0A5E36);
-  static const Color secondary = Color(0xFF2BA55B);
-  static const Color secondaryDeep = Color(0xFF0A5E36);
-  static const Color secondaryMid = Color(0xFF4FBE7C);
+  // Charte Baara (identique au site) : vert forêt #26472B, vert feuille
+  // #45A735, citron #78EB54.
+  static const Color primary = Color(0xFF26472B);
+  static const Color primaryLight = Color(0xFFD5F9CA);
+  static const Color primaryMedium = Color(0xFF45A735);
+  static const Color primaryDark = Color(0xFF1A321E);
+  static const Color secondary = Color(0xFF45A735);
+  static const Color secondaryDeep = Color(0xFF1A321E);
+  static const Color secondaryMid = Color(0xFF78EB54);
   static Color get secondarySoft =>
-      _isDark ? const Color(0xFF183631) : const Color(0xFFE5F2EF);
+      _isDark ? const Color(0xFF1B3220) : const Color(0xFFE8F5E3);
 
   static bool get _isDark =>
       Get.isRegistered<AppThemeController>() &&
@@ -56,9 +58,13 @@ class AppColors {
   /// utilisateur ([_accentSeed]). En dark on l'éclaircit (~+14 % L) pour rester
   /// lisible et vivant ; en light c'est la graine telle quelle. À NE PAS
   /// utiliser comme fond de bouton (garder [primary] pour les fills de marque).
+  ///
+  /// Le vert forêt de marque est trop sombre pour un texte sur fond sombre :
+  /// en dark, l'accent par défaut bascule sur le vert feuille éclairci.
   static Color get primaryAccent {
     final base = _accentSeed;
-    return _isDark ? _lighten(base, 0.14) : base;
+    if (!_isDark) return base;
+    return base == primary ? _lighten(primaryMedium, 0.10) : _lighten(base, 0.14);
   }
 
   // Rampe dark : base légèrement relevée (moins « trou noir »), pas vers le
@@ -86,13 +92,13 @@ class AppColors {
       ? const Color(0xFF202427)
       : (_isDark ? const Color(0xFF333F43) : const Color(0xFFD8E2E1));
   static Color get surfaceSelected =>
-      _isDark ? const Color(0xFF15322E) : const Color(0xFFE7F4F1);
+      _isDark ? const Color(0xFF1A3320) : const Color(0xFFEDF8E8);
   static Color get surfaceIconSoft =>
-      _isDark ? const Color(0xFF183631) : const Color(0xFFE5F2EF);
+      _isDark ? const Color(0xFF1B3220) : const Color(0xFFE8F5E3);
   static Color get surfaceSplashMid =>
       _isDark ? const Color(0xFF10191B) : const Color(0xFFF8FBFA);
   static Color get surfaceSplashBottom =>
-      _isDark ? const Color(0xFF0D1517) : const Color(0xFFEAF2F1);
+      _isDark ? const Color(0xFF0D1517) : const Color(0xFFEDF4EA);
 
   // Texte dark adouci : on évite le blanc pur (#F5F7F7 éblouit sur fond
   // sombre). ~90 % de blanc = lisible sans « brûler » les yeux.
@@ -202,7 +208,7 @@ class AppColors {
   static Color get profileGradientMid =>
       _isDark ? const Color(0xFF121A1F) : const Color(0xFFF4F7FB);
   static Color get profileGradientBottom =>
-      _isDark ? const Color(0xFF0F1719) : const Color(0xFFEEF6F4);
+      _isDark ? const Color(0xFF0F1719) : const Color(0xFFF0F6EE);
 
   static const Color recruiterStart = Color(0xFF2F8F83);
   static const Color recruiterEnd = Color(0xFF136F63);
@@ -217,14 +223,14 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF2F8F83), Color(0xFF136F63)]
+            ? const [Color(0xFF3E8E34), Color(0xFF2C5A30)]
             : const [primaryMedium, primary],
       );
   static LinearGradient get headerBrandGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.45, 1.0],
       );
@@ -232,7 +238,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF2F8F83), Color(0xFF0B2F3A)]
+            ? const [Color(0xFF3E8E34), Color(0xFF10241A)]
             : const [primaryMedium, primary, primaryDark],
       );
 
@@ -255,14 +261,14 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primaryDark, primary, primaryMedium],
       );
   static LinearGradient get heroAccueilGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -271,7 +277,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2A34), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF0F2318), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primaryMedium, primary, primaryDark],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -280,7 +286,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0E2B34), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF112619), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primary, primaryMedium, secondary],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -289,7 +295,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF1B7E73)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF3A7A33)]
             : const [primaryDark, primary, primaryMedium],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -298,7 +304,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF2E2415)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF2E2415)]
             : const [primaryDark, primary, secondary],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -307,7 +313,7 @@ class AppColors {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: _isDark
-            ? const [Color(0xFF0B2F3A), Color(0xFF11564F), Color(0xFF2E2415)]
+            ? const [Color(0xFF10241A), Color(0xFF26472B), Color(0xFF2E2415)]
             : const [primaryDark, primary, secondaryDeep],
         stops: const [0.0, 0.55, 1.0],
       );
@@ -316,7 +322,7 @@ class AppColors {
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
         colors: _isDark
-            ? const [Color(0xFF1B7E73), Color(0xFF11564F)]
+            ? const [Color(0xFF3A7A33), Color(0xFF26472B)]
             : const [primaryMedium, primary],
       );
 
@@ -345,12 +351,15 @@ class AppColors {
       ? const [Color(0x00000000), Color(0x55000000), Color(0xB3000000)]
       : const [Color(0x00000000), Color(0x22000000), Color(0x66000000)];
   static const List<double> imageScrimStops = [0.55, 0.85, 1.0];
+  // Avatars sans photo (personnes, entreprises sans logo) : déclinaisons des
+  // verts de la charte, toutes assez sombres pour porter des initiales
+  // blanches. Varier sans sortir de la marque.
   static const List<List<Color>> avatarPalette = [
-    [Color(0xFF14B488), Color(0xFF0CA6A6)],
-    [Color(0xFF7A5CFA), Color(0xFF4F46E5)],
-    [Color(0xFF2B7FFF), Color(0xFF1F9FBE)],
-    [Color(0xFFFF8A00), Color(0xFFFF6B6B)],
-    [Color(0xFFEB4D8A), Color(0xFFB42369)],
+    [Color(0xFF26472B), Color(0xFF45A735)],
+    [Color(0xFF1A321E), Color(0xFF2E5A33)],
+    [Color(0xFF2C5A30), Color(0xFF3E8E34)],
+    [Color(0xFF34703A), Color(0xFF45A735)],
+    [Color(0xFF203D25), Color(0xFF3A7A33)],
     [primary, primaryMedium],
   ];
 
@@ -368,8 +377,8 @@ class AppColors {
         end: Alignment.bottomRight,
         colors: _isDark
             ? const [
-                Color(0xFF13322F),
-                Color(0xFF173B33),
+                Color(0xFF14301B),
+                Color(0xFF1A3A20),
                 Color(0xFF0F1518),
               ]
             : const [

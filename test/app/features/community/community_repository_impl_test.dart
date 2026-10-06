@@ -20,6 +20,8 @@ class _FakeApiProvider extends ApiProvider {
     String endpoint,
     Map<String, dynamic> payload, {
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) async {
     return _response;
   }
@@ -28,6 +30,8 @@ class _FakeApiProvider extends ApiProvider {
   Future<Map<String, dynamic>> deleteJson(
     String endpoint, {
     Map<String, String>? headers,
+    String? idempotencyKey,
+    bool idempotent = true,
   }) async {
     return _response;
   }

@@ -21,8 +21,8 @@ import '../../../features/profile/presentation/controllers/profile_controller.da
 import '../../../../routes/app_routes.dart';
 
 import '../../utils/haptics.dart';
-
 import '../../utils/profile_completion.dart';
+import 'list_nav_chevron.dart';
 
 
 
@@ -216,7 +216,7 @@ class ProfileCompletionCard extends StatelessWidget {
 
                               Icon(item.icon,
 
-                                  size: 16, color: AppColors.warningAccent),
+                                  size: 16, color: AppColors.primaryAccent),
 
                               const SizedBox(width: 8),
 
@@ -238,9 +238,7 @@ class ProfileCompletionCard extends StatelessWidget {
 
                               ),
 
-                              Icon(Icons.chevron_right_rounded,
-
-                                  size: 18, color: AppColors.hintColor),
+                              const ListNavChevron(size: 18),
 
                             ],
 

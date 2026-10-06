@@ -155,8 +155,7 @@ class DocumentsScreen extends GetView<DocumentsController> {
                       color: AppColors.primaryAccent, size: 18),
                 ),
                 title: Text(t.label, style: AppTextStyles.titleMd),
-                trailing: Icon(AppIcons.arrowRight,
-                    color: AppColors.outlineVariant),
+                trailing: const ListNavChevron(),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   controller.pickAndUpload(t.key);

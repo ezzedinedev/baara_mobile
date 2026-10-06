@@ -218,7 +218,7 @@ class _MethodCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(AppIcons.arrowRight,
+              ListNavChevron(
                   color: AppColors.primaryAccent, size: 22),
             ],
           ),

@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
+import 'package:flutter/services.dart';
 import '../../theme/app_shapes.dart';
 import '../../theme/app_text_styles.dart';
+import '../baara_mark.dart';
 import '../common/app_back_button.dart';
-import '../common/wavy_decorations.dart';
 
-/// [height] contrôle la hauteur totale (landing = ~60% écran, sign up = ~35%).
-/// [showLeading] affiche une flèche retour à gauche.
-/// [title]/[subtitle] sont affichés centrés au sein du header (s'ils sont
-/// passés) — utile pour OTP / success pages.
-/// [titleUnderline] : petit trait rouge/vert sous un titre sous la vague
-/// (voir mockup "Sign up" avec le trait horizontal sous le titre).
+/// En-tête de marque des écrans d'accueil, d'inscription et de connexion.
+///
+/// Même langage que le splash et la landing : un bandeau vert forêt aux coins
+/// bas arrondis, un halo citron discret, le symbole Baara en filigrane (la
+/// signature) et le logo en haut. L'icône de contexte (connexion, code,
+/// mot de passe…) apparaît dans une pastille citron avec un léger rebond.
+///
+/// [height] est la hauteur utile, ajoutée à la barre d'état (jamais rognée
+/// par elle). [showLeading] affiche le bouton retour. [title]/[subtitle] sont
+/// optionnels : la plupart des écrans portent leur titre sous l'en-tête.
+/// [gradient] remplace le fond uni si un écran a besoin d'une variante.
+///
+/// Le nom historique (`Wavy`) est conservé pour ne pas toucher aux appels.
 class WavyAuthHeader extends StatelessWidget {
   const WavyAuthHeader({
     super.key,
@@ -31,125 +38,171 @@ class WavyAuthHeader extends StatelessWidget {
   final String? title;
   final String? subtitle;
 
+  static const double _radius = 32;
+
   @override
   Widget build(BuildContext context) {
-    // Mode compact (profile_selection, profile_edit) : on resserre l'icone et
-    // les paddings pour rentrer dans 150dp. La vague (~40dp) reste lisible et
-    // l'icone ne deborde plus sur petits ecrans (Tecno KG5j) ni sur appareils
-    // avec status bar haute / notch.
-    // 200 inclus dans le compact : sinon icône 72 + titre + réserve 60 ne
-    // tiennent pas sous la status bar → overflow.
-    final isCompact = height < 220;
-    final iconSize = isCompact ? 48.0 : 72.0;
-    final iconInnerSize = isCompact ? 24.0 : 36.0;
-    final topGap = isCompact ? 6.0 : 20.0;
-    final bottomReserve = isCompact ? 36.0 : 60.0;
-    // La hauteur design s'AJOUTE à la status bar (au lieu d'être rognée par
-    // elle) → le contenu dispose toujours de `height` réels, plus d'overflow
-    // selon le notch/la status bar de l'appareil.
-    final topInset = MediaQuery.of(context).padding.top;
+    final topInset = MediaQuery.paddingOf(context).top;
+    final isCompact = height < 190;
+    final badge = isCompact ? 52.0 : 60.0;
 
-    return SizedBox(
-      height: height + topInset,
-      width: double.infinity,
-      child: ClipPath(
-        clipper: const WaveClipper(),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Fond avec gradient primaire.
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: gradient ?? AppColors.landingHeroGradient,
-              ),
-            ),
-            // Couche texture topographique (cercles concentriques translucides).
-            const CustomPaint(painter: TopoPainter()),
-            // Leading arrow back.
-            if (showLeading)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 14,
-                child: AppBackButton(
-                  onDark: true,
-                  onTap: () {
-                    if (onLeadingTap != null) {
-                      onLeadingTap!();
-                    } else {
-                      Navigator.of(context).maybePop();
-                    }
-                  },
+    // Le bandeau est sombre et passe sous la barre d'état : icônes claires.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: SizedBox(
+        height: height + topInset,
+        width: double.infinity,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(_radius),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: BaaraMark.brandForest,
+                  gradient: gradient,
                 ),
               ),
-            // Contenu central (icône + titre + sous-titre).
-            if (foregroundIcon != null || title != null || subtitle != null)
-              Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + topGap,
-                  bottom: bottomReserve,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (foregroundIcon != null) ...[
-                      Container(
-                        width: iconSize,
-                        height: iconSize,
-                        decoration: BoxDecoration(
-                          color: AppColors.onPrimary.withValues(alpha: 0.18),
-                          borderRadius:
-                              AppShapes.squircleRadius(iconSize * 0.32),
-                          border: Border.all(
-                            color: AppColors.onPrimary.withValues(alpha: 0.24),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppColors.onPrimary.withValues(alpha: 0.12),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          foregroundIcon,
-                          color: AppColors.onPrimary,
-                          size: iconInnerSize,
-                        ),
-                      ),
-                      // Spacer uniquement s'il y a un titre/sous-titre dessous.
-                      // Sans cette condition l'icone seule (cas profileEdit)
-                      // gaspillait 18px → overflow de 16px sur petits ecrans.
-                      if (title != null || subtitle != null)
-                        SizedBox(height: isCompact ? 10 : 18),
+              // Halo citron en haut à droite : de la lumière, pas un motif.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(1.1, -1.2),
+                    radius: 1.3,
+                    colors: [
+                      BaaraMark.brandLime.withValues(alpha: 0.22),
+                      BaaraMark.brandLime.withValues(alpha: 0.0),
                     ],
-                    if (title != null)
-                      Text(
-                        title!,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.displayHero.copyWith(
-                          color: AppColors.onPrimary,
-                          fontSize: isCompact ? 24 : 32,
+                  ),
+                ),
+              ),
+              // Le personnage du logo en filigrane, coupé par le bord.
+              Positioned(
+                right: -36,
+                bottom: -46,
+                child: ExcludeSemantics(
+                  child: BaaraMark(
+                    size: height * 0.95,
+                    color: Colors.white.withValues(alpha: 0.06),
+                    headColor: BaaraMark.brandLime.withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: topInset + 8,
+                left: 14,
+                right: 14,
+                child: SizedBox(
+                  height: 44,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (showLeading)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: AppBackButton(
+                            onDark: true,
+                            onTap: onLeadingTap ??
+                                () => Navigator.of(context).maybePop(),
+                          ),
+                        ),
+                      Semantics(
+                        label: 'Baara',
+                        image: true,
+                        child: Image.asset(
+                          'assets/images/logo/baara_logo_light.png',
+                          height: 22,
+                          filterQuality: FilterQuality.high,
+                          excludeFromSemantics: true,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                         ),
                       ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
+                    ],
+                  ),
+                ),
+              ),
+              if (foregroundIcon != null || title != null || subtitle != null)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(24, topInset + 56, 24, 22),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (foregroundIcon != null)
+                        _IconBadge(icon: foregroundIcon!, size: badge),
+                      if (foregroundIcon != null && title != null)
+                        SizedBox(height: isCompact ? 10 : 14),
+                      if (title != null)
+                        Text(
+                          title!,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.displayHero.copyWith(
+                            color: Colors.white,
+                            fontSize: isCompact ? 22 : 26,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
                           subtitle!,
                           textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.onPrimary.withValues(alpha: 0.92),
+                            color: Colors.white.withValues(alpha: 0.80),
                             height: 1.4,
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pastille citron portant l'icône de l'écran, qui apparaît avec un rebond.
+class _IconBadge extends StatelessWidget {
+  const _IconBadge({required this.icon, required this.size});
+
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return ExcludeSemantics(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: reduceMotion ? 1 : 0.6, end: 1),
+        duration: Duration(milliseconds: reduceMotion ? 0 : 520),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: BaaraMark.brandLime,
+            borderRadius: AppShapes.squircleRadius(size * 0.34),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.22),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-          ],
+            ],
+          ),
+          child: Icon(icon, color: BaaraMark.brandForest, size: size * 0.46),
         ),
       ),
     );

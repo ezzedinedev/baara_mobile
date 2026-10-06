@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "Baara.bf" "\0"
+            VALUE "FileDescription", "Baara" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "appli_pour_lemploie" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "appli_pour_lemploie.exe" "\0"
-            VALUE "ProductName", "Baara.bf" "\0"
+            VALUE "ProductName", "Baara" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

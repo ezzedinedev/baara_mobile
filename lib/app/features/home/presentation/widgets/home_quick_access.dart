@@ -10,24 +10,22 @@ import 'package:baara/app/core/utils/haptics.dart';
 import 'package:baara/app/core/widgets/widgets.dart';
 import 'package:baara/routes/app_routes.dart';
 
-/// Accès rapides en BENTO : raccourcis vers les actions profondes (gain de
-/// taps), tuiles de tailles variées (squircle, profondeur douce, icônes
-/// colorées, press spring). Ne duplique pas la bottom nav.
+/// Accès rapides en bento : une tuile vedette (le suivi des candidatures,
+/// l'action la plus fréquente) aux couleurs de la marque, et trois tuiles
+/// calmes. Une seule couleur forte par bloc : la hiérarchie se lit d'un coup
+/// d'œil. Ne duplique pas la barre de navigation.
 class HomeQuickAccessRow extends StatelessWidget {
   const HomeQuickAccessRow({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Tuile vedette (large, à gauche) + 3 tuiles compactes empilées à droite.
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            flex: 1,
             child: HomeBentoTile(
               icon: AppIcons.workFilled,
-              color: AppColors.categoryBlue,
               label: 'home.quick_applications'.tr,
               caption: 'home.quick_applications_caption'.tr,
               route: AppRoutes.myApplications,
@@ -36,26 +34,22 @@ class HomeQuickAccessRow extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            flex: 1,
             child: Column(
               children: [
                 HomeBentoTile(
                   icon: AppIcons.document,
-                  color: AppColors.categoryPurple,
                   label: 'home.quick_cv'.tr,
                   route: AppRoutes.profileCv,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 HomeBentoTile(
                   icon: AppIcons.folder,
-                  color: AppColors.categoryCyan,
                   label: 'home.quick_documents'.tr,
                   route: AppRoutes.profileDocuments,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 HomeBentoTile(
                   icon: AppIcons.bookmarkFilled,
-                  color: AppColors.categoryOrange,
                   label: 'home.quick_portfolio'.tr,
                   route: AppRoutes.profilePortfolio,
                 ),
@@ -68,13 +62,13 @@ class HomeQuickAccessRow extends StatelessWidget {
   }
 }
 
-/// Tuile bento squircle. [feature] = grand format (icône XL + caption),
-/// sinon format compact (icône + label sur une ligne).
+/// Tuile bento. [feature] = grand format vert forêt (icône sur pastille
+/// citron, personnage Baara en filigrane, appel « Suivre ») ; sinon format
+/// compact clair, icône monochrome de la marque.
 class HomeBentoTile extends StatelessWidget {
   const HomeBentoTile({
     super.key,
     required this.icon,
-    required this.color,
     required this.label,
     required this.route,
     this.caption,
@@ -82,7 +76,6 @@ class HomeBentoTile extends StatelessWidget {
   });
 
   final IconData icon;
-  final Color color;
   final String label;
   final String route;
   final String? caption;
@@ -90,84 +83,136 @@ class HomeBentoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconBadge = Container(
-      width: feature ? 52 : 40,
-      height: feature ? 52 : 40,
-      decoration: ShapeDecoration(
-        color: color,
-        shape: AppShapes.squircle(feature ? AppRadius.md : AppRadius.sm),
-        shadows: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.32),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
+    return Semantics(
+      button: true,
+      label: caption == null ? label : '$label. $caption',
+      excludeSemantics: true,
+      child: PressScale(
+        onTap: () {
+          AppHaptics.tap();
+          Get.toNamed(route);
+        },
+        child: feature ? _feature() : _compact(),
       ),
-      child: Icon(icon, size: feature ? 25 : 20, color: AppColors.onPrimary),
     );
+  }
 
-    final content = feature
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              iconBadge,
-              const Spacer(),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.titleMd.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              if (caption != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  caption!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.hintColor,
-                    fontWeight: FontWeight.w600,
+  Widget _feature() {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 150),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: BaaraMark.brandForest,
+        shape: AppShapes.squircle(AppRadius.xl),
+        shadows: AppColors.ambientShadow,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -22,
+            bottom: -30,
+            child: BaaraMark(
+              size: 120,
+              color: Colors.white.withValues(alpha: 0.07),
+              headColor: BaaraMark.brandLime.withValues(alpha: 0.14),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: ShapeDecoration(
+                    color: BaaraMark.brandLime,
+                    shape: AppShapes.squircle(AppRadius.md),
                   ),
+                  child: Icon(icon, size: 22, color: BaaraMark.brandForest),
                 ),
-              ],
-            ],
-          )
-        : Row(
-            children: [
-              iconBadge,
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
+                const Spacer(),
+                Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleMd.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.1,
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
                   ),
                 ),
-              ),
-            ],
-          );
+                if (caption != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    caption!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Text(
+                      'Suivre',
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: BaaraMark.brandLime,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      AppIcons.actionForward,
+                      size: 15,
+                      color: BaaraMark.brandLime,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return PressScale(
-      onTap: () {
-        AppHaptics.tap();
-        Get.toNamed(route);
-      },
-      child: Container(
-        padding: EdgeInsets.all(feature ? AppSpacing.lg : AppSpacing.md),
-        constraints: BoxConstraints(minHeight: feature ? 132 : 0),
-        decoration: ShapeDecoration(
-          color: AppColors.surfaceCard,
-          shape: AppShapes.cardBordered(AppColors.outlineVariant),
-          shadows: AppColors.lightShadow,
-        ),
-        child: content,
+  Widget _compact() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: ShapeDecoration(
+        color: AppColors.surfaceCard,
+        shape: AppShapes.cardBordered(AppColors.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: ShapeDecoration(
+              color: AppColors.surfaceIconSoft,
+              shape: AppShapes.squircle(AppRadius.sm),
+            ),
+            child: Icon(icon, size: 19, color: AppColors.primaryAccent),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.titleMd.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ),
+          Icon(AppIcons.chevronRight, size: 16, color: AppColors.hintColor),
+        ],
       ),
     );
   }

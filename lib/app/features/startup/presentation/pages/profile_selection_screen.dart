@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
 import 'package:baara/app/core/theme/app_colors.dart';
-import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:baara/app/core/theme/app_motion.dart';
 import 'package:baara/app/core/theme/app_shapes.dart';
 import 'package:baara/app/core/theme/app_text_styles.dart';
@@ -10,6 +9,12 @@ import 'package:baara/app/core/utils/haptics.dart';
 import 'package:baara/app/core/widgets/widgets.dart';
 import '../controllers/profile_selection_controller.dart';
 
+/// Premier pas de l'inscription : le candidat choisit son parcours.
+///
+/// Deux options pleine largeur, chacune avec ce qu'elle apporte concrètement
+/// (trois puces). La sélection se lit d'un coup d'œil : bordure forêt,
+/// pastille citron, coche. « Continuer » reste neutre tant que rien n'est
+/// choisi.
 class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
   const ProfileSelectionScreen({super.key});
 
@@ -27,62 +32,55 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 14),
+              padding: const EdgeInsets.fromLTRB(22, 26, 22, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RevealOnMount(
-                    child: Text('Choisissez votre profil',
-                        style:
-                            AppTextStyles.displayHero.copyWith(fontSize: 28)),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        'Quel est votre profil ?',
+                        style: AppTextStyles.displayHero.copyWith(
+                          fontSize: 28,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 7),
-                  Container(
-                      width: 46,
-                      height: 4,
-                      decoration: BoxDecoration(
-                          color: AppColors.primaryAccent,
-                          borderRadius: AppShapes.pill)),
                   const SizedBox(height: 8),
                   RevealOnMount(
                     delay: const Duration(milliseconds: 60),
                     child: Text(
-                        'Inscription réservée aux candidats (emploi ou stage). '
-                        'Les employeurs utilisent la plateforme web Baara.bf.',
-                        style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.bodyColor,
-                            height: 1.35,
-                            fontSize: 13)),
+                      'Nous adaptons les offres et les formations à votre '
+                      'situation.',
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.bodyColor,
+                        height: 1.45,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 22),
-                  // Deux cartes pleine largeur, l'une SOUS l'autre, de MÊME
-                  // taille. Le recrutement (entreprise) se fait sur le web.
+                  const SizedBox(height: 24),
                   RevealOnMount(
                     delay: const Duration(milliseconds: 120),
-                    child: _ProfileCard(
+                    child: _ProfileOption(
                       type: ProfileType.jobseeker,
                       icon: AppIcons.workFilled,
                       title: 'Je cherche un emploi',
-                      subtitle: 'Trouvez un emploi et soyez recruté.',
-                      gradient: AppColors.primaryGradient,
-                      glow: AppColors.primaryAccent,
+                      subtitle: 'Trouvez un poste et faites-vous recruter.',
+                      perks: const ['Offres', 'Candidatures', 'CV gratuit'],
                       controller: controller,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   RevealOnMount(
-                    delay: const Duration(milliseconds: 175),
-                    child: _ProfileCard(
+                    delay: const Duration(milliseconds: 180),
+                    child: _ProfileOption(
                       type: ProfileType.student,
-                      icon: Icons.school_rounded,
+                      icon: AppIcons.school,
                       title: 'Je suis étudiant',
-                      subtitle: 'Cherchez un emploi ou un stage.',
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.secondary, AppColors.primary],
-                      ),
-                      glow: AppColors.secondary,
+                      subtitle: 'Décrochez un stage ou un premier emploi.',
+                      perks: const ['Stages', 'Premier emploi', 'Formations'],
                       controller: controller,
                     ),
                   ),
@@ -93,11 +91,14 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(26, 6, 26, 22),
-              child: Obx(() => AuthCtaButton(
+              padding: const EdgeInsets.fromLTRB(22, 8, 22, 20),
+              child: Obx(
+                () => AuthCtaButton(
                   label: 'Continuer',
                   onPressed:
-                      controller.canContinue ? controller.onContinue : null)),
+                      controller.canContinue ? controller.onContinue : null,
+                ),
+              ),
             ),
           ),
         ],
@@ -106,103 +107,120 @@ class ProfileSelectionScreen extends GetView<ProfileSelectionController> {
   }
 }
 
-/// Carte de profil verticale, élégante et de taille fixe (utilisée dans un
-/// `Row` + `IntrinsicHeight` pour deux cartes parfaitement égales) : icône
-/// « travaillée » (badge dégradé glossy) + titre + sous-titre, avec un état
-/// sélectionné vivant (bordure + glow + coche qui pop).
-class _ProfileCard extends StatelessWidget {
-  final ProfileType type;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Gradient gradient;
-  final Color glow;
-  final ProfileSelectionController controller;
-
-  const _ProfileCard({
+class _ProfileOption extends StatelessWidget {
+  const _ProfileOption({
     required this.type,
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.gradient,
-    required this.glow,
+    required this.perks,
     required this.controller,
   });
+
+  final ProfileType type;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<String> perks;
+  final ProfileSelectionController controller;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isSelected = controller.selected.value == type;
-      return PressScale(
-        haptic: false,
-        curve: AppMotion.springEmphasized,
-        onTap: () {
-          AppHaptics.tap();
-          controller.select(type);
-        },
-        child: AnimatedContainer(
-          duration: AppMotion.medium,
-          curve: AppMotion.emphasizedDecelerate,
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? AppColors.surfaceSelected : AppColors.surfaceCard,
-            borderRadius: AppShapes.squircleRadius(AppRadius.xl),
-            border: Border.all(
-                color: isSelected
-                    ? AppColors.primaryAccent
-                    : AppColors.outlineVariant.withValues(alpha: 0.25),
-                width: isSelected ? 1.6 : 0.8),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.primaryAccent.withValues(alpha: 0.18),
-                      blurRadius: 22,
-                      offset: const Offset(0, 10),
-                    ),
-                  ]
-                : AppColors.lightShadow,
-          ),
-          child: Row(
-            children: [
-              _CraftedIcon(icon: icon, gradient: gradient, glow: glow),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.titleLg.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                        letterSpacing: -0.3,
-                        color: isSelected
-                            ? AppColors.primaryAccent
-                            : AppColors.titleColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySm.copyWith(
-                        color: AppColors.bodyColor,
-                        height: 1.3,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ],
-                ),
+      final selected = controller.selected.value == type;
+      final accent = AppColors.primaryAccent;
+
+      return Semantics(
+        button: true,
+        selected: selected,
+        label: '$title. $subtitle',
+        excludeSemantics: true,
+        child: PressScale(
+          haptic: false,
+          curve: AppMotion.springEmphasized,
+          onTap: () {
+            AppHaptics.tap();
+            controller.select(type);
+          },
+          child: AnimatedContainer(
+            duration: AppMotion.base,
+            curve: AppMotion.emphasizedDecelerate,
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.surfaceSelected : AppColors.surfaceCard,
+              borderRadius: AppShapes.squircleRadius(22),
+              border: Border.all(
+                color: selected ? accent : AppColors.outlineVariant,
+                width: selected ? 2 : 1,
               ),
-              const SizedBox(width: 12),
-              _SelectDot(isSelected: isSelected),
-            ],
+              boxShadow: selected ? AppColors.ambientShadow : null,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedContainer(
+                  duration: AppMotion.base,
+                  curve: AppMotion.emphasized,
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? BaaraMark.brandLime
+                        : AppColors.surfaceIconSoft,
+                    borderRadius: AppShapes.squircleRadius(16),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: selected ? BaaraMark.brandForest : accent,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: AppTextStyles.titleLg.copyWith(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                color: AppColors.titleColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _Check(selected: selected),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.bodyColor,
+                          fontSize: 13,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final perk in perks)
+                            _Perk(label: perk, selected: selected),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -210,98 +228,65 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Icône « travaillée » : badge dégradé en squircle, reflet glossy en haut et
-/// halo coloré dessous (effet 3D/matière), avec une icône pleine au centre.
-class _CraftedIcon extends StatelessWidget {
-  const _CraftedIcon({
-    required this.icon,
-    required this.gradient,
-    required this.glow,
-  });
+class _Perk extends StatelessWidget {
+  const _Perk({required this.label, required this.selected});
 
-  final IconData icon;
-  final Gradient gradient;
-  final Color glow;
+  final String label;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
+    return AnimatedContainer(
+      duration: AppMotion.base,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: AppShapes.squircleRadius(AppRadius.md),
-        boxShadow: [
-          BoxShadow(
-            color: glow.withValues(alpha: 0.34),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        color: selected ? AppColors.surfaceCard : AppColors.surfaceLow,
+        borderRadius: AppShapes.pill,
       ),
-      child: Stack(
-        children: [
-          // Reflet glossy : voile clair en haut qui s'estompe (matière brillante).
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: AppShapes.squircleRadius(AppRadius.md),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.center,
-                  colors: [
-                    AppColors.onPrimary.withValues(alpha: 0.28),
-                    AppColors.onPrimary.withValues(alpha: 0.0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: Icon(icon, color: AppColors.onPrimary, size: 27),
-          ),
-        ],
+      child: Text(
+        label,
+        style: AppTextStyles.labelSm.copyWith(
+          color: AppColors.bodyColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-/// Pastille de sélection : se remplit en vert avec une coche qui « pop ».
-class _SelectDot extends StatelessWidget {
-  const _SelectDot({required this.isSelected});
-  final bool isSelected;
+/// Coche ronde : contour vide, puis pastille forêt avec coche citron.
+class _Check extends StatelessWidget {
+  const _Check({required this.selected});
+
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: AppMotion.medium,
+      duration: AppMotion.base,
       curve: AppMotion.springEmphasized,
       width: 24,
       height: 24,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isSelected ? AppColors.primaryAccent : Colors.transparent,
+        color: selected ? AppColors.primaryAccent : Colors.transparent,
         border: Border.all(
-          color:
-              isSelected ? AppColors.primaryAccent : AppColors.outlineVariant,
+          color: selected ? AppColors.primaryAccent : AppColors.outlineVariant,
           width: 2,
         ),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ]
-            : null,
       ),
       child: AnimatedScale(
-        scale: isSelected ? 1.0 : 0.0,
-        duration: AppMotion.medium,
+        scale: selected ? 1 : 0,
+        duration: AppMotion.base,
         curve: AppMotion.springEmphasized,
-        child: const Icon(Icons.check_rounded,
-            size: 15, color: AppColors.onPrimary),
+        child: Icon(
+          AppIcons.check,
+          size: 14,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? BaaraMark.brandForest
+              : BaaraMark.brandLime,
+        ),
       ),
     );
   }

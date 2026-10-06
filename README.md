@@ -20,11 +20,12 @@ flutter run
 ### Backend local + émulateur Android
 
 ```powershell
-./scripts/start_laravel_for_emulator.ps1
-flutter run
+# Backend Docker (depuis projet_de_l-emploi) : docker compose up -d
+./scripts/flutter_run_android_dev.ps1
 ```
 
 L'API est résolue automatiquement vers `10.0.2.2:8000` sur l'émulateur Android en mode debug.
+Le script lit aussi `REVERB_APP_KEY` dans `../projet_de_l-emploi/.env` et configure le tunnel ADB pour Reverb (`8080`).
 
 ## Variables de build (`--dart-define`)
 

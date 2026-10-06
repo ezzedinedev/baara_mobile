@@ -72,7 +72,7 @@ class ProfileSectionsToComplete extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: ShapeDecoration(
-          color: AppColors.warningSoft,
+          color: AppColors.surfaceIconSoft,
           shape: AppShapes.squircle(AppRadius.lg),
         ),
         child: Column(
@@ -81,7 +81,7 @@ class ProfileSectionsToComplete extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.auto_awesome_rounded,
-                    size: 18, color: AppColors.warningAccent),
+                    size: 18, color: AppColors.primaryAccent),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -115,14 +115,14 @@ class ProfileSectionsToComplete extends StatelessWidget {
                         color: AppColors.surfaceCard,
                         borderRadius: AppShapes.pill,
                         border: Border.all(
-                            color: AppColors.warningAccent
+                            color: AppColors.primaryAccent
                                 .withValues(alpha: 0.35)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(s.icon,
-                              size: 14, color: AppColors.warningAccent),
+                              size: 14, color: AppColors.primaryAccent),
                           const SizedBox(width: 6),
                           Text(
                             s.label,
@@ -132,7 +132,7 @@ class ProfileSectionsToComplete extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Icon(AppIcons.add,
-                              size: 14, color: AppColors.warningAccent),
+                              size: 14, color: AppColors.primaryAccent),
                         ],
                       ),
                     ),

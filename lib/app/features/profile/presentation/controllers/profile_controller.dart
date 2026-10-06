@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:baara/app/core/services/auth_token_store.dart';
@@ -46,7 +47,8 @@ class ProfileController extends GetxController {
       await loadCertificates();
       _applyServerTheme();
     } catch (e) {
-      errorMessage.value = "Erreur de chargement du profil";
+      if (kDebugMode) debugPrint('[Profile] fetch failed: $e');
+      errorMessage.value = userFacingError(e);
     } finally {
       isLoading.value = false;
       isLoadingProfile.value = false;

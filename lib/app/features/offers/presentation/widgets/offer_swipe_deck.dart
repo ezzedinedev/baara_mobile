@@ -614,8 +614,8 @@ class _OfferDeckCard extends StatelessWidget {
                                         fontWeight: FontWeight.w800,
                                         fontSize: compact ? 11 : 12)),
                                 const SizedBox(width: 4),
-                                Icon(AppIcons.arrowRight,
-                                    size: compact ? 12 : 14,
+                                ListNavChevron(
+                                    size: compact ? 14 : 16,
                                     color: AppColors.primaryAccent),
                               ],
                             ),

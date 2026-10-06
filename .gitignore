@@ -66,3 +66,6 @@ app.*.map.json
 /android/key.properties
 /android/app/*.jks
 /android/app/*.keystore
+
+# Cache du compilateur Kotlin (Gradle)
+/android/.kotlin/

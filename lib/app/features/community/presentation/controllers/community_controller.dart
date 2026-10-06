@@ -151,6 +151,27 @@ class CommunityController extends GetxController {
     }
   }
 
+  /// Corps envoyé à l'API : le backend exige au moins texte, média ou sondage.
+  /// Pour un sondage/média seul, on dérive un libellé minimal si besoin.
+  String _resolvePublishBody({
+    required String body,
+    PollDraft? poll,
+    required List<String> mediaPaths,
+  }) {
+    final trimmed = body.trim();
+    if (trimmed.isNotEmpty) return trimmed;
+    if (poll != null) {
+      final question = poll.question?.trim();
+      if (question != null && question.isNotEmpty) return question;
+      for (final option in poll.options) {
+        final label = option.trim();
+        if (label.isNotEmpty) return label;
+      }
+    }
+    if (mediaPaths.isNotEmpty) return '';
+    return trimmed;
+  }
+
   /// Publie une nouvelle publication et l'ajoute en tête du fil.
   Future<bool> publish({
     required String body,
@@ -158,19 +179,28 @@ class CommunityController extends GetxController {
     String visibility = 'public',
     List<String> mediaPaths = const [],
     PollDraft? poll,
+    required String idempotencyKey,
   }) async {
+    if (isPublishing.value) return false;
     // Un sondage seul (sans texte) est une publication valable.
     if (body.trim().isEmpty && mediaPaths.isEmpty && poll == null) return false;
     try {
       isPublishing.value = true;
       final post = await _repository.createPost(
-        body: body,
+        body: _resolvePublishBody(
+          body: body,
+          poll: poll,
+          mediaPaths: mediaPaths,
+        ),
         category: category,
         visibility: visibility,
         mediaPaths: mediaPaths,
         poll: poll,
+        idempotencyKey: idempotencyKey,
       );
-      posts.insert(0, post);
+      if (!posts.any((p) => p.id == post.id)) {
+        posts.insert(0, post);
+      }
       return true;
     } catch (e) {
       errorMessage.value = userFacingError(e);

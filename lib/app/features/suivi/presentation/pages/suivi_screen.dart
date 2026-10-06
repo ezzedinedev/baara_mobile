@@ -35,7 +35,7 @@ class SuiviScreen extends StatefulWidget {
   static const _tabs = <({String label, IconData icon})>[
     (label: 'Visiteurs', icon: AppIcons.show),
     (label: 'Candidatures', icon: AppIcons.paper),
-    (label: 'Matchs', icon: AppIcons.activity),
+    (label: 'Matchs', icon: AppIcons.starFilled),
     (label: 'Entretiens', icon: AppIcons.calendar),
     (label: 'Favoris', icon: AppIcons.bookmark),
   ];
@@ -98,10 +98,12 @@ class _SuiviScreenState extends State<SuiviScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Ton parcours : visites, candidatures, matchs et entretiens.',
-                    style: AppTextStyles.bodyMd.copyWith(
+                    'Visites, candidatures, matchs, entretiens et favoris.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodySm.copyWith(
                       color: AppColors.bodyColor,
-                      height: 1.4,
+                      height: 1.35,
                     ),
                   ),
                 ],
@@ -138,7 +140,7 @@ class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
   final TabController controller;
 
   @override
-  Size get preferredSize => const Size.fromHeight(48);
+  Size get preferredSize => const Size.fromHeight(46);
 
   @override
   Widget build(BuildContext context) {
@@ -146,28 +148,34 @@ class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
       controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH - 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
       labelColor: AppColors.primaryAccent,
       unselectedLabelColor: AppColors.hintColor,
-      labelStyle: AppTextStyles.labelLg.copyWith(fontWeight: FontWeight.w800),
-      unselectedLabelStyle:
-          AppTextStyles.labelLg.copyWith(fontWeight: FontWeight.w600),
+      labelStyle: AppTextStyles.labelMd.copyWith(
+        fontWeight: FontWeight.w800,
+        fontSize: 13,
+      ),
+      unselectedLabelStyle: AppTextStyles.labelMd.copyWith(
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+      ),
       indicatorColor: AppColors.primaryAccent,
-      indicatorWeight: 3,
+      indicatorWeight: 2.5,
       indicatorSize: TabBarIndicatorSize.label,
-      dividerColor: AppColors.outlineVariant.withValues(alpha: 0.4),
+      dividerColor: AppColors.outlineVariant.withValues(alpha: 0.35),
       splashFactory: NoSplash.splashFactory,
       overlayColor: WidgetStateProperty.all(Colors.transparent),
       onTap: (_) => AppHaptics.tap(),
       tabs: [
         for (final t in tabs)
           Tab(
-            height: 44,
+            height: 40,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(t.icon, size: 17),
-                const SizedBox(width: 6),
+                Icon(t.icon, size: 16),
+                const SizedBox(width: 5),
                 Text(t.label),
               ],
             ),
@@ -526,8 +534,7 @@ class _MatchMiniCard extends StatelessWidget {
             children: [
               MatchScorePill(score: offer.score, dense: true),
               const Spacer(),
-              Icon(AppIcons.arrowRight,
-                  size: 18, color: AppColors.hintColor),
+              const ListNavChevron(size: 18),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),

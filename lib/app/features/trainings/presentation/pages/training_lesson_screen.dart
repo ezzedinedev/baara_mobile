@@ -566,7 +566,7 @@ class _LinkCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(AppIcons.arrowRight, color: AppColors.hintColor),
+            const ListNavChevron(),
           ],
         ),
       ),

@@ -130,6 +130,7 @@ abstract class ICommunityRepository {
     String visibility = 'public',
     List<String> mediaPaths = const [],
     PollDraft? poll,
+    String? idempotencyKey,
   });
   Future<void> deletePost(String postId);
   Future<Map<String, dynamic>> react(

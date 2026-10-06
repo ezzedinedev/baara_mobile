@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:baara/app/core/theme/app_icons.dart';
+import 'package:baara/app/core/widgets/widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/haptics.dart';
@@ -59,9 +59,8 @@ class SectionHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 2),
-                    Icon(
-                      AppIcons.arrowRight,
-                      size: 18,
+                    ListNavChevron(
+                      size: 20,
                       color: AppColors.primaryAccent,
                     ),
                   ],

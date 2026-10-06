@@ -278,36 +278,37 @@ class _NotifIcon extends StatelessWidget {
   }
 }
 
-/// Icône + couleur par type de notification (robuste : on mappe par mots-clés
-/// du `category`, avec une cloche par défaut).
+/// Icône par type de notification (robuste : on mappe par mots-clés du
+/// `category`, avec une cloche par défaut). L'icône porte le sens ; la
+/// couleur reste celle de la marque pour tous les types (pas d'arc-en-ciel).
 ({IconData icon, Color color}) _visualFor(String category) {
   final c = category.toLowerCase();
   bool has(String s) => c.contains(s);
   // Mentions (`mention_post`, `mention_comment`) : prioritaire car la clé
   // contient aussi « post »/« comment ».
   if (has('mention')) {
-    return (icon: AppIcons.chatFilled, color: AppColors.categoryPurple);
+    return (icon: AppIcons.chatFilled, color: AppColors.primaryAccent);
   }
   if (has('message') || has('new_message')) {
-    return (icon: AppIcons.chatFilled, color: AppColors.categoryBlue);
+    return (icon: AppIcons.chatFilled, color: AppColors.primaryAccent);
   }
   if (has('network') || has('connection') || has('connexion')) {
-    return (icon: AppIcons.addUser, color: AppColors.categoryCyan);
+    return (icon: AppIcons.addUser, color: AppColors.primaryAccent);
   }
   if (has('story') || has('reaction')) {
-    return (icon: AppIcons.heartFilled, color: AppColors.categoryPink);
+    return (icon: AppIcons.heartFilled, color: AppColors.primaryAccent);
   }
   if (has('interview') || has('entretien')) {
-    return (icon: AppIcons.calendar, color: AppColors.categoryPurple);
+    return (icon: AppIcons.calendar, color: AppColors.primaryAccent);
   }
   if (has('application') || has('candidat') || has('status')) {
-    return (icon: AppIcons.tickSquare, color: AppColors.secondary);
+    return (icon: AppIcons.tickSquare, color: AppColors.primaryAccent);
   }
   if (has('offer') || has('job') || has('emploi')) {
     return (icon: AppIcons.workFilled, color: AppColors.primaryAccent);
   }
   if (has('training') || has('formation') || has('course')) {
-    return (icon: AppIcons.bookmarkFilled, color: AppColors.categoryOrange);
+    return (icon: AppIcons.bookmarkFilled, color: AppColors.primaryAccent);
   }
   if (has('comment') ||
       has('commentaire') ||
@@ -316,10 +317,10 @@ class _NotifIcon extends StatelessWidget {
       has('follow') ||
       has('réseau') ||
       has('reseau')) {
-    return (icon: AppIcons.chatFilled, color: AppColors.categoryCyan);
+    return (icon: AppIcons.chatFilled, color: AppColors.primaryAccent);
   }
   if (has('profile') || has('profil') || has('portfolio')) {
-    return (icon: AppIcons.profileFilled, color: AppColors.categoryPink);
+    return (icon: AppIcons.profileFilled, color: AppColors.primaryAccent);
   }
   return (icon: AppIcons.notificationFilled, color: AppColors.primaryAccent);
 }

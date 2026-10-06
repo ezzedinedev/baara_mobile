@@ -99,7 +99,7 @@ class OtpVerificationController extends GetxController {
       await _authRepository.verifyOtp(phone: phone, otp: code);
       final onboarding = Get.find<OnboardingService>();
       await onboarding.navigateAfterAuth();
-      AppToast.success('Compte vérifié', 'Bienvenue sur Baara.bf !');
+      AppToast.success('Compte vérifié', 'Bienvenue sur Baara !');
     } catch (e) {
       errorMsg.value = userFacingError(e);
     } finally {

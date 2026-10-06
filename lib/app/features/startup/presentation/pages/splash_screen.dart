@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
-import 'package:baara/app/core/theme/app_colors.dart';
-import 'package:baara/app/core/theme/app_dimens.dart';
+import 'package:baara/app/core/theme/app_shapes.dart';
 import 'package:baara/app/core/theme/app_text_styles.dart';
 import 'package:baara/app/core/widgets/baara_mark.dart';
 import '../controllers/splash_controller.dart';
 
-/// Splash sobre et performant : un seul [AnimationController] pour l'entrée
-/// (fade + léger scale), pas de blur plein écran / particules / orbites pendant
-/// le boot (le moment le plus sensible en perf). Symbole de marque centré,
-/// tagline, puis une barre de progression fine en bas. Tap n'importe où pour
-/// passer.
+/// Splash de marque : le personnage du logo fait un saut de joie.
+///
+/// Continuité avec le lancement natif : Android et iOS affichent déjà le
+/// symbole (corps blanc, tête citron, [_markHeight] de haut) au centre d'un
+/// fond vert forêt. Le premier frame Flutter le reprend à l'identique, puis
+/// l'anime : il s'accroupit, saute bras levés, retombe en laissant une onde
+/// au sol, remonte et laisse apparaître le mot « Baara ».
+///
+/// Un seul [AnimationController] pilote toute la séquence (Transform, Opacity
+/// et un CustomPaint léger : aucun flou, rien de coûteux pendant le boot).
+/// Animations réduites (réglage système) : on affiche directement l'état final.
+/// Toucher l'écran passe l'introduction.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,34 +27,40 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  late final AnimationController _intro;
-  // Boucle douce et continue (respiration du logo + halo). Animations GPU
-  // (Transform/Opacity) uniquement — pas de blur par frame → zéro jank.
-  late final AnimationController _ambient;
+    with SingleTickerProviderStateMixin {
+  /// Doit rester égal à la hauteur du symbole des écrans de lancement natifs
+  /// (`splash_mark.png` Android, `LaunchImage` iOS) : 96 dp.
+  static const double _markHeight = 96;
+
+  /// Remontée finale du symbole pour faire place au mot « Baara ».
+  static const double _settleShift = 54;
+
+  static const double _wordmarkWidth = 132;
+
+  late final AnimationController _intro = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
 
   @override
-  void initState() {
-    super.initState();
-    _intro = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..forward();
-    _ambient = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2600),
-    )..repeat(reverse: true);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_intro.isAnimating || _intro.isCompleted) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _intro.value = 1;
+    } else {
+      _intro.forward();
+    }
   }
 
   @override
   void dispose() {
     _intro.dispose();
-    _ambient.dispose();
     super.dispose();
   }
 
-  /// Valeur 0→1 interpolée sur un intervalle de [_intro], avec courbe.
-  double _seg(double begin, double end, Curve curve) {
+  /// Valeur 0 → 1 de [_intro] ramenée à l'intervalle [begin, end], avec courbe.
+  double _seg(double begin, double end, [Curve curve = Curves.linear]) {
     final t = ((_intro.value - begin) / (end - begin)).clamp(0.0, 1.0);
     return curve.transform(t);
   }
@@ -56,409 +69,262 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final controller = Get.find<SplashController>();
 
-    return Scaffold(
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: controller.skip,
-        child: DecoratedBox(
-          decoration: BoxDecoration(gradient: AppColors.splashBackground),
-          child: SafeArea(
-            child: AnimatedBuilder(
-              animation: _intro,
-              builder: (context, _) {
-                final logoIn = _seg(0.0, 0.45, Curves.easeOut);
-                final logoScale =
-                    0.90 + 0.10 * _seg(0.0, 0.55, Curves.easeOutBack);
-                final taglineIn = _seg(0.40, 0.80, Curves.easeOutCubic);
-                final footerIn = _seg(0.55, 1.0, Curves.easeOut);
-
-                return Column(
-                  children: [
-                    const Spacer(flex: 5),
-                    Opacity(
-                      opacity: logoIn,
-                      child: Transform.scale(
-                        scale: logoScale,
-                        child: _BreathingLogo(ambient: _ambient),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _FadeSlide(
-                      t: taglineIn,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 280),
-                        child: Builder(
-                          builder: (context) {
-                            // Style commun : le mot animé doit couler dans la
-                            // phrase sans décrochage de ligne de base.
-                            final base = AppTextStyles.bodyMd.copyWith(
-                              color:
-                                  AppColors.titleColor.withValues(alpha: 0.72),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              height: 1.4,
-                              letterSpacing: 0.1,
-                            );
-                            return Text.rich(
-                              TextSpan(
-                                style: base,
-                                children: [
-                                  const TextSpan(text: 'Votre prochaine '),
-                                  WidgetSpan(
-                                    alignment: PlaceholderAlignment.baseline,
-                                    baseline: TextBaseline.alphabetic,
-                                    child: _ShimmerWord(
-                                      'opportunité',
-                                      // Même métrique que le reste : seul le
-                                      // poids + le reflet changent.
-                                      style: base.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  const TextSpan(text: ', à portée de main'),
-                                ],
-                              ),
-                              textAlign: TextAlign.center,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const Spacer(flex: 6),
-                    Opacity(
-                      opacity: footerIn,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48),
-                        child: _ProgressBar(controller: controller),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Opacity(
-                      opacity: footerIn,
-                      child: Text(
-                        'Baara.bf · Burkina Faso',
-                        style: AppTextStyles.labelSm.copyWith(
-                          color: AppColors.primaryMedium,
-                          letterSpacing: 1.4,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: _SplashPalette.ground,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: BaaraMark.brandForest,
+        body: Semantics(
+          button: true,
+          label: 'Baara. Chargement, touchez pour passer',
+          onTap: controller.skip,
+          excludeSemantics: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: controller.skip,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.15),
+                  radius: 1.05,
+                  colors: [
+                    _SplashPalette.light,
+                    BaaraMark.brandForest,
+                    _SplashPalette.ground,
                   ],
-                );
-              },
+                  stops: [0.0, 0.55, 1.0],
+                ),
+              ),
+              child: AnimatedBuilder(
+                animation: _intro,
+                builder: (context, _) => _buildScene(controller),
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
 
-/// Logo + halo lumineux qui respire doucement. Animations GPU pures
-/// (Transform.scale + Opacity + dégradé radial), isolées dans un RepaintBoundary
-/// → fluide même pendant le boot.
-class _BreathingLogo extends StatelessWidget {
-  const _BreathingLogo({required this.ambient});
-  final Animation<double> ambient;
+  Widget _buildScene(SplashController controller) {
+    // 1. Accroupi : les bras s'abaissent, le corps se tasse.
+    final crouch = _seg(0.0, 0.16, Curves.easeOut);
+    // 2. Saut : bras levés, le corps monte.
+    final rise = _seg(0.16, 0.38, Curves.easeOutCubic);
+    // 3. Chute puis réception.
+    final fall = _seg(0.38, 0.56, Curves.easeInCubic);
+    final land = _seg(0.56, 0.68, Curves.easeOutBack);
+    // 4. Remontée finale et apparition du mot.
+    final settle = _seg(0.62, 0.92, const Cubic(0.2, 0.0, 0.0, 1.0));
+    final ripple = _seg(0.54, 0.98, Curves.easeOutCubic);
+    final wordmark = _seg(0.70, 1.0, Curves.easeOutCubic);
+    final tagline = _seg(0.82, 1.0, Curves.easeOut);
+    final footer = _seg(0.60, 1.0, Curves.easeOut);
 
-  @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: ambient,
-        builder: (context, child) {
-          final t = Curves.easeInOut.transform(ambient.value);
-          final breath = 1.0 + 0.022 * t;
-          // Halo doux, CIRCULAIRE et CENTRÉ (plus de rectangle désaxé qui
-          // débordait à droite du wordmark = la « tache »). Lumière ambiante
-          // discrète qui respire, pas un blob localisé.
-          final glowOpacity = 0.10 + 0.16 * t;
-          final glowScale = 0.94 + 0.12 * t;
-          return SizedBox(
-            width: 300,
-            height: 200,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Transform.scale(
-                  scale: glowScale,
-                  child: Opacity(
-                    opacity: glowOpacity,
-                    child: Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppColors.primaryMedium.withValues(alpha: 0.55),
-                            AppColors.primaryMedium.withValues(alpha: 0.0),
-                          ],
-                          stops: const [0.0, 0.72],
-                        ),
-                      ),
+    double pose;
+    if (rise == 0) {
+      pose = -0.5 * crouch;
+    } else if (fall == 0) {
+      pose = -0.5 + 1.5 * rise;
+    } else {
+      pose = 1.0 - fall;
+    }
+    final jumpY = -26.0 * rise * (1 - fall);
+    // Tassement à l'appel puis à la réception (ancré aux pieds).
+    final squash = fall < 1 ? 0.07 * crouch * (1 - rise) : 0.05 * (1 - land);
+    final markShift = -_settleShift * settle;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Onde au sol à la réception : une ellipse qui s'élargit et s'efface.
+        Center(
+          child: Transform.translate(
+            offset: Offset(0, _markHeight / 2),
+            child: CustomPaint(
+              size: const Size(280, 80),
+              painter: _RipplePainter(progress: ripple),
+            ),
+          ),
+        ),
+        Center(
+          child: Transform.translate(
+            offset: Offset(0, jumpY + markShift),
+            child: Transform(
+              alignment: Alignment.bottomCenter,
+              transform: Matrix4.diagonal3Values(
+                1 + squash * 0.6,
+                1 - squash,
+                1,
+              ),
+              child: RepaintBoundary(
+                child: BaaraMark(
+                  size: _markHeight,
+                  color: Colors.white,
+                  headColor: BaaraMark.brandLime,
+                  pose: pose,
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Mot « Baara » révélé par un balayage gauche → droite.
+        Center(
+          child: Transform.translate(
+            offset: Offset(0, _markHeight / 2 + 46 - _settleShift * settle),
+            child: Opacity(
+              opacity: wordmark,
+              child: ClipRect(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: wordmark,
+                  child: Image.asset(
+                    'assets/images/logo/baara_wordmark_light.png',
+                    width: _wordmarkWidth,
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (_, __, ___) => Text(
+                      'Baara',
+                      style: AppTextStyles.logoGreen(size: 34)
+                          .copyWith(color: Colors.white),
                     ),
                   ),
                 ),
-                Transform.scale(scale: breath, child: child),
-              ],
+              ),
             ),
-          );
-        },
-        // Le lockup officiel (symbole + wordmark) : image PNG de marque
-        // haute fidélité.
-        child: const _LogoLockup(),
-      ),
+          ),
+        ),
+        Center(
+          child: Transform.translate(
+            offset: Offset(
+              0,
+              _markHeight / 2 + 98 - _settleShift * settle + 8 * (1 - tagline),
+            ),
+            child: Opacity(
+              opacity: tagline,
+              child: Text(
+                'Le travail commence ici.',
+                style: AppTextStyles.bodyMd.copyWith(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: SafeArea(
+            top: false,
+            child: Opacity(
+              opacity: footer,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ProgressLine(controller: controller),
+                    const SizedBox(height: 16),
+                    Text(
+                      'BURKINA FASO',
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Affiche le logo complet (Pictogramme + Texte) de Baara.
-class _LogoLockup extends StatelessWidget {
-  const _LogoLockup();
+/// Teintes dérivées du vert forêt, pour le fond du splash uniquement.
+abstract final class _SplashPalette {
+  /// Halo central, à peine plus clair que la forêt.
+  static const Color light = Color(0xFF305A36);
 
-  // Noms de fichiers en minuscules pour correspondre aux assets réels
-  static const String _logoDark = 'assets/images/logo/baara_logo.png';
-  static const String _logoLight = 'assets/images/logo/baara_logo_light.png';
+  /// Bords, à peine plus sombres (et barre de navigation système).
+  static const Color ground = Color(0xFF1C3620);
+}
+
+/// Onde elliptique « au sol » sous les pieds du personnage.
+class _RipplePainter extends CustomPainter {
+  const _RipplePainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || progress >= 1) return;
+    final center = size.center(Offset.zero);
+    for (final lag in const [0.0, 0.18]) {
+      final t = ((progress - lag) / (1 - lag)).clamp(0.0, 1.0);
+      if (t <= 0) continue;
+      final w = 40 + (size.width - 40) * t;
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2 * (1 - t) + 0.4
+        ..color = BaaraMark.brandLime.withValues(alpha: 0.55 * (1 - t));
+      canvas.drawOval(
+        Rect.fromCenter(center: center, width: w, height: w * 0.22),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RipplePainter old) => old.progress != progress;
+}
+
+/// Fine ligne de progression, de la largeur du mot « Baara ». Seule cette
+/// zone se reconstruit quand la progression avance.
+class _ProgressLine extends StatelessWidget {
+  const _ProgressLine({required this.controller});
+
+  final SplashController controller;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 230,
-      child: Image.asset(
-        Get.isDarkMode ? _logoLight : _logoDark,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        // Repli sur le symbole vectoriel si le PNG est manquant.
-        errorBuilder: (context, error, stackTrace) => const BaaraMark(size: 132),
-      ),
-    );
-  }
-}
-
-/// Un mot mis en avant par un reflet lumineux qui le balaie en boucle.
-///
-/// Rendu via [ShaderMask] : un dégradé vert (accent → éclat → accent) dont la
-/// bande claire glisse de gauche à droite. Le mot reste net et coule dans la
-/// phrase (mêmes métriques que le texte porteur). Animation purement GPU,
-/// isolée dans un [RepaintBoundary] → coût négligeable même pendant le boot.
-class _ShimmerWord extends StatefulWidget {
-  const _ShimmerWord(this.word, {required this.style});
-
-  final String word;
-  final TextStyle style;
-
-  @override
-  State<_ShimmerWord> createState() => _ShimmerWordState();
-}
-
-class _ShimmerWordState extends State<_ShimmerWord>
-    with SingleTickerProviderStateMixin {
-  // Contrôleur dédié, une seule direction : un reflet va-et-vient (reverse)
-  // aurait l'air d'un balancier, pas d'une brillance qui passe.
-  late final _shine = _RepeatingTicker(this);
-
-  @override
-  Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: _shine.controller,
-        builder: (context, child) {
-          final v = _shine.controller.value;
-          // Position de la bande d'éclat, débordant des deux côtés pour qu'elle
-          // entre et sorte complètement du mot à chaque passage.
-          final p = -0.3 + 1.6 * v;
-          return ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: const [
-                  AppColors.primaryDark, // accent lisible sur fond clair
-                  AppColors.primaryLight, // l'éclat qui passe
-                  AppColors.primaryDark,
-                ],
-                stops: [
-                  (p - 0.3).clamp(0.0, 1.0),
-                  p.clamp(0.0, 1.0),
-                  (p + 0.3).clamp(0.0, 1.0),
-                ],
-              ).createShader(bounds);
-            },
-            child: child,
-          );
-        },
-        child: Text(widget.word, style: widget.style),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _shine.dispose();
-    super.dispose();
-  }
-}
-
-/// Petit ticker répétitif encapsulé, pour ne pas alourdir l'état de l'écran.
-class _RepeatingTicker {
-  _RepeatingTicker(TickerProvider vsync)
-      : controller = AnimationController(
-          vsync: vsync,
-          duration: const Duration(milliseconds: 2200),
-        )..repeat();
-
-  final AnimationController controller;
-
-  void dispose() => controller.dispose();
-}
-
-/// Fade + léger glissement vers le haut, piloté par une valeur 0→1.
-class _FadeSlide extends StatelessWidget {
-  const _FadeSlide({required this.t, required this.child});
-  final double t;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: t,
-      child: Transform.translate(
-        offset: Offset(0, (1 - t) * 14),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// Barre de progression fine + message + pourcentage, avec un reflet (shimmer)
-/// qui balaie la portion remplie. Seule cette zone se reconstruit (Obx + le
-/// shimmer isolé en RepaintBoundary) → coût négligeable.
-class _ProgressBar extends StatefulWidget {
-  const _ProgressBar({required this.controller});
-  final SplashController controller;
-
-  @override
-  State<_ProgressBar> createState() => _ProgressBarState();
-}
-
-class _ProgressBarState extends State<_ProgressBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _shimmer;
-
-  @override
-  void initState() {
-    super.initState();
-    _shimmer = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _shimmer.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final pct = widget.controller.progress.value;
-      final fraction = (pct / 100).clamp(0.0, 1.0);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: Text(
-                  widget.controller.loadingMessage,
-                  key: ValueKey(widget.controller.loadingMessage),
-                  style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.bodyColor,
-                    fontSize: 11,
-                    letterSpacing: 0.2,
-                  ),
+      width: _SplashScreenState._wordmarkWidth,
+      height: 3,
+      child: ClipRRect(
+        borderRadius: AppShapes.pill,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: Colors.white.withValues(alpha: 0.12)),
+            Obx(() {
+              final fraction =
+                  (controller.progress.value / 100).clamp(0.0, 1.0);
+              return Semantics(
+                liveRegion: true,
+                value: controller.loadingMessage,
+                child: AnimatedFractionallySizedBox(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.centerLeft,
+                  widthFactor: fraction,
+                  child: const ColoredBox(color: BaaraMark.brandLime),
                 ),
-              ),
-              Text('$pct%', style: AppTextStyles.splashPercent),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: SizedBox(
-              height: 5,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final filledWidth = constraints.maxWidth * fraction;
-                  return Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ColoredBox(color: AppColors.surfaceHighest),
-                      ),
-                      AnimatedFractionallySizedBox(
-                        duration: const Duration(milliseconds: 240),
-                        curve: Curves.easeOutCubic,
-                        widthFactor: fraction,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient),
-                        ),
-                      ),
-                      // Reflet qui balaie la partie remplie.
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: filledWidth,
-                        child: ClipRect(
-                          child: AnimatedBuilder(
-                            animation: _shimmer,
-                            builder: (context, _) {
-                              final pos =
-                                  _shimmer.value * (filledWidth + 60) - 60;
-                              return Transform.translate(
-                                offset: Offset(pos, 0),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    width: 60,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.onPrimary
-                                              .withValues(alpha: 0.0),
-                                          AppColors.onPrimary
-                                              .withValues(alpha: 0.45),
-                                          AppColors.onPrimary
-                                              .withValues(alpha: 0.0),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      );
-    });
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 }

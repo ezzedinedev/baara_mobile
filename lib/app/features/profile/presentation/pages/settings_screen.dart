@@ -78,7 +78,7 @@ class SettingsBody extends StatelessWidget {
             rows: [
               _HeaderRow(
                 icon: AppIcons.profile,
-                color: AppColors.categoryBlue,
+                color: AppColors.primaryAccent,
                 title: 'Informations personnelles',
                 subtitle: 'Gérez les détails de votre compte',
                 onTap: () {
@@ -88,7 +88,7 @@ class SettingsBody extends StatelessWidget {
               ),
               _HeaderRow(
                 icon: AppIcons.work,
-                color: AppColors.categoryPurple,
+                color: AppColors.primaryAccent,
                 title: 'Expériences & formations',
                 subtitle: 'Votre parcours et vos diplômes',
                 onTap: () {
@@ -103,7 +103,7 @@ class SettingsBody extends StatelessWidget {
                     : 0;
                 return _HeaderRow(
                   icon: AppIcons.paper,
-                  color: AppColors.successDark,
+                  color: AppColors.primaryAccent,
                   title: 'Mes candidatures',
                   subtitle: 'Suivez l\'état de vos postulations',
                   badge: count,
@@ -121,7 +121,7 @@ class SettingsBody extends StatelessWidget {
             rows: [
               _HeaderRow(
                 icon: AppIcons.wallet,
-                color: AppColors.categoryPurple,
+                color: AppColors.primaryAccent,
                 title: 'Mon abonnement',
                 subtitle: 'Forfait, avantages et facturation',
                 onTap: () {
@@ -143,7 +143,7 @@ class SettingsBody extends StatelessWidget {
                     icon: AppIcons.notificationFilled,
                     color: denied
                         ? AppColors.warningAccent
-                        : AppColors.categoryOrange,
+                        : AppColors.primaryAccent,
                     title: 'Notifications push',
                     subtitle: denied
                         ? 'Autorisez Baara dans les réglages système'
@@ -167,7 +167,7 @@ class SettingsBody extends StatelessWidget {
               Obx(
                 () => _HeaderRow(
                   icon: AppIcons.bell,
-                  color: AppColors.categoryOrange,
+                  color: AppColors.primaryAccent,
                   title: 'Notifications',
                   subtitle: 'Offres, messages et suivi des candidatures',
                   valueLabel: settings.notificationsEnabled.value
@@ -194,7 +194,7 @@ class SettingsBody extends StatelessWidget {
               // langue déclenche déjà un rebuild global via GetMaterialApp.
               _HeaderRow(
                 icon: AppIcons.message,
-                color: AppColors.categoryBlue,
+                color: AppColors.primaryAccent,
                 title: 'Langue',
                 subtitle: 'Langue de l\'application',
                 valueLabel:
@@ -218,7 +218,7 @@ class SettingsBody extends StatelessWidget {
               ),
               _HeaderRow(
                 icon: AppIcons.show,
-                color: AppColors.categoryCyan,
+                color: AppColors.primaryAccent,
                 title: 'Vues de profil',
                 subtitle: 'Qui a consulté votre profil',
                 onTap: () {
@@ -229,7 +229,7 @@ class SettingsBody extends StatelessWidget {
               Obx(
                 () => _HeaderRow(
                   icon: AppIcons.unlock,
-                  color: AppColors.categoryPurple,
+                  color: AppColors.primaryAccent,
                   title: 'Visibilité du profil',
                   subtitle: 'Qui peut voir votre profil',
                   valueLabel: settings.profileVisibility.value == 'connections'
@@ -247,7 +247,7 @@ class SettingsBody extends StatelessWidget {
                   trailing: Switch.adaptive(
                     value: settings.networkActivity.value,
                     activeThumbColor: AppColors.onPrimary,
-                    activeTrackColor: AppColors.successSwitch,
+                    activeTrackColor: AppColors.primaryMedium,
                     onChanged: (v) {
                       AppHaptics.tap();
                       settings.setNetworkActivity(v);
@@ -270,13 +270,13 @@ class SettingsBody extends StatelessWidget {
                 }
                 return _HeaderRow(
                   icon: Icons.fingerprint_rounded,
-                  color: AppColors.categoryPurple,
+                  color: AppColors.primaryAccent,
                   title: 'Verrou biométrique',
                   subtitle: 'Déverrouiller l\'app au démarrage',
                   trailing: Switch.adaptive(
                     value: bio.isEnabled.value,
                     activeThumbColor: AppColors.onPrimary,
-                    activeTrackColor: AppColors.successSwitch,
+                    activeTrackColor: AppColors.primaryMedium,
                     onChanged: (v) {
                       AppHaptics.tap();
                       bio.setEnabled(v);
@@ -293,7 +293,7 @@ class SettingsBody extends StatelessWidget {
                 if (pending <= 0) return const SizedBox.shrink();
                 return _HeaderRow(
                   icon: Icons.cloud_upload_outlined,
-                  color: AppColors.categoryOrange,
+                  color: AppColors.primaryAccent,
                   title: 'Candidatures en attente',
                   subtitle:
                       '$pending en file — appuyez pour réessayer l\'envoi',
@@ -313,7 +313,7 @@ class SettingsBody extends StatelessWidget {
               ),
               _HeaderRow(
                 icon: AppIcons.password,
-                color: AppColors.categoryBlue,
+                color: AppColors.primaryAccent,
                 title: 'Changer le mot de passe',
                 subtitle: 'Protégez l\'accès à votre compte',
                 onTap: () {
@@ -323,14 +323,14 @@ class SettingsBody extends StatelessWidget {
               ),
               _HeaderRow(
                 icon: Icons.devices_other_rounded,
-                color: AppColors.categoryOrange,
+                color: AppColors.primaryAccent,
                 title: 'Déconnexion tous appareils',
                 subtitle: 'Ferme les sessions ouvertes ailleurs',
                 onTap: () => _confirmLogoutAll(context),
               ),
               _HeaderRow(
                 icon: Icons.support_agent_rounded,
-                color: AppColors.categoryCyan,
+                color: AppColors.primaryAccent,
                 title: 'Aide et support',
                 subtitle: 'Posez vos questions à l\'assistant',
                 onTap: () {
@@ -340,7 +340,7 @@ class SettingsBody extends StatelessWidget {
               ),
               _HeaderRow(
                 icon: AppIcons.info,
-                color: AppColors.categoryBlue,
+                color: AppColors.primaryAccent,
                 title: 'À propos',
                 subtitle: 'Baara',
                 valueLabel: 'v1.0.0',
@@ -353,14 +353,14 @@ class SettingsBody extends StatelessWidget {
             rows: [
               _HeaderRow(
                 icon: Icons.share_rounded,
-                color: AppColors.primary,
+                color: AppColors.primaryAccent,
                 title: 'Partager l\'application',
                 subtitle: 'Invitez vos proches sur Baara',
                 onTap: _shareApp,
               ),
               _HeaderRow(
                 icon: AppIcons.star,
-                color: AppColors.warningAccent,
+                color: AppColors.primaryAccent,
                 title: 'Noter l\'application',
                 subtitle: 'Votre avis compte pour la communauté',
                 onTap: _rateApp,
@@ -468,7 +468,7 @@ class SettingsBody extends StatelessWidget {
                       ),
                       value: dark && theme.amoled.value,
                       activeThumbColor: AppColors.onPrimary,
-                      activeTrackColor: AppColors.successSwitch,
+                      activeTrackColor: AppColors.primaryMedium,
                       onChanged: dark
                           ? (v) {
                               AppHaptics.tap();
@@ -847,8 +847,10 @@ class _EmailVerifyBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(AppIcons.arrowRight,
-                    size: 18, color: AppColors.warningAccent),
+                ListNavChevron(
+                  size: 18,
+                  color: AppColors.warningAccent,
+                ),
               ],
             ),
           ),
@@ -987,9 +989,7 @@ class _HeaderRow extends StatelessWidget {
                       style: AppTextStyles.bodyMd
                           .copyWith(color: AppColors.hintColor)),
                 ),
-              if (!hideChevron)
-                Icon(AppIcons.arrowRight,
-                    color: AppColors.outlineVariant),
+              if (!hideChevron) const ListNavChevron(),
             ],
           ],
         ),
@@ -1049,11 +1049,13 @@ class _SquareIcon extends StatelessWidget {
     return Container(
       width: 32,
       height: 32,
+      // Pastille teintée : la couleur garde son sens (marque, alerte,
+      // danger) sans transformer la liste en mosaïque de carrés vifs.
       decoration: BoxDecoration(
-        color: color,
+        color: color.withValues(alpha: 0.12),
         borderRadius: AppShapes.squircleRadius(AppRadius.xs),
       ),
-      child: Icon(icon, color: AppColors.onPrimary, size: 19),
+      child: Icon(icon, color: color, size: 18),
     );
   }
 }

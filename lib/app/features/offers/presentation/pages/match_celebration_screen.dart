@@ -246,7 +246,8 @@ class _MatchCelebrationScreenState extends State<MatchCelebrationScreen>
                               Get.back<void>();
                             },
                             icon:
-                                const Icon(AppIcons.arrowRight, size: 20),
+                                Icon(AppIcons.actionForward,
+                                    size: 20, color: AppColors.onPrimary),
                             label: Text(
                               'Continuer',
                               style: AppTextStyles.buttonLg.copyWith(

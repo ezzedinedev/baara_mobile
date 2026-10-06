@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:baara/app/core/constants/api_constants.dart';
 import 'package:baara/app/core/theme/app_colors.dart';
 import 'package:baara/app/core/theme/app_dimens.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
@@ -36,10 +34,9 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     WavyAuthHeader(
-                      height: 200,
+                      height: 170,
                       showLeading: true,
                       foregroundIcon: AppIcons.profile,
-                      title: 'Baara.bf',
                       onLeadingTap: () => Get.back(),
                     ),
                     Padding(
@@ -55,17 +52,22 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             RevealOnMount(
-                              child: Text(
-                                'Connexion',
-                                style: AppTextStyles.displayHero
-                                    .copyWith(fontSize: 30),
+                              child: Semantics(
+                                header: true,
+                                child: Text(
+                                  'Bon retour',
+                                  style: AppTextStyles.displayHero.copyWith(
+                                    fontSize: 30,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             RevealOnMount(
                               delay: const Duration(milliseconds: 60),
                               child: Text(
-                                'Connexion candidat — offres, messages et candidatures.',
+                                'Connectez-vous pour suivre vos offres, messages et candidatures.',
                                 style: AppTextStyles.bodyMd.copyWith(
                                   color: AppColors.bodyColor,
                                   height: 1.45,
@@ -176,29 +178,6 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: TextButton(
-                                onPressed: () async {
-                                  AppHaptics.tap();
-                                  final uri = Uri.tryParse(
-                                      ApiConstants.companyPortalWebUrl);
-                                  if (uri != null) {
-                                    await launchUrl(uri,
-                                        mode: LaunchMode.externalApplication);
-                                  }
-                                },
-                                child: Text(
-                                  'Vous êtes employeur ? Connectez-vous sur baara.bf',
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.bodySm.copyWith(
-                                    color: AppColors.hintColor,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.4,
                                   ),
                                 ),
                               ),

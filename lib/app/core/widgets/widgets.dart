@@ -13,6 +13,7 @@ export 'common/app_network_image.dart';
 export 'common/brand_card.dart';
 export 'common/glass_chip.dart';
 export 'common/glass_surface.dart';
+export 'common/list_nav_chevron.dart';
 export 'common/section_header.dart';
 export 'common/section_label.dart';
 export 'common/status_pill.dart';

@@ -47,7 +47,7 @@ class ProfileContactCard extends StatelessWidget {
               children: [
                 ProfileContactRow(
                   icon: AppIcons.phone,
-                  color: AppColors.categoryBlue,
+                  color: AppColors.primaryAccent,
                   value: phone.isEmpty ? 'Ajouter un numéro' : phone,
                   muted: phone.isEmpty,
                   onTap: edit,
@@ -55,7 +55,7 @@ class ProfileContactCard extends StatelessWidget {
                 _rowDivider(),
                 ProfileContactRow(
                   icon: AppIcons.message,
-                  color: AppColors.categoryOrange,
+                  color: AppColors.primaryAccent,
                   value: email.isEmpty ? 'Ajouter un email' : email,
                   muted: email.isEmpty,
                   onTap: edit,
@@ -63,7 +63,7 @@ class ProfileContactCard extends StatelessWidget {
                 _rowDivider(),
                 ProfileContactRow(
                   icon: AppIcons.location,
-                  color: AppColors.categoryCyan,
+                  color: AppColors.primaryAccent,
                   value: city.isEmpty ? 'Ajouter une ville' : city,
                   muted: city.isEmpty,
                   onTap: edit,
@@ -121,7 +121,7 @@ class ProfileContactRow extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(AppIcons.arrowRight, color: AppColors.outlineVariant),
+            const ListNavChevron(),
           ],
         ),
       ),
@@ -144,11 +144,13 @@ class ProfileSquareTileIcon extends StatelessWidget {
     return Container(
       width: 32,
       height: 32,
+      // Pastille teintée (fond pâle, icône de la couleur) : calme et lisible,
+      // là où trois carrés pleins de couleurs vives se disputaient l'œil.
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.surfaceIconSoft,
         borderRadius: AppShapes.squircleRadius(AppRadius.xs),
       ),
-      child: Icon(icon, color: AppColors.onPrimary, size: 19),
+      child: Icon(icon, color: color, size: 17),
     );
   }
 }

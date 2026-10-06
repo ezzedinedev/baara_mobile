@@ -256,7 +256,7 @@ class _AssistantHint extends StatelessWidget {
                       ],
                     )),
               ),
-              Icon(AppIcons.arrowRight,
+              ListNavChevron(
                   color: AppColors.primaryAccent, size: 22),
             ],
           ),

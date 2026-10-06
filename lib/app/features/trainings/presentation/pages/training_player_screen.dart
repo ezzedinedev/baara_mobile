@@ -289,7 +289,7 @@ class _ModuleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(AppIcons.arrowRight, color: AppColors.hintColor),
+                const ListNavChevron(),
               ],
             ),
           ),
@@ -398,7 +398,7 @@ class _QuizButton extends StatelessWidget {
                   child: AppLoader(size: 14, strokeWidth: 2, color: accent),
                 )
               else if (!exhausted)
-                Icon(AppIcons.arrowRight, size: 16, color: accent),
+                ListNavChevron(size: 16, color: accent),
             ],
           ),
         ),

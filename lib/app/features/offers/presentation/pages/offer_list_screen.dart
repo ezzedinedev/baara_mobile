@@ -266,14 +266,8 @@ class OfferListScreen extends GetView<OfferController> {
       onRefresh: () => controller.loadOffers(refresh: true),
       color: AppColors.primaryAccent,
       child: AnimationLimiter(
-        child: GridView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isTablet ? 2 : 1,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: isTablet ? 1.2 : 2.05,
-          ),
+        child: _OfferCollection(
+          isTablet: isTablet,
           itemCount: items.length + (controller.hasNextPage.value ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == items.length) {
@@ -312,6 +306,45 @@ class OfferListScreen extends GetView<OfferController> {
           },
         ),
       ),
+    );
+  }
+}
+
+/// Téléphone : liste, chaque carte prend sa hauteur naturelle (plus de vide
+/// imposé par un ratio fixe). Tablette : grille à deux colonnes.
+class _OfferCollection extends StatelessWidget {
+  const _OfferCollection({
+    required this.isTablet,
+    required this.itemCount,
+    required this.itemBuilder,
+  });
+
+  final bool isTablet;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+
+  static const _padding = EdgeInsets.fromLTRB(16, 12, 16, 100);
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isTablet) {
+      return ListView.separated(
+        padding: _padding,
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: itemBuilder,
+      );
+    }
+    return GridView.builder(
+      padding: _padding,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: itemCount,
+      itemBuilder: itemBuilder,
     );
   }
 }
@@ -459,6 +492,7 @@ class _OfferCard extends StatelessWidget {
           shadows: [...AppColors.lightShadow, ...AppColors.ambientShadow],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (offer.isBoosted && offer.boostTier > 0) ...[
@@ -548,7 +582,7 @@ class _OfferCard extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: saved
-                              ? AppColors.warningAccent.withValues(alpha: 0.12)
+                              ? AppColors.surfaceIconSoft
                               : AppColors.surfaceLow,
                           shape: BoxShape.circle,
                         ),
@@ -561,7 +595,7 @@ class _OfferCard extends StatelessWidget {
                             key: ValueKey(saved),
                             size: 19,
                             color: saved
-                                ? AppColors.warningAccent
+                                ? AppColors.primaryAccent
                                 : AppColors.hintColor,
                           ),
                         ),
@@ -571,33 +605,25 @@ class _OfferCard extends StatelessWidget {
                 }),
               ],
             ),
-            const Spacer(),
             const SizedBox(height: AppSpacing.md),
-            Row(
+            // Wrap : les étiquettes passent à la ligne au lieu d'être tronquées
+            // (« Ouagadougou • C… »).
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
-                if (offer.contractType.isNotEmpty) ...[
+                if (offer.contractType.isNotEmpty)
                   _OfferBadge(
                     icon: AppIcons.work,
                     label: offer.contractType,
                     accent: true,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
-                Flexible(
-                  child: _OfferBadge(
-                    icon: AppIcons.location,
-                    label: offer.isRemote ? 'Télétravail' : offer.location,
-                  ),
+                _OfferBadge(
+                  icon: AppIcons.location,
+                  label: offer.isRemote ? 'Télétravail' : offer.location,
                 ),
-                if (offer.salary.isNotEmpty) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: _OfferBadge(
-                      icon: AppIcons.wallet,
-                      label: offer.salary,
-                    ),
-                  ),
-                ],
+                if (offer.salary.isNotEmpty)
+                  _OfferBadge(icon: AppIcons.wallet, label: offer.salary),
               ],
             ),
           ],

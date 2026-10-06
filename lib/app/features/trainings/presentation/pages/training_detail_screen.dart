@@ -720,8 +720,7 @@ class _LessonRow extends StatelessWidget {
               else if (isLocked)
                 Icon(AppIcons.lock, size: 16, color: AppColors.hintColor)
               else
-                Icon(AppIcons.arrowRight,
-                    size: 20, color: AppColors.hintColor),
+                const ListNavChevron(size: 20),
             ],
           ),
         ),

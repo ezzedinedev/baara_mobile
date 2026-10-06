@@ -32,38 +32,43 @@ class BrandAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.avatarGradientForSeed(seed);
     final resolved = ApiConstants.resolveMediaUrl(imageUrl);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          ),
         ),
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: resolved != null && resolved.isNotEmpty
-          ? ClipOval(
-              child: CachedNetworkImage(
+        child: resolved != null && resolved.isNotEmpty
+            ? CachedNetworkImage(
                 imageUrl: resolved,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => _initialsText(),
-              ),
-            )
-          : _initialsText(),
+                errorWidget: (_, __, ___) => _initialsLayer(),
+              )
+            : _initialsLayer(),
+      ),
     );
   }
 
-  Widget _initialsText() => Text(
-        _initials,
-        style: AppTextStyles.titleMd.copyWith(
-          color: AppColors.onPrimary,
-          fontWeight: FontWeight.w800,
-          fontSize: fontSize ?? size * 0.42,
+  Widget _initialsLayer() => Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            _initials,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleMd.copyWith(
+              color: AppColors.onPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: fontSize ?? size * 0.42,
+              height: 1.0,
+            ),
+          ),
         ),
       );
 }

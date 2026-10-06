@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import 'package:baara/app/core/theme/app_colors.dart';
 import 'package:baara/app/core/theme/app_dimens.dart';
-import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:baara/app/core/theme/app_shapes.dart';
 import 'package:baara/app/core/theme/app_text_styles.dart';
 import 'package:baara/app/core/utils/haptics.dart';
@@ -38,7 +37,7 @@ class ProfileStreakCard extends StatelessWidget {
               height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.warningSoft,
+                color: AppColors.surfaceIconSoft,
                 borderRadius: AppShapes.squircleRadius(AppRadius.sm),
               ),
               child: Text('🔥', style: const TextStyle(fontSize: 22)),
@@ -67,7 +66,7 @@ class ProfileStreakCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(AppIcons.arrowRight, color: AppColors.outlineVariant),
+            const ListNavChevron(),
           ],
         ),
       ),

@@ -33,6 +33,10 @@ abstract final class AppIcons {
   static const IconData arrowRight = CupertinoIcons.arrow_right;
   static const IconData arrowLeft = CupertinoIcons.chevron_back;
   static const IconData back = CupertinoIcons.chevron_back;
+  /// Chevron des lignes navigables (réglages, listes) — plus net que arrow_right.
+  static const IconData listChevron = Icons.chevron_right_rounded;
+  /// Flèche des boutons d'action (Continuer, Suivant…).
+  static const IconData actionForward = Icons.arrow_forward_rounded;
   static const IconData close = CupertinoIcons.xmark;
   static const IconData closeSquare = CupertinoIcons.xmark_circle;
   static const IconData check = CupertinoIcons.checkmark;

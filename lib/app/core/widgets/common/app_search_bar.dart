@@ -54,7 +54,12 @@ class AppSearchBar extends StatelessWidget {
                 hintStyle: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.hintColor,
                 ),
+                // Le thème remplit les champs en gris : ici le conteneur porte
+                // déjà le fond, sinon on obtient une boîte dans la boîte.
+                filled: false,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),

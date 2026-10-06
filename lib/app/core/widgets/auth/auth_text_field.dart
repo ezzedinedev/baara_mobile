@@ -43,7 +43,17 @@ class AuthTextField extends StatefulWidget {
 class _AuthTextFieldState extends State<AuthTextField> {
   late bool _obscured;
   final FocusNode _focusNode = FocusNode();
+  final _fieldKey = GlobalKey<FormFieldState<String>>();
   bool _focused = false;
+
+  /// Un champ déjà en erreur se revalide à chaque frappe : le message
+  /// disparaît dès que la saisie est correcte. Les autres champs ne sont pas
+  /// vérifiés pendant la frappe (ce serait agaçant), seulement à l'envoi.
+  void _onChanged(String value) {
+    final field = _fieldKey.currentState;
+    if (field != null && field.hasError) field.validate();
+    widget.onChanged?.call(value);
+  }
 
   @override
   void initState() {
@@ -115,6 +125,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 : const [],
           ),
           child: TextFormField(
+            key: _fieldKey,
             controller: widget.controller,
             focusNode: _focusNode,
             keyboardType: widget.maxLines > 1
@@ -125,7 +136,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             maxLines: _obscured ? 1 : widget.maxLines,
             textAlignVertical: TextAlignVertical.top,
             validator: widget.validator,
-            onChanged: widget.onChanged,
+            onChanged: _onChanged,
             style: AppTextStyles.bodyLg.copyWith(
               color: AppColors.titleColor,
               fontWeight: FontWeight.w600,

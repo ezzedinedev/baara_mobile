@@ -12,6 +12,7 @@ import 'package:baara/app/core/theme/app_dimens.dart';
 import 'package:baara/app/core/theme/app_shapes.dart';
 import 'package:baara/app/core/theme/app_text_styles.dart';
 import 'package:baara/app/core/utils/haptics.dart';
+import 'package:baara/app/core/utils/idempotency_key.dart';
 import 'package:baara/app/core/widgets/widgets.dart';
 import 'dart:async';
 
@@ -74,6 +75,9 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
   int _mentionEnd = -1;
   // Noms mentionnés mémorisés pour l'envoi (best-effort).
   final _mentions = <String>{};
+
+  /// Clé stable pour la tentative en cours (retry réseau sans doublon).
+  String? _publishIdempotencyKey;
 
   @override
   void initState() {
@@ -477,7 +481,7 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
   }
 
   Future<void> _publish() async {
-    if (!_canPublish) return;
+    if (!_canPublish || _controller.isPublishing.value) return;
     AppHaptics.tap();
     _closeMentions();
 
@@ -513,18 +517,26 @@ class _ComposePostScreenState extends State<ComposePostScreen> {
         multiple: _pollMultiple,
       );
     }
+    _publishIdempotencyKey ??= newIdempotencyKey();
     final ok = await _controller.publish(
       body: _text.text.trim(),
       category: _category,
       visibility: _visibility,
       mediaPaths: paths,
       poll: poll,
+      idempotencyKey: _publishIdempotencyKey!,
     );
     if (ok) {
       AppToast.success('Publié', 'Votre publication est en ligne.');
       if (mounted) Get.back<void>();
     } else {
-      AppToast.error('Échec', 'La publication n\'a pas pu être envoyée.');
+      final detail = (_controller.errorMessage.value ?? '').trim();
+      AppToast.error(
+        'Échec',
+        detail.isNotEmpty
+            ? detail
+            : 'La publication n\'a pas pu être envoyée.',
+      );
     }
   }
 
@@ -1380,7 +1392,7 @@ class _AiComposeSheetState extends State<_AiComposeSheet> {
                       ),
                     ),
                   ),
-                  Icon(AppIcons.arrowRight, color: AppColors.hintColor),
+                  const ListNavChevron(),
                 ],
               ),
             ),

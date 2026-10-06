@@ -28,13 +28,13 @@ class ProfileRecruiterView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: ShapeDecoration(
-              color: AppColors.categoryBlue.withValues(alpha: 0.10),
+              color: AppColors.primaryAccent.withValues(alpha: 0.10),
               shape: AppShapes.squircle(AppRadius.lg),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(AppIcons.show, size: 20, color: AppColors.categoryBlue),
+                Icon(AppIcons.show, size: 20, color: AppColors.primaryAccent),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
