@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face{font-family:Outfit;font-weight:800;src:url(outfit-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:Inter;font-weight:500;src:url(inter-latin-500-normal.woff2) format('woff2')}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
+.c{position:relative;width:1080px;height:1920px;background:#26472B;overflow:hidden;font-family:Inter,sans-serif}
+.glow{position:absolute;inset:0;background:radial-gradient(circle at 85% 0%,rgba(120,235,84,.26),rgba(120,235,84,0) 50%)}
+.mark{position:absolute;left:-90px;bottom:-120px;width:520px}
+.cap{position:absolute;left:84px;right:84px;top:118px}
+.kick{display:inline-block;color:#26472B;background:#78EB54;border-radius:999px;padding:10px 22px;font-size:26px;font-weight:500;margin-bottom:26px}
+h1{font-family:Outfit,sans-serif;font-weight:800;font-size:76px;line-height:1.04;letter-spacing:-2px;color:#fff;margin:0}
+h1 em{font-style:normal;color:#78EB54}
+.shot{position:absolute;left:50%;transform:translateX(-50%);top:520px;width:640px;border-radius:56px;overflow:hidden;
+  box-shadow:0 40px 90px rgba(0,0,0,.45),0 0 0 10px rgba(255,255,255,.08)}
+.shot img{display:block;width:100%}
+</style>
+<div class="c">
+  <div class="glow"></div>
+  <svg class="mark" viewBox="0 0 175.54 204" xmlns="http://www.w3.org/2000/svg">
+    <g opacity=".07" stroke="#fff" stroke-width="37.1" stroke-linecap="round">
+      <line x1="87.77" y1="116.28" x2="18.55" y2="42.15"/><line x1="87.77" y1="116.28" x2="156.99" y2="42.15"/>
+      <line x1="87.77" y1="116.28" x2="43.32" y2="185.4"/><line x1="87.77" y1="116.28" x2="132.22" y2="185.4"/>
+    </g><circle cx="87.77" cy="27.2" r="27.2" fill="#78EB54" opacity=".14"/>
+  </svg>
+  <div class="cap"><span class="kick" id="k"></span><h1 id="t"></h1></div>
+  <div class="shot"><img id="s"></div>
+</div>
+<script>
+const q=new URLSearchParams(location.search);
+document.getElementById('k').textContent=q.get('k');
+document.getElementById('t').innerHTML=q.get('t');
+document.getElementById('s').src='screens/'+q.get('n')+'.png';
+</script>
