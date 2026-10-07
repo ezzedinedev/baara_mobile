@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:474816588506:android:f832f8fa9bbcf4d45613e3",
         "android_client_info": {
-          "package_name": "com.Baara.bf"
+          "package_name": "com.opportune.bf"
         }
       },
       "oauth_client": [],
@@ -26,7 +26,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:474816588506:android:f832f8fa9bbcf4d45613e3",
+        "mobilesdk_app_id": "1:474816588506:android:ffac436012c90ce45613e3",
         "android_client_info": {
           "package_name": "com.stratetix.baara"
         }

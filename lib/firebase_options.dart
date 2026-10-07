@@ -40,7 +40,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAd9ZXjxb9TZqZQgCXi73DrXnvpzW-TdJQ',
-    appId: '1:474816588506:android:f832f8fa9bbcf4d45613e3',
+    appId: '1:474816588506:android:ffac436012c90ce45613e3',
     messagingSenderId: '474816588506',
     projectId: 'flutter-ai-playground-e84b5',
     storageBucket: 'flutter-ai-playground-e84b5.firebasestorage.app',
@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDdqh8w9sxi3NQZma02znEZA_tOSjDeLgY',
-    appId: '1:474816588506:ios:d74b661af5cbdc845613e3',
+    appId: '1:474816588506:ios:212545021b76077a5613e3',
     messagingSenderId: '474816588506',
     projectId: 'flutter-ai-playground-e84b5',
     storageBucket: 'flutter-ai-playground-e84b5.firebasestorage.app',
