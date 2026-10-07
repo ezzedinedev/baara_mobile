@@ -45,6 +45,26 @@ class CandidateLoginController extends GetxController {
   static const Duration _cooldownDuration = Duration(seconds: 30);
 
   @override
+  void onInit() {
+    super.onInit();
+    // Arrivée depuis l'inscription (compte déjà existant) : identifiant pré-rempli.
+    final args = Get.arguments;
+    if (args is Map) {
+      final email = args['email']?.toString() ?? '';
+      final phone = args['phone']?.toString() ?? '';
+      if (email.isNotEmpty) {
+        emailCtrl.text = email;
+        loginMode.value = 'email';
+      } else if (phone.isNotEmpty) {
+        phoneCtrl.text = phone;
+        loginMode.value = 'phone';
+        final country = args['country']?.toString() ?? '';
+        if (country.isNotEmpty) selectedCountryIso.value = country;
+      }
+    }
+  }
+
+  @override
   void onClose() {
     emailCtrl.dispose();
     phoneCtrl.dispose();

@@ -18,6 +18,10 @@ class RegisterController extends GetxController {
   final registrationProfile = ''.obs;
   final selectedCountryIso = 'BF'.obs;
 
+  /// Champ ('email' ou 'phone') déjà rattaché à un compte existant, signalé par
+  /// le serveur. Vide sinon. Pilote le panneau « Vous avez déjà un compte ».
+  final existingAccountField = ''.obs;
+
   /// Liste des pays proposés (zone UEMOA) — cf. [PhoneCountry.uemoa].
   final countries = PhoneCountry.uemoa;
 
@@ -44,7 +48,41 @@ class RegisterController extends GetxController {
     if (args is Map && args['registration_profile'] != null) {
       registrationProfile.value = args['registration_profile'].toString();
     }
+    // Dès que l'identifiant en cause est modifié, le panneau n'a plus lieu d'être.
+    emailCtrl.addListener(_clearExistingIfEdited);
+    phoneCtrl.addListener(_clearExistingIfEdited);
   }
+
+  String _existingValue = '';
+
+  void _clearExistingIfEdited() {
+    final field = existingAccountField.value;
+    if (field.isEmpty) return;
+    final current =
+        field == 'email' ? emailCtrl.text.trim() : phoneCtrl.text.trim();
+    if (current != _existingValue) existingAccountField.value = '';
+  }
+
+  /// Le serveur refuse l'identifiant parce qu'un compte l'utilise déjà
+  /// (message de la règle `unique`, ancienne ou nouvelle formulation).
+  static bool _isTakenMessage(String message) {
+    final m = message.toLowerCase();
+    return m.contains('existe déjà') ||
+        m.contains('déjà été pris') ||
+        m.contains('already been taken');
+  }
+
+  /// Arguments de pré-remplissage pour la connexion / le mot de passe oublié.
+  Map<String, String> get _identifierArgs =>
+      existingAccountField.value == 'phone'
+          ? {'phone': phoneCtrl.text.trim(), 'country': selectedCountryIso.value}
+          : {'email': emailCtrl.text.trim()};
+
+  void goToLogin() =>
+      Get.offNamed(AppRoutes.candidateLogin, arguments: _identifierArgs);
+
+  void goToForgotPassword() =>
+      Get.toNamed(AppRoutes.forgotPassword, arguments: _identifierArgs);
 
   void selectCountry(String isoCode) {
     selectedCountryIso.value = isoCode;
@@ -143,6 +181,7 @@ class RegisterController extends GetxController {
     try {
       isLoading.value = true;
       errorMsg.value = '';
+      existingAccountField.value = '';
       await _authRepository.register({
         'first_name': firstNameCtrl.text.trim(),
         'last_name': lastNameCtrl.text.trim(),
@@ -164,6 +203,23 @@ class RegisterController extends GetxController {
     } on ApiValidationException catch (e) {
       // Détail par champ : on affiche le message précis et on ramène
       // l'utilisateur à l'étape du champ fautif.
+      final taken = ['email', 'phone'].firstWhere(
+        (f) => (e.errors[f] ?? const <String>[]).any(_isTakenMessage),
+        orElse: () => '',
+      );
+      if (taken.isNotEmpty) {
+        // Compte existant : panneau dédié avec « Se connecter », plutôt qu'une
+        // erreur rouge. Les autres champs fautifs restent signalés à part.
+        _existingValue =
+            taken == 'email' ? emailCtrl.text.trim() : phoneCtrl.text.trim();
+        existingAccountField.value = taken;
+        errorMsg.value = e.errors.entries
+            .where((entry) => entry.key != taken && entry.value.isNotEmpty)
+            .map((entry) => entry.value.first)
+            .join('\n');
+        currentStep.value = 2;
+        return;
+      }
       errorMsg.value = e.message;
       _goToFirstInvalidStep(e.errors.keys);
     } catch (e) {
@@ -175,6 +231,8 @@ class RegisterController extends GetxController {
 
   @override
   void onClose() {
+    emailCtrl.removeListener(_clearExistingIfEdited);
+    phoneCtrl.removeListener(_clearExistingIfEdited);
     firstNameCtrl.dispose();
     lastNameCtrl.dispose();
     emailCtrl.dispose();

@@ -87,6 +87,22 @@ class RegisterScreen extends GetView<RegisterController> {
                   const SizedBox(height: 28),
                   Obx(() {
                     final step = controller.currentStep.value;
+                    // Compte déjà existant : le panneau remplace le bouton
+                    // « Continuer » jusqu'à ce que l'identifiant soit modifié.
+                    final existing = controller.existingAccountField.value;
+                    if (existing.isNotEmpty) {
+                      return _ExistingAccountPanel(
+                        isPhone: existing == 'phone',
+                        identifier: existing == 'phone'
+                            ? controller.fullPhone
+                            : controller.emailCtrl.text.trim(),
+                        onLogin: () {
+                          AppHaptics.tap();
+                          controller.goToLogin();
+                        },
+                        onForgotPassword: controller.goToForgotPassword,
+                      );
+                    }
                     return AuthCtaButton(
                       label: step == 3 ? 'Créer mon compte' : 'Continuer',
                       isLoading: controller.isLoading.value,
@@ -335,6 +351,127 @@ class _TermsTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Affiché quand l'adresse e-mail ou le numéro saisi appartient déjà à un
+/// compte : on oriente vers la connexion au lieu d'afficher une erreur.
+class _ExistingAccountPanel extends StatelessWidget {
+  const _ExistingAccountPanel({
+    required this.isPhone,
+    required this.identifier,
+    required this.onLogin,
+    required this.onForgotPassword,
+  });
+
+  final bool isPhone;
+  final String identifier;
+  final VoidCallback onLogin;
+  final VoidCallback onForgotPassword;
+
+  @override
+  Widget build(BuildContext context) {
+    final what = isPhone ? 'Ce numéro' : 'Cette adresse';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: AppColors.primaryMedium.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMedium.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  AppIcons.personFilled,
+                  color: AppColors.primaryMedium,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Vous avez déjà un compte',
+                      style: AppTextStyles.titleMd
+                          .copyWith(color: AppColors.titleColor),
+                    ),
+                    const SizedBox(height: 4),
+                    Text.rich(
+                      TextSpan(
+                        text: '$what ',
+                        children: [
+                          TextSpan(
+                            text: identifier,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          TextSpan(
+                            text: isPhone
+                                ? ' est déjà inscrit sur Baara. '
+                                    'Connectez-vous pour retrouver votre compte.'
+                                : ' est déjà inscrite sur Baara. '
+                                    'Connectez-vous pour retrouver votre compte.',
+                          ),
+                        ],
+                      ),
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.bodyColor,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AuthCtaButton(label: 'Se connecter', onPressed: onLogin),
+          Center(
+            child: TextButton(
+              onPressed: onForgotPassword,
+              child: Text(
+                'Mot de passe oublié ?',
+                style: AppTextStyles.labelMd
+                    .copyWith(color: AppColors.primaryMedium),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Center(
+              child: Text(
+                isPhone
+                    ? "Ce n'est pas vous ? Modifiez le numéro ci-dessus."
+                    : "Ce n'est pas vous ? Modifiez l'adresse ci-dessus.",
+                textAlign: TextAlign.center,
+                style:
+                    AppTextStyles.bodySm.copyWith(color: AppColors.hintColor),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

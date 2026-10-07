@@ -66,6 +66,26 @@ class ForgotPasswordController extends GetxController {
   static const int _maxOtpAttempts = 3;
   static const Duration _otpCooldownDuration = Duration(seconds: 30);
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Arrivée depuis l'inscription (compte déjà existant) : identifiant pré-rempli.
+    final args = Get.arguments;
+    if (args is Map) {
+      final email = args['email']?.toString() ?? '';
+      final phone = args['phone']?.toString() ?? '';
+      if (email.isNotEmpty) {
+        emailCtrl.text = email;
+        mode.value = 'email';
+      } else if (phone.isNotEmpty) {
+        phoneCtrl.text = phone;
+        mode.value = 'phone';
+        final country = args['country']?.toString() ?? '';
+        if (country.isNotEmpty) selectedCountryIso.value = country;
+      }
+    }
+  }
+
   /// Étape 1 : envoie le code de réinitialisation (email ou téléphone).
   Future<void> requestReset() async {
     final isEmail = mode.value == 'email';
