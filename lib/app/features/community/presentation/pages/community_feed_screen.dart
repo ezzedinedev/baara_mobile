@@ -309,8 +309,11 @@ class _FeedBody extends StatelessWidget {
           onRefresh: () => _refreshFeedWithStories(controller),
           color: AppColors.primaryAccent,
           child: ListView(
+            // Bas réservé au bouton flottant « Publier » et à la barre de
+            // navigation : le texte de l'état vide ne passe plus dessous.
+            padding: const EdgeInsets.only(bottom: 180),
             children: [
-              const SizedBox(height: 80),
+              const SizedBox(height: 24),
               EmptyState(
                 illustration: const EmptyFeedIllustration(),
                 title: 'Le fil est vide',

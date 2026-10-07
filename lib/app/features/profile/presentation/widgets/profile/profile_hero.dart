@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:baara/app/core/constants/api_constants.dart';
@@ -24,119 +25,136 @@ class ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(gradient: AppColors.meshBrand),
-      foregroundDecoration: BoxDecoration(gradient: AppColors.meshBrandGlow),
-      child: Column(
-        children: [
-          SizedBox(height: topPadding + 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      label: 'Titre: Profil de ${profile.fullName}',
-                      child: Text(
-                        'Profil',
-                        style: AppTextStyles.displayHero.copyWith(
-                          color: AppColors.titleColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 60,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryAccent.withValues(alpha: 0.55),
-                        borderRadius: AppShapes.pill,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Obx(() {
-                      final theme = Get.find<AppThemeController>();
-                      final isDark = theme.isDarkMode.value;
-                      return AppIconButton(
-                        icon: isDark
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        tooltip: isDark ? 'Mode clair' : 'Mode sombre',
-                        onTap: () {
-                          AppHaptics.tap();
-                          if (Get.isRegistered<SettingsController>()) {
-                            Get.find<SettingsController>().setDarkMode(!isDark);
-                          } else {
-                            theme.setDarkMode(!isDark);
-                          }
-                        },
-                      );
-                    }),
-                    const SizedBox(width: 10),
-                    AppIconButton(
-                      icon: AppIcons.edit,
-                      onTap: () => Get.toNamed(AppRoutes.profileEdit),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    // Bandeau vert forêt (langage du splash) ; la feuille claire remonte
+    // dessus et l'avatar flotte à cheval entre les deux.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: BaaraMark.brandForest,
+          gradient: RadialGradient(
+            center: const Alignment(1.0, -1.2),
+            radius: 1.3,
+            colors: [
+              Color.lerp(BaaraMark.brandForest, BaaraMark.brandLime, 0.22)!,
+              BaaraMark.brandForest,
+            ],
           ),
-          const SizedBox(height: 32),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(40)),
-            ),
-            child: Column(
-              children: [
-                Transform.translate(
-                  offset: const Offset(0, -50),
-                  child: Column(
+        ),
+        child: Column(
+          children: [
+            SizedBox(height: topPadding + 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ProfileFloatingAvatar(profile: profile),
-                      const SizedBox(height: 16),
-                      Text(
-                        profile.fullName,
-                        style: AppTextStyles.headlineMd.copyWith(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 24,
-                          color: AppColors.titleColor,
+                      Semantics(
+                        header: true,
+                        label: 'Titre: Profil de ${profile.fullName}',
+                        child: Text(
+                          'Profil',
+                          style: AppTextStyles.displayHero.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      if (profile.headline != null &&
-                          profile.headline!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          profile.headline!,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.primaryAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          textAlign: TextAlign.center,
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 60,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: BaaraMark.brandLime,
+                          borderRadius: AppShapes.pill,
                         ),
-                      ],
-                      const SizedBox(height: 12),
-                      ProfileMemberBadge(
-                          isComplete: profile.isProfileComplete),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Obx(() {
+                        final theme = Get.find<AppThemeController>();
+                        final isDark = theme.isDarkMode.value;
+                        return AppIconButton(
+                          icon: isDark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          tooltip: isDark ? 'Mode clair' : 'Mode sombre',
+                          onTap: () {
+                            AppHaptics.tap();
+                            if (Get.isRegistered<SettingsController>()) {
+                              Get.find<SettingsController>()
+                                  .setDarkMode(!isDark);
+                            } else {
+                              theme.setDarkMode(!isDark);
+                            }
+                          },
+                        );
+                      }),
+                      const SizedBox(width: 10),
+                      AppIconButton(
+                        icon: AppIcons.edit,
+                        tooltip: 'Modifier le profil',
+                        onTap: () => Get.toNamed(AppRoutes.profileEdit),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 32),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(40)),
+              ),
+              child: Column(
+                children: [
+                  Transform.translate(
+                    offset: const Offset(0, -50),
+                    child: Column(
+                      children: [
+                        ProfileFloatingAvatar(profile: profile),
+                        const SizedBox(height: 16),
+                        Text(
+                          profile.fullName,
+                          style: AppTextStyles.headlineMd.copyWith(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                            color: AppColors.titleColor,
+                          ),
+                        ),
+                        if (profile.headline != null &&
+                            profile.headline!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            profile.headline!,
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.primaryAccent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        ProfileMemberBadge(
+                            isComplete: profile.isProfileComplete),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -254,8 +272,7 @@ class ProfileFloatingAvatar extends StatelessWidget {
             child: AnimatedCount(
               value: pct,
               builder: (ctx, v) => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: AppShapes.pill,
@@ -298,9 +315,7 @@ class ProfileMemberBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isComplete
-                ? AppIcons.shieldDone
-                : Icons.workspace_premium_rounded,
+            isComplete ? AppIcons.shieldDone : Icons.workspace_premium_rounded,
             size: 16,
             color: color,
           ),

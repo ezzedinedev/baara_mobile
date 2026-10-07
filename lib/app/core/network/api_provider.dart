@@ -352,6 +352,7 @@ class ApiProvider {
 
   Future<Map<String, dynamic>> deleteJson(
     String endpoint, {
+    Map<String, dynamic>? payload,
     Map<String, String>? headers,
     String? idempotencyKey,
     bool idempotent = true,
@@ -365,6 +366,7 @@ class ApiProvider {
       method: 'DELETE',
       endpoint: endpoint,
       headers: headers ?? const {'Accept': 'application/json'},
+      body: payload,
       idempotencyKey: key,
     );
   }

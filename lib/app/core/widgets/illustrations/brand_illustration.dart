@@ -151,10 +151,13 @@ class IllustrationPalette {
       line: AppColors.outlineVariant,
       brand: AppColors.primaryAccent,
       brandSoft: AppColors.surfaceIconSoft,
-      accentBlue: AppColors.categoryBlue,
-      accentOrange: AppColors.categoryOrange,
-      accentPink: AppColors.categoryPink,
-      accentPurple: AppColors.categoryPurple,
+      // Accents des illustrations : déclinaisons de la charte (feuille,
+      // citron, forêt profonde) au lieu de l'arc-en-ciel d'origine. Les noms
+      // des champs sont conservés pour ne pas toucher aux 21 dessins.
+      accentBlue: AppColors.primaryMedium,
+      accentOrange: AppColors.secondaryMid,
+      accentPink: AppColors.primaryDark,
+      accentPurple: AppColors.primaryMedium,
       success: AppColors.successAccent,
       error: AppColors.errorAccent,
       faint: AppColors.hintColor.withValues(alpha: 0.30),

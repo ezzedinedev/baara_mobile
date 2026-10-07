@@ -111,4 +111,15 @@ class ProfileRepositoryImpl implements IProfileRepository {
     final response = await _apiProvider.postJson(ApiConstants.logoutAll, {});
     ApiResponse.ensureSuccess(response, fallback: 'Déconnexion impossible.');
   }
+
+  @override
+  Future<void> deleteAccount(String confirmation) async {
+    final response = await _apiProvider.deleteJson(
+      ApiConstants.account,
+      payload: {'password': confirmation, 'confirmation': confirmation},
+      idempotent: false,
+    );
+    ApiResponse.ensureSuccess(response,
+        fallback: 'La suppression du compte a échoué.');
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:baara/app/features/offers/presentation/widgets/application_status_style.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -1037,29 +1038,6 @@ class _InterviewAction extends StatelessWidget {
   }
 }
 
-class _StatusStyle {
-  const _StatusStyle(this.label, this.color, this.icon);
-  final String label;
-  final Color color;
-  final IconData icon;
-}
-
-_StatusStyle _statusStyle(ApplicationStatus status) {
-  switch (status) {
-    case ApplicationStatus.newApp:
-      return _StatusStyle('Envoyée', AppColors.primaryAccent, AppIcons.send);
-    case ApplicationStatus.shortlisted:
-      return _StatusStyle(
-          'Présélectionné', AppColors.successAccent, AppIcons.starFilled);
-    case ApplicationStatus.interview:
-      return _StatusStyle(
-          'Entretien', AppColors.warningAccent, AppIcons.calendar);
-    case ApplicationStatus.rejected:
-      return _StatusStyle('Non retenue', AppColors.errorAccent,
-          Icons.do_not_disturb_on_rounded);
-  }
-}
-
 String _formatDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
@@ -1113,7 +1091,7 @@ class _ApplicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _statusStyle(app.status);
+    final style = ApplicationStatusStyle.of(app.status);
     final title = app.offer?.title ?? 'Offre #${app.offerId}';
     final company = app.offer?.company ?? '';
     final location = app.offer?.location ?? '';

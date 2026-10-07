@@ -251,7 +251,6 @@ class _CourseHeroBanner extends StatelessWidget {
                   ),
                 ),
               ),
-            const Positioned.fill(child: CustomPaint(painter: TopoPainter())),
             Positioned(
               top: -40,
               right: -30,
@@ -744,7 +743,7 @@ class _DescriptionTab extends StatelessWidget {
         _DetailSection(
           title: 'Description',
           icon: AppIcons.paper,
-          color: AppColors.categoryBlue,
+          color: AppColors.primaryAccent,
           child: Text(
             training.description.isEmpty
                 ? 'Description non fournie.'
@@ -781,7 +780,7 @@ class _DescriptionTab extends StatelessWidget {
         _DetailSection(
           title: 'Contact',
           icon: Icons.business_outlined,
-          color: AppColors.categoryPink,
+          color: AppColors.primaryAccent,
           child: Text(
             training.providerName.isEmpty ? '—' : training.providerName,
             style: AppTextStyles.titleMd.copyWith(color: AppColors.titleColor),
@@ -876,14 +875,14 @@ class _StatusChipsRow extends StatelessWidget {
         if (training.level.isNotEmpty)
           _StatusChip(
             text: training.level,
-            background: AppColors.categoryBlueSoft,
-            textColor: AppColors.categoryBlue,
+            background: AppColors.surfaceIconSoft,
+            textColor: AppColors.primaryAccent,
           ),
         if (training.format.isNotEmpty)
           _StatusChip(
             text: training.format,
-            background: AppColors.warningSoft,
-            textColor: AppColors.warningAccent,
+            background: AppColors.surfaceLow,
+            textColor: AppColors.bodyColor,
           ),
       ],
     );
@@ -932,13 +931,13 @@ class _MetaGrid extends StatelessWidget {
     final items = <_MetaEntry>[
       _MetaEntry(
         icon: AppIcons.paper,
-        color: AppColors.categoryCyan,
+        color: AppColors.primaryAccent,
         title: 'Modules',
         value: '${training.modules.length} module(s)',
       ),
       _MetaEntry(
         icon: AppIcons.time,
-        color: AppColors.categoryPink,
+        color: AppColors.primaryAccent,
         title: 'Durée',
         value: training.durationLabel,
       ),
@@ -950,25 +949,25 @@ class _MetaGrid extends StatelessWidget {
       ),
       _MetaEntry(
         icon: AppIcons.timeSquare,
-        color: AppColors.warningAccent,
+        color: AppColors.primaryAccent,
         title: 'Limite',
         value: training.deadlineLabel,
       ),
       _MetaEntry(
         icon: AppIcons.location,
-        color: AppColors.categoryBlue,
+        color: AppColors.primaryAccent,
         title: 'Lieu',
         value: training.location,
       ),
       _MetaEntry(
         icon: Icons.public_outlined,
-        color: AppColors.categoryGray,
+        color: AppColors.primaryAccent,
         title: 'Langue',
         value: training.languageLabel,
       ),
       _MetaEntry(
         icon: AppIcons.wallet,
-        color: AppColors.categoryOrange,
+        color: AppColors.primaryAccent,
         title: 'Prix',
         value: training.priceLabel,
       ),

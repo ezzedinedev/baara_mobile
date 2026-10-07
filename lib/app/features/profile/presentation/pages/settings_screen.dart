@@ -21,6 +21,7 @@ import 'package:baara/routes/app_routes.dart';
 import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../widgets/delete_account_sheet.dart';
 
 /// Paramètres — liste groupée style iOS Réglages : en-tête simple, cartes
 /// groupées, icônes carrées arrondies colorées, lignes-titres + sous-lignes.
@@ -372,6 +373,15 @@ class SettingsBody extends StatelessWidget {
                 titleColor: AppColors.errorAccent,
                 hideChevron: true,
                 onTap: () => _confirmLogout(context),
+              ),
+              _HeaderRow(
+                icon: AppIcons.delete,
+                color: AppColors.error,
+                title: 'Supprimer mon compte',
+                subtitle: 'Efface définitivement vos données',
+                titleColor: AppColors.errorAccent,
+                hideChevron: true,
+                onTap: () => showDeleteAccountSheet(context),
               ),
             ],
           ),

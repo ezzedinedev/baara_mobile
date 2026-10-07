@@ -1,3 +1,4 @@
+import 'package:baara/app/features/offers/presentation/widgets/application_status_style.dart';
 import 'package:flutter/material.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -72,60 +73,24 @@ class _SuiviScreenState extends State<SuiviScreen>
   Widget build(BuildContext context) {
     final suivi = Get.find<SuiviController>();
 
-    return Material(
-      color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SankTabShell(
+      title: 'Suivi',
+      subtitle: 'Visites, candidatures, matchs, entretiens et favoris.',
+      headerChild:
+          _SuiviTabBar(tabs: SuiviScreen._tabs, controller: _tabController),
+      body: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: TabBarView(
+          controller: _tabController,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.pageH,
-                AppSpacing.md,
-                AppSpacing.pageH,
-                AppSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Suivi',
-                    style: AppTextStyles.displayMd.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Visites, candidatures, matchs, entretiens et favoris.',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodySm.copyWith(
-                      color: AppColors.bodyColor,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ),
+            _VisitorsTab(suivi: suivi),
+            _ApplicationsTab(
+              suivi: suivi,
+              highlightApplicationId: _highlightApplicationId,
             ),
-            _SuiviTabBar(tabs: SuiviScreen._tabs, controller: _tabController),
-            const SizedBox(height: AppSpacing.xs),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _VisitorsTab(suivi: suivi),
-                  _ApplicationsTab(
-                    suivi: suivi,
-                    highlightApplicationId: _highlightApplicationId,
-                  ),
-                  _MatchesTab(suivi: suivi),
-                  _InterviewsTab(suivi: suivi),
-                  _FavoritesTab(suivi: suivi),
-                ],
-              ),
-            ),
+            _MatchesTab(suivi: suivi),
+            _InterviewsTab(suivi: suivi),
+            _FavoritesTab(suivi: suivi),
           ],
         ),
       ),
@@ -133,7 +98,8 @@ class _SuiviScreenState extends State<SuiviScreen>
   }
 }
 
-/// TabBar maison : scrollable, indicateur souligné fin, libellés + icônes.
+/// Sous-onglets posés sur le bandeau forêt : l'actif en pastille citron, les
+/// autres en blanc atténué (même grammaire que la barre de navigation).
 class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
   const _SuiviTabBar({required this.tabs, required this.controller});
   final List<({String label, IconData icon})> tabs;
@@ -148,10 +114,10 @@ class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
       controller: controller,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pageH),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-      labelColor: AppColors.primaryAccent,
-      unselectedLabelColor: AppColors.hintColor,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+      labelColor: BaaraMark.brandForest,
+      unselectedLabelColor: Colors.white.withValues(alpha: 0.72),
       labelStyle: AppTextStyles.labelMd.copyWith(
         fontWeight: FontWeight.w800,
         fontSize: 13,
@@ -160,10 +126,12 @@ class _SuiviTabBar extends StatelessWidget implements PreferredSizeWidget {
         fontWeight: FontWeight.w600,
         fontSize: 13,
       ),
-      indicatorColor: AppColors.primaryAccent,
-      indicatorWeight: 2.5,
-      indicatorSize: TabBarIndicatorSize.label,
-      dividerColor: AppColors.outlineVariant.withValues(alpha: 0.35),
+      indicator: BoxDecoration(
+        color: BaaraMark.brandLime,
+        borderRadius: AppShapes.pill,
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+      dividerColor: Colors.transparent,
       splashFactory: NoSplash.splashFactory,
       overlayColor: WidgetStateProperty.all(Colors.transparent),
       onTap: (_) => AppHaptics.tap(),
@@ -404,7 +372,7 @@ class _ApplicationMiniCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _statusStyle(app.status);
+    final style = ApplicationStatusStyle.of(app.status);
     final title = app.offer?.title ?? 'Offre #${app.offerId}';
     final company = app.offer?.company ?? '';
     final matchPct =
@@ -459,6 +427,8 @@ class _ApplicationMiniCard extends StatelessWidget {
                   dense: true),
             ],
           ),
+          const SizedBox(height: AppSpacing.md),
+          ApplicationProgressTimeline(status: app.status, compact: true),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
@@ -1381,28 +1351,5 @@ class _SkInterview extends StatelessWidget {
 }
 
 // ── Mapping statut candidature (local au hub) ──────────────────────────────
-class _StatusStyle {
-  const _StatusStyle(this.label, this.color, this.icon);
-  final String label;
-  final Color color;
-  final IconData icon;
-}
-
-_StatusStyle _statusStyle(ApplicationStatus status) {
-  switch (status) {
-    case ApplicationStatus.newApp:
-      return _StatusStyle('Envoyée', AppColors.primaryAccent, AppIcons.send);
-    case ApplicationStatus.shortlisted:
-      return _StatusStyle(
-          'Présélectionné', AppColors.successAccent, AppIcons.starFilled);
-    case ApplicationStatus.interview:
-      return _StatusStyle(
-          'Entretien', AppColors.warningAccent, AppIcons.calendar);
-    case ApplicationStatus.rejected:
-      return _StatusStyle('Non retenue', AppColors.errorAccent,
-          Icons.do_not_disturb_on_rounded);
-  }
-}
-
 String _formatDate(DateTime d) =>
     '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';

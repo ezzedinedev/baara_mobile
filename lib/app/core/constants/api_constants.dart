@@ -173,6 +173,9 @@ class ApiConstants {
   static const String emailSendVerification = '/auth/email/send-verification';
   static const String emailVerify = '/auth/email/verify';
   static const String logoutAll = '/auth/logout-all';
+
+  /// Suppression définitive du compte (DELETE).
+  static const String account = '/account';
   static const String authRefresh = '/auth/refresh';
   static const String profile = '/profile';
   static const String profileAvatar = '/profile/avatar';

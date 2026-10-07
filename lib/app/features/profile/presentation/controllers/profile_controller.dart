@@ -222,6 +222,22 @@ class ProfileController extends GetxController {
     Get.offAllNamed(AppRoutes.profileSelection);
   }
 
+  /// Supprime le compte puis ferme la session locale. Renvoie le message
+  /// d'erreur à afficher, ou null en cas de succès.
+  Future<String?> deleteAccount(String confirmation) async {
+    try {
+      await _repository.deleteAccount(confirmation);
+    } catch (e) {
+      return userFacingError(e);
+    }
+    if (Get.isRegistered<RealtimeService>()) {
+      await Get.find<RealtimeService>().stop();
+    }
+    await const AuthTokenStore().clearSession();
+    Get.offAllNamed(AppRoutes.landing);
+    return null;
+  }
+
   Future<void> logoutAll() async {
     if (Get.isRegistered<RealtimeService>()) {
       await Get.find<RealtimeService>().stop();

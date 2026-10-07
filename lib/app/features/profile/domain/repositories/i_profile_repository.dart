@@ -25,4 +25,9 @@ abstract class IProfileRepository {
   Future<void> logout();
 
   Future<void> logoutAll();
+
+  /// Supprime définitivement le compte. [confirmation] = mot de passe, ou
+  /// « SUPPRIMER » pour un compte créé avec Google (le serveur vérifie ce qui
+  /// s'applique au compte).
+  Future<void> deleteAccount(String confirmation);
 }

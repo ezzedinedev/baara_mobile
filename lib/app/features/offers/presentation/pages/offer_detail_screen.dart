@@ -58,87 +58,87 @@ class _OfferDetailLoaded extends GetView<OfferDetailController> {
             if (id != null) await controller.fetchOfferDetail(id);
           },
           child: CustomScrollView(
-          // Permet l'étirement du hero en overscroll (zoom élastique).
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
-            _buildSliverAppBar(offer),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xxl, AppSpacing.xxl, AppSpacing.xxl, 0),
-                // Chorégraphie : les sections montent en cascade
-                // (emphasizedDecelerate via RevealOnMount), une fois le hero
-                // posé. Délais échelonnés pour une entrée vivante mais calme.
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RevealOnMount(
-                      offsetY: 16,
-                      child: _buildMainInfo(offer),
-                    ),
-                        const SizedBox(height: AppSpacing.xxl),
-                        RevealOnMount(
-                          delay: AppMotion.stagger,
-                          offsetY: 16,
-                          child: _buildKeyInfoGrid(offer),
+            // Permet l'étirement du hero en overscroll (zoom élastique).
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              _buildSliverAppBar(offer),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xxl, AppSpacing.xxl, AppSpacing.xxl, 0),
+                  // Chorégraphie : les sections montent en cascade
+                  // (emphasizedDecelerate via RevealOnMount), une fois le hero
+                  // posé. Délais échelonnés pour une entrée vivante mais calme.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RevealOnMount(
+                        offsetY: 16,
+                        child: _buildMainInfo(offer),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      RevealOnMount(
+                        delay: AppMotion.stagger,
+                        offsetY: 16,
+                        child: _buildKeyInfoGrid(offer),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      RevealOnMount(
+                        delay: AppMotion.stagger * 2,
+                        offsetY: 16,
+                        child: _buildAiOfferActions(offer),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      RevealOnMount(
+                        delay: AppMotion.stagger * 3,
+                        offsetY: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle(
+                                'À propos de l\'offre', AppIcons.document),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              offer.description,
+                              style: AppTextStyles.bodyMd.copyWith(
+                                  height: 1.7, color: AppColors.bodyColor),
+                            ),
+                          ],
                         ),
+                      ),
+                      if (offer.requiredSkills.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xxl),
                         RevealOnMount(
-                          delay: AppMotion.stagger * 2,
-                          offsetY: 16,
-                          child: _buildAiOfferActions(offer),
-                        ),
-                        const SizedBox(height: AppSpacing.xxl),
-                        RevealOnMount(
-                          delay: AppMotion.stagger * 3,
+                          delay: AppMotion.stagger * 4,
                           offsetY: 16,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildSectionTitle(
-                                  'À propos de l\'offre', AppIcons.document),
-                              const SizedBox(height: AppSpacing.md),
-                              Text(
-                                offer.description,
-                                style: AppTextStyles.bodyMd.copyWith(
-                                    height: 1.7, color: AppColors.bodyColor),
+                                  'Compétences requises', AppIcons.activity),
+                              const SizedBox(height: AppSpacing.lg),
+                              Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: offer.requiredSkills
+                                    .map((s) => _SkillChip(label: s))
+                                    .toList(),
                               ),
                             ],
                           ),
                         ),
-                        if (offer.requiredSkills.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.xxl),
-                          RevealOnMount(
-                            delay: AppMotion.stagger * 4,
-                            offsetY: 16,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionTitle('Compétences requises',
-                                    AppIcons.activity),
-                                const SizedBox(height: AppSpacing.lg),
-                                Wrap(
-                                  spacing: AppSpacing.sm,
-                                  runSpacing: AppSpacing.sm,
-                                  children: offer.requiredSkills
-                                      .map((s) => _SkillChip(label: s))
-                                      .toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        // Espace pour dégager la CTA sticky.
-                        const SizedBox(height: 130),
                       ],
-                    ),
+                      // Espace pour dégager la CTA sticky.
+                      const SizedBox(height: 130),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
         _buildBottomAction(),
       ],
     );
@@ -151,7 +151,7 @@ class _OfferDetailLoaded extends GetView<OfferDetailController> {
       // Étirement du hero au pull-down + zoom de l'arrière-plan (parallax 2026).
       stretch: true,
       stretchTriggerOffset: 120,
-      backgroundColor: AppColors.primary,
+      backgroundColor: BaaraMark.brandForest,
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.only(left: AppSpacing.sm),
@@ -187,14 +187,34 @@ class _OfferDetailLoaded extends GetView<OfferDetailController> {
           StretchMode.zoomBackground,
           StretchMode.fadeTitle,
         ],
+        // Fond de marque commun aux en-têtes : forêt, halo citron, et le
+        // personnage Baara en filigrane quand l'entreprise n'a pas de logo.
         background: Container(
-          decoration: BoxDecoration(gradient: AppColors.heroOffersGradient),
-          // Halo mesh de marque par-dessus le dégradé (profondeur hero 2026).
-          foregroundDecoration:
-              BoxDecoration(gradient: AppColors.meshBrandGlow),
+          decoration: BoxDecoration(
+            color: BaaraMark.brandForest,
+            gradient: RadialGradient(
+              center: const Alignment(1.1, -1.2),
+              radius: 1.4,
+              colors: [
+                Color.lerp(BaaraMark.brandForest, BaaraMark.brandLime, 0.22)!,
+                BaaraMark.brandForest,
+              ],
+            ),
+          ),
           child: Stack(
             children: [
-              const Positioned.fill(child: CustomPaint(painter: TopoPainter())),
+              if ((offer.companyLogo ?? '').isEmpty)
+                Positioned(
+                  right: -30,
+                  top: -20,
+                  child: ExcludeSemantics(
+                    child: BaaraMark(
+                      size: 190,
+                      color: Colors.white.withValues(alpha: 0.05),
+                      headColor: BaaraMark.brandLime.withValues(alpha: 0.09),
+                    ),
+                  ),
+                ),
               // Logo flou en filigrane (profondeur immersive) si dispo.
               if ((offer.companyLogo ?? '').isNotEmpty)
                 Positioned(
@@ -399,78 +419,113 @@ class _OfferDetailLoaded extends GetView<OfferDetailController> {
     );
   }
 
+  /// Assistant candidature : le moment fort de l'écran, traité comme les
+  /// tuiles vedettes (carte vert forêt, pastille citron, personnage en
+  /// filigrane). L'action principale « Adapter + postuler » est en citron.
   Widget _buildAiOfferActions(Offer offer) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppColors.surfaceCard,
-        shape: AppShapes.cardBordered(
-          AppColors.primaryAccent.withValues(alpha: 0.18),
-        ),
-        shadows: AppColors.lightShadow,
+        color: BaaraMark.brandForest,
+        shape: AppShapes.squircle(AppRadius.xl),
+        shadows: AppColors.ambientShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: ShapeDecoration(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.12),
-                  shape: AppShapes.squircle(AppRadius.xs),
-                ),
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 18,
-                  color: AppColors.primaryAccent,
-                ),
+          Positioned(
+            right: -24,
+            bottom: -34,
+            child: ExcludeSemantics(
+              child: BaaraMark(
+                size: 120,
+                color: Colors.white.withValues(alpha: 0.06),
+                headColor: BaaraMark.brandLime.withValues(alpha: 0.12),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  'Assistant candidature',
-                  style: AppTextStyles.titleLg.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              Obx(
-                () => controller.isAiActionLoading.value
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _AiActionChip(
-                icon: AppIcons.document,
-                label: 'Adapter CV',
-                onTap: () async {
-                  final data = await controller.adaptCv();
-                  if (data != null) _showAiResult('CV adapté', data);
-                },
-              ),
-              // Pas de « Lettre IA » ici : la table `applications` n'a aucune
-              // colonne de lettre de motivation et `applyToOffer` n'en envoie
-              // pas. La lettre générée n'était rattachable à rien — un
-              // cul-de-sac dans un bloc dédié à la candidature.
-              _AiActionChip(
-                icon: AppIcons.send,
-                label: 'Adapter + postuler',
-                onTap: controller.adaptCvAndApply,
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        color: BaaraMark.brandLime,
+                        shape: AppShapes.squircle(AppRadius.sm),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 20,
+                        color: BaaraMark.brandForest,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Assistant candidature',
+                            style: AppTextStyles.titleLg.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Votre CV adapté à cette offre, en un geste.',
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: Colors.white.withValues(alpha: 0.72),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Obx(
+                      () => controller.isAiActionLoading.value
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: BaaraMark.brandLime,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    // Pas de « Lettre IA » ici : la table `applications` n'a
+                    // aucune colonne de lettre de motivation et `applyToOffer`
+                    // n'en envoie pas ; la lettre n'était rattachable à rien.
+                    _AiActionChip(
+                      icon: AppIcons.send,
+                      label: 'Adapter + postuler',
+                      primary: true,
+                      onTap: controller.adaptCvAndApply,
+                    ),
+                    _AiActionChip(
+                      icon: AppIcons.document,
+                      label: 'Voir le CV adapté',
+                      onTap: () async {
+                        final data = await controller.adaptCv();
+                        if (data != null) _showAiResult('CV adapté', data);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -589,11 +644,9 @@ class _OfferDetailLoaded extends GetView<OfferDetailController> {
                 final applied = controller.hasApplied.value;
                 return AuthCtaButton(
                   label:
-                      applied ? 'CANDIDATURE ENVOYÉE' : 'POSTULER MAINTENANT',
+                      applied ? 'Candidature envoyée' : 'Postuler maintenant',
                   isLoading: controller.isApplying.value,
-                  trailing: applied
-                      ? AppIcons.tickSquare
-                      : AppIcons.arrowRight,
+                  trailing: applied ? AppIcons.tickSquare : AppIcons.arrowRight,
                   onPressed: applied
                       ? null
                       : () => _applyWithOptionalScreening(
@@ -899,44 +952,59 @@ class _InfoPill extends StatelessWidget {
   }
 }
 
+/// Action de l'assistant, posée sur la carte forêt : [primary] en citron,
+/// sinon en blanc translucide.
 class _AiActionChip extends StatelessWidget {
   const _AiActionChip({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.primary = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool primary;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        AppHaptics.tap();
-        onTap();
-      },
-      borderRadius: AppShapes.squircleRadius(AppRadius.sm),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: ShapeDecoration(
-          color: AppColors.primaryAccent.withValues(alpha: 0.10),
-          shape: AppShapes.squircle(AppRadius.sm),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: AppColors.primaryAccent),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: AppTextStyles.labelMd.copyWith(
-                color: AppColors.primaryAccent,
-                fontWeight: FontWeight.w800,
+    final fg = primary ? BaaraMark.brandForest : Colors.white;
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: PressScale(
+        onTap: () {
+          AppHaptics.tap();
+          onTap();
+        },
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            color: primary
+                ? BaaraMark.brandLime
+                : Colors.white.withValues(alpha: 0.10),
+            borderRadius: AppShapes.pill,
+            border: primary
+                ? null
+                : Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: AppTextStyles.labelMd.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -961,8 +1029,7 @@ class _SkillChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(AppIcons.tickSquare,
-              size: 14, color: AppColors.primaryAccent),
+          Icon(AppIcons.tickSquare, size: 14, color: AppColors.primaryAccent),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1281,8 +1348,7 @@ class _AdaptGaps extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListNavChevron(
-                    size: 16, color: AppColors.warningAccent),
+                ListNavChevron(size: 16, color: AppColors.warningAccent),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

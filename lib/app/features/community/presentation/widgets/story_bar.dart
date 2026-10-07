@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:baara/app/core/widgets/baara_mark.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
 
@@ -223,7 +224,10 @@ class _CreateTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.labelSm.copyWith(
-                color: isPublishing ? AppColors.primary : AppColors.bodyColor,
+                // Posée sur le bandeau vert forêt de l'onglet Réseau.
+                color: isPublishing
+                    ? BaaraMark.brandLime
+                    : Colors.white.withValues(alpha: 0.82),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -310,7 +314,9 @@ class _StoryTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.labelSm.copyWith(
-                color: unseen ? AppColors.titleColor : AppColors.bodyColor,
+                color: unseen
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.7),
                 fontWeight: unseen ? FontWeight.w800 : FontWeight.w600,
               ),
             ),

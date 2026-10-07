@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_text_styles.dart';
+import '../baara_mark.dart';
 import 'app_back_button.dart';
 
 /// Sous-page (paramètres, édition profil…) : bandeau vert uni + feuille blanche.
@@ -112,7 +114,11 @@ class SankSheetScaffold extends StatelessWidget {
   }
 }
 
-/// Onglet principal : titre sur fond clair, contenu continu (pas de dégradé).
+/// Onglet principal, dans le langage du splash et des écrans de connexion :
+/// bandeau vert forêt aux coins bas arrondis, halo citron, personnage Baara en
+/// filigrane, grand titre blanc. Les actions et le [headerChild] (recherche,
+/// sélecteur) sont posés sur le bandeau ; le contenu défile dessous sur le
+/// fond clair.
 class SankTabShell extends StatelessWidget {
   const SankTabShell({
     super.key,
@@ -129,79 +135,134 @@ class SankTabShell extends StatelessWidget {
   final List<Widget> headerActions;
   final Widget? headerChild;
   final Widget body;
+
   /// Quand false, le header se rétracte vers le haut avec une animation.
   final bool headerVisible;
 
+  static const double _radius = 28;
+
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
+
     return Material(
       color: AppColors.background,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClipRect(
-              child: AnimatedAlign(
-                alignment: Alignment.topCenter,
-                heightFactor: headerVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeInOut,
-                child: AnimatedOpacity(
-                  opacity: headerVisible ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.pageH,
-                      AppSpacing.md,
-                      AppSpacing.pageH,
-                      AppSpacing.lg,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    title,
-                                    style: AppTextStyles.displayMd.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  if (subtitle != null) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      subtitle!,
-                                      style: AppTextStyles.bodyMd.copyWith(
-                                        color: AppColors.bodyColor,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            ...headerActions,
-                          ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light
+                .copyWith(statusBarColor: Colors.transparent),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(_radius),
+              ),
+              child: ColoredBox(
+                color: BaaraMark.brandForest,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(1.1, -1.3),
+                            radius: 1.4,
+                            colors: [
+                              BaaraMark.brandLime.withValues(alpha: 0.20),
+                              BaaraMark.brandLime.withValues(alpha: 0.0),
+                            ],
+                          ),
                         ),
-                        if (headerChild != null) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          headerChild!,
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      right: -28,
+                      bottom: -40,
+                      child: ExcludeSemantics(
+                        child: BaaraMark(
+                          size: 150,
+                          color: Colors.white.withValues(alpha: 0.05),
+                          headColor:
+                              BaaraMark.brandLime.withValues(alpha: 0.09),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(top: topInset),
+                      child: _header(),
+                    ),
+                  ],
                 ),
               ),
             ),
-            Expanded(child: body),
-          ],
+          ),
+          Expanded(child: body),
+        ],
+      ),
+    );
+  }
+
+  Widget _header() {
+    return ClipRect(
+      child: AnimatedAlign(
+        alignment: Alignment.topCenter,
+        heightFactor: headerVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOut,
+        child: AnimatedOpacity(
+          opacity: headerVisible ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.pageH,
+              AppSpacing.md,
+              AppSpacing.pageH,
+              AppSpacing.lg + 4,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              title,
+                              style: AppTextStyles.displayMd.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6,
+                              ),
+                            ),
+                          ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              subtitle!,
+                              style: AppTextStyles.bodyMd.copyWith(
+                                color: Colors.white.withValues(alpha: 0.74),
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    ...headerActions,
+                  ],
+                ),
+                if (headerChild != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  headerChild!,
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

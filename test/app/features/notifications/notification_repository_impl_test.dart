@@ -29,6 +29,7 @@ class _FakeApiProvider extends ApiProvider {
   @override
   Future<Map<String, dynamic>> deleteJson(
     String endpoint, {
+    Map<String, dynamic>? payload,
     Map<String, String>? headers,
     String? idempotencyKey,
     bool idempotent = true,

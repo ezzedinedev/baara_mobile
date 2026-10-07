@@ -69,9 +69,10 @@ class HomeNavBadge extends StatelessWidget {
   }
 }
 
-/// Barre de navigation « glass » flottante : fond translucide + flou
-/// d'arrière-plan (BackdropFilter), pill qui s'étire sur l'onglet actif (icône
-/// + label). Le contenu défile dessous (Scaffold.extendBody) pour l'effet verre.
+/// Barre de navigation flottante aux couleurs du splash : capsule vert forêt,
+/// l'onglet actif s'étire en pastille citron (icône + nom), les autres restent
+/// en blanc atténué. Aplat plutôt que verre : lisible sur n'importe quel
+/// contenu, et c'est la matière de la marque.
 class HomeBottomNav extends GetView<HomeController> {
   const HomeBottomNav({super.key});
 
@@ -119,11 +120,20 @@ class HomeBottomNav extends GetView<HomeController> {
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
         // Verre liquide flottant (chrome) : GlassSurface = blur + couche tonale
         // + liseré spéculaire, dans un RepaintBoundary.
-        child: GlassSurface(
-          borderRadius: AppShapes.pill,
-          blurSigma: 20,
-          boxShadow: AppColors.ambientShadow,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            color: BaaraMark.brandForest,
+            borderRadius: AppShapes.pill,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: BaaraMark.brandForest.withValues(alpha: 0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: SizedBox(
             height: 62,
             child: Obx(() {
@@ -164,7 +174,8 @@ class HomeGlassNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primaryAccent : AppColors.hintColor;
+    final color =
+        selected ? BaaraMark.brandForest : Colors.white.withValues(alpha: 0.62);
     // Icône avec micro-bascule de scale en spring quand l'onglet devient actif.
     Widget icon = AnimatedScale(
       scale: selected ? 1.0 : 0.92,
@@ -176,47 +187,50 @@ class HomeGlassNavItem extends StatelessWidget {
       icon = HomeNavBadge(kind: item.badge!, child: icon);
     }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedContainer(
-        // Sélection en spring : la pill « gonfle » avec un léger overshoot.
-        duration: AppMotion.medium,
-        curve: AppMotion.spring,
-        height: 42,
-        padding:
-            EdgeInsets.symmetric(horizontal: selected ? 14 : 12, vertical: 9),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primaryAccent.withValues(alpha: 0.14)
-              : Colors.transparent,
-          borderRadius: AppShapes.pill,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            icon,
-            // Le nom « pousse » en spring sur l'onglet actif.
-            AnimatedSize(
-              duration: AppMotion.medium,
-              curve: AppMotion.spring,
-              child: selected
-                  ? Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        item.labelKey.tr,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.clip,
-                        style: AppTextStyles.labelSm.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w800,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.labelKey.tr,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          // Sélection en spring : la pill « gonfle » avec un léger overshoot.
+          duration: AppMotion.medium,
+          curve: AppMotion.spring,
+          height: 42,
+          padding:
+              EdgeInsets.symmetric(horizontal: selected ? 14 : 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? BaaraMark.brandLime : Colors.transparent,
+            borderRadius: AppShapes.pill,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              icon,
+              // Le nom « pousse » en spring sur l'onglet actif.
+              AnimatedSize(
+                duration: AppMotion.medium,
+                curve: AppMotion.spring,
+                child: selected
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          item.labelKey.tr,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.clip,
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
