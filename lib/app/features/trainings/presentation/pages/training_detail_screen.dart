@@ -1,3 +1,4 @@
+import 'package:baara/app/core/constants/app_features.dart';
 import 'package:flutter/material.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -1221,6 +1222,9 @@ class _EnrollBottomBar extends StatelessWidget {
             final completedAll =
                 hasModules && training.modules.every((m) => m.isCompleted);
             final isPaid = training.price != null && training.price! > 0;
+            // Version stores : aucun achat de contenu numérique dans l'app.
+            final purchaseBlocked =
+                isPaid && !isEnrolled && !AppFeatures.inAppPurchases;
 
             final label = isEnrolled
                 ? (!hasModules
@@ -1228,11 +1232,15 @@ class _EnrollBottomBar extends StatelessWidget {
                     : completedAll
                         ? 'REVOIR LA FORMATION'
                         : 'COMMENCER MAINTENANT')
-                : (isPaid
-                    ? "S'INSCRIRE • ${training.priceLabel}"
-                    : 'SUIVRE LA FORMATION');
+                : purchaseBlocked
+                    ? "INSCRIPTION INDISPONIBLE DANS L'APP"
+                    : (isPaid
+                        ? "S'INSCRIRE • ${training.priceLabel}"
+                        : 'SUIVRE LA FORMATION');
 
-            final disabled = isEnrolling || (isEnrolled && !hasModules);
+            final disabled = isEnrolling ||
+                (isEnrolled && !hasModules) ||
+                purchaseBlocked;
 
             return GradientButton(
               label: label,

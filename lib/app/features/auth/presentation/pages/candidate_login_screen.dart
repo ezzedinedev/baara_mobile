@@ -1,3 +1,4 @@
+import 'package:baara/app/core/constants/app_features.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:baara/app/core/theme/app_colors.dart';
@@ -147,13 +148,17 @@ class CandidateLoginScreen extends GetView<CandidateLoginController> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),
-                            const AuthOrDivider(),
-                            const SizedBox(height: AppSpacing.lg),
-                            AuthSocialButton(
-                              icon: const GoogleLogoAsset(size: 20),
-                              label: 'Continuer avec Google',
-                              onTap: controller.loginWithGoogle,
-                            ),
+                            // Connexion Google : affichée seulement une fois
+                            // configurée et testée (AppFeatures.googleSignIn).
+                            if (AppFeatures.googleSignIn) ...[
+                              const AuthOrDivider(),
+                              const SizedBox(height: AppSpacing.lg),
+                              AuthSocialButton(
+                                icon: const GoogleLogoAsset(size: 20),
+                                label: 'Continuer avec Google',
+                                onTap: controller.loginWithGoogle,
+                              ),
+                            ],
                             const SizedBox(height: AppSpacing.xl),
                             Center(
                               child: TextButton(

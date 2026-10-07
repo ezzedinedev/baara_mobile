@@ -1,3 +1,4 @@
+import 'package:baara/app/core/constants/app_features.dart';
 import 'package:flutter/material.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
@@ -117,21 +118,25 @@ class SettingsBody extends StatelessWidget {
             ],
           ),
           const _EmailVerifyBanner(),
-          const SectionLabel('Abonnement'),
-          _Group(
-            rows: [
-              _HeaderRow(
-                icon: AppIcons.wallet,
-                color: AppColors.primaryAccent,
-                title: 'Mon abonnement',
-                subtitle: 'Forfait, avantages et facturation',
-                onTap: () {
-                  AppHaptics.tap();
-                  Get.toNamed(AppRoutes.subscription);
-                },
-              ),
-            ],
-          ),
+          // Abonnement : pas encore commercialisé, et tout achat de contenu
+          // numérique est désactivé dans la version stores (AppFeatures).
+          if (AppFeatures.inAppPurchases) ...[
+            const SectionLabel('Abonnement'),
+            _Group(
+              rows: [
+                _HeaderRow(
+                  icon: AppIcons.wallet,
+                  color: AppColors.primaryAccent,
+                  title: 'Mon abonnement',
+                  subtitle: 'Forfait, avantages et facturation',
+                  onTap: () {
+                    AppHaptics.tap();
+                    Get.toNamed(AppRoutes.subscription);
+                  },
+                ),
+              ],
+            ),
+          ],
           const SectionLabel('Préférences'),
           _Group(
             rows: [
@@ -289,8 +294,7 @@ class SettingsBody extends StatelessWidget {
                 if (!Get.isRegistered<OfflineApplyQueue>()) {
                   return const SizedBox.shrink();
                 }
-                final pending =
-                    Get.find<OfflineApplyQueue>().pending.length;
+                final pending = Get.find<OfflineApplyQueue>().pending.length;
                 if (pending <= 0) return const SizedBox.shrink();
                 return _HeaderRow(
                   icon: Icons.cloud_upload_outlined,

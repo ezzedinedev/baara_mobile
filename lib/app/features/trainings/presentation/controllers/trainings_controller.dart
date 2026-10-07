@@ -1,3 +1,4 @@
+import 'package:baara/app/core/constants/app_features.dart';
 import 'package:get/get.dart';
 import '../../domain/entities/enrolled_training.dart';
 import '../../domain/entities/training.dart';
@@ -35,9 +36,21 @@ class TrainingsController extends GetxController {
       (t.price != null && t.price! <= 0) ||
       t.priceLabel.toLowerCase().contains('gratuit');
 
+  /// Formations proposées dans l'app : sans achat intégré (version stores),
+  /// les payantes n'apparaissent que si elles sont déjà acquises.
+  /// Même définition de « payante » que le bouton d'inscription : un prix
+  /// strictement positif (un prix inconnu n'est pas un achat).
+  bool isOffered(Training t) {
+    final isPaid = t.price != null && t.price! > 0;
+    return AppFeatures.inAppPurchases || !isPaid || t.isEnrolled;
+  }
+
+  List<Training> get visibleTrainings => trainings.where(isOffered).toList();
+
   List<Training> get filteredTrainings {
     final query = searchQuery.value.trim().toLowerCase();
     return trainings.where((t) {
+      if (!isOffered(t)) return false;
       if (activeFormat.value != null && t.format != activeFormat.value) {
         return false;
       }

@@ -22,7 +22,7 @@ class HomeFormationsSection extends StatelessWidget {
     final controller = Get.find<TrainingsController>();
     return Obx(() {
       final isLoading = controller.isLoading.value;
-      final items = controller.trainings;
+      final items = controller.visibleTrainings;
 
       if (isLoading && items.isEmpty) {
         return const Column(

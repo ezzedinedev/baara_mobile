@@ -182,6 +182,9 @@ class ApiConstants {
   static const String emailVerify = '/auth/email/verify';
   static const String logoutAll = '/auth/logout-all';
 
+  /// Versions de l'app (mise à jour proposée ou obligatoire), public.
+  static const String appVersion = '/app/version';
+
   /// Suppression définitive du compte (DELETE).
   static const String account = '/account';
   static const String authRefresh = '/auth/refresh';

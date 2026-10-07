@@ -1,3 +1,4 @@
+import 'package:baara/app/core/services/app_update_service.dart';
 import 'dart:async';
 
 import 'package:get/get.dart';
@@ -81,6 +82,8 @@ class HomeController extends GetxController {
       return;
     }
     await PostAuthBootstrap.syncPushToken();
+    // Mise à jour proposée ou imposée depuis l'admin du site.
+    unawaited(AppUpdateService.checkAndPrompt());
   }
 
   @override
