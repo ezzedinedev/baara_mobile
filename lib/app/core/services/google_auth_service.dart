@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../constants/api_constants.dart';
@@ -58,7 +59,12 @@ class GoogleAuthService {
     try {
       // serverClientId = client OAuth « Web » du site : le jeton obtenu porte
       // cet identifiant en audience, celui que l'API vérifie (GOOGLE_CLIENT_ID).
+      // Sur iOS, le client iOS est requis en plus ; sur Android, c'est le
+      // couple package + SHA-1 déclaré dans Google Cloud qui identifie l'app.
       await (_initialized ??= _googleSignIn.initialize(
+        clientId: defaultTargetPlatform == TargetPlatform.iOS
+            ? ApiConstants.googleIosClientId
+            : null,
         serverClientId: ApiConstants.googleServerClientId,
       ));
       final account = await _googleSignIn.authenticate();

@@ -34,6 +34,14 @@ class ApiConstants {
         '514652349175-vc72d4k6t5sjmqri56gko0smo214t9v1.apps.googleusercontent.com',
   );
 
+  /// Client OAuth « iOS » (même projet Google Cloud que le client Web).
+  /// Doit correspondre à GIDClientID et au schéma d'URL inversé d'Info.plist.
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue:
+        '514652349175-gffa6sajpgmi2sc7snotserdc5nc231s.apps.googleusercontent.com',
+  );
+
   static const String authDeviceName = 'Baara-mobile';
 
   /// Serveur par défaut : la production, quel que soit le mode (debug,

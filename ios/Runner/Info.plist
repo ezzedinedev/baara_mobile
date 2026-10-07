@@ -66,7 +66,24 @@
 				<string>baara</string>
 			</array>
 		</dict>
+		<!-- Retour de la connexion Google : ID client iOS inversé. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.baara.google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.514652349175-gffa6sajpgmi2sc7snotserdc5nc231s</string>
+			</array>
+		</dict>
 	</array>
+	<!-- Client OAuth iOS (projet Google Cloud « Opportunebf »). -->
+	<key>GIDClientID</key>
+	<string>514652349175-gffa6sajpgmi2sc7snotserdc5nc231s.apps.googleusercontent.com</string>
+	<!-- Client OAuth Web : audience du jeton vérifiée par l'API (GOOGLE_CLIENT_ID). -->
+	<key>GIDServerClientID</key>
+	<string>514652349175-vc72d4k6t5sjmqri56gko0smo214t9v1.apps.googleusercontent.com</string>
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>
 </dict>
