@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:baara/app/core/services/post_auth_bootstrap.dart';
@@ -44,19 +46,20 @@ class OnboardingService extends GetxService {
     return null;
   }
 
+  /// Après connexion ou inscription : directement l'accueil, sans écran
+  /// de présentation. L'autorisation des notifications est demandée une
+  /// fois l'accueil affiché, pour ne pas bloquer l'arrivée.
   Future<void> navigateAfterAuth() async {
-    if (await isCompleted()) {
-      await PostAuthBootstrap.activatePushAfterLogin();
-      final pending = await consumePendingRoute();
-      if (pending != null && pending.isNotEmpty) {
-        Get.offAllNamed(AppRoutes.home);
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-        Get.toNamed<void>(pending);
-        return;
-      }
-      Get.offAllNamed(AppRoutes.home);
-    } else {
-      Get.offAllNamed(AppRoutes.onboarding);
+    await markCompleted();
+    final pending = await consumePendingRoute();
+    Get.offAllNamed(AppRoutes.home);
+    if (pending != null && pending.isNotEmpty) {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      Get.toNamed<void>(pending);
     }
+    unawaited(Future<void>.delayed(
+      const Duration(milliseconds: 900),
+      PostAuthBootstrap.activatePushAfterLogin,
+    ));
   }
 }

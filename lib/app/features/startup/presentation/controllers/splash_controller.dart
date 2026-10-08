@@ -314,17 +314,14 @@ class SplashController extends GetxController {
 
     if (_isClosed) return;
 
+    // Pas d'écran de présentation : un utilisateur connecté arrive
+    // directement sur l'accueil.
     final onboarding = Get.find<OnboardingService>();
-
     if (!await onboarding.isCompleted()) {
-
-      Get.offAllNamed(AppRoutes.onboarding);
-
-    } else {
-
-      Get.offAllNamed(AppRoutes.home);
-
+      await onboarding.markCompleted();
     }
+    if (_isClosed) return;
+    Get.offAllNamed(AppRoutes.home);
 
   }
 
