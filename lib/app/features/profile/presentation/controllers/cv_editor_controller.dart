@@ -72,7 +72,8 @@ class CvEditorController extends GetxController {
         user['last_name']?.toString() ?? '',
       ].where((s) => s.trim().isNotEmpty).join(' ').trim();
 
-      roleCtrl.text = _str(cv['desired_role'] ?? cv['headline']);
+      // Pas de repli sur headline : le serveur y range le nom du candidat.
+      roleCtrl.text = _str(cv['desired_role']);
       locationCtrl.text = _str(cv['location']);
       phoneCtrl.text = _str(cv['phone'] ?? user['phone']);
       emailCtrl.text = _str(cv['email'] ?? user['email']);

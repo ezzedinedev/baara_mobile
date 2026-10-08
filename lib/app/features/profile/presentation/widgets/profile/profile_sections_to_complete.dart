@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -10,6 +12,7 @@ import 'package:baara/app/core/utils/haptics.dart';
 import 'package:baara/app/core/widgets/widgets.dart';
 import 'package:baara/routes/app_routes.dart';
 import '../../../domain/entities/profile.dart';
+import '../../controllers/profile_controller.dart';
 
 typedef ProfileSection = ({
   String label,
@@ -35,7 +38,7 @@ List<ProfileSection> profileSectionsFor(Profile p) => [
         label: 'Compétences',
         icon: AppIcons.star,
         done: p.skills.isNotEmpty,
-        route: AppRoutes.profileParcours,
+        route: AppRoutes.profileCvManual,
       ),
       (
         label: 'Expériences',
@@ -53,7 +56,7 @@ List<ProfileSection> profileSectionsFor(Profile p) => [
         label: 'Langues',
         icon: Icons.translate_rounded,
         done: p.languages.isNotEmpty,
-        route: AppRoutes.profileParcours,
+        route: AppRoutes.profileCvManual,
       ),
     ];
 
@@ -104,9 +107,14 @@ class ProfileSectionsToComplete extends StatelessWidget {
               children: [
                 for (final s in missing)
                   PressScale(
-                    onTap: () {
+                    onTap: () async {
                       AppHaptics.tap();
-                      Get.toNamed(s.route);
+                      await Get.toNamed(s.route);
+                      // Retour d'édition : la pastille doit disparaître si la
+                      // section est maintenant remplie.
+                      if (Get.isRegistered<ProfileController>()) {
+                        unawaited(Get.find<ProfileController>().fetchProfile());
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(

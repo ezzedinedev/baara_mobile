@@ -128,9 +128,9 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                       child: RevealOnMount(
                         delay: Duration(milliseconds: 50 * i),
                         child: _EntryCard(
-                          title: _str(e, ['degree', 'diploma'], 'Formation'),
+                          title: _str(e, ['diploma', 'degree'], 'Formation'),
                           subtitle: _str(
-                              e, ['institution', 'school', 'university'], ''),
+                              e, ['school', 'institution', 'university'], ''),
                           period: _period(e),
                           onDelete: () => controller.removeEducation(i),
                         ),
@@ -159,8 +159,8 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
   }
 
   static String _period(Map<String, dynamic> m) {
-    final start = _str(m, ['start_date', 'start'], '');
-    final end = _str(m, ['end_date', 'end'], '');
+    final start = _str(m, ['from', 'start_date', 'start'], '');
+    final end = _str(m, ['to', 'end_date', 'end', 'year'], '');
     if (start.isEmpty && end.isEmpty) return '';
     return '$start${start.isNotEmpty && end.isNotEmpty ? ' – ' : ''}$end';
   }
@@ -173,9 +173,8 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
         _FieldSpec('title', 'Poste', AppIcons.work, required: true),
         _FieldSpec('company', 'Entreprise', AppIcons.work, required: true),
         _FieldSpec('location', 'Ville', AppIcons.location),
-        _FieldSpec('start_date', 'Début (ex : 2020)', AppIcons.calendar),
-        _FieldSpec(
-            'end_date', 'Fin (ex : 2023 / Présent)', AppIcons.calendar),
+        _FieldSpec('from', 'Début (ex : 2020)', AppIcons.calendar),
+        _FieldSpec('to', 'Fin (ex : 2023 / Présent)', AppIcons.calendar),
         _FieldSpec('description', 'Missions', AppIcons.document,
             multiline: true),
       ],
@@ -191,13 +190,14 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
       context,
       title: 'Nouvelle formation',
       fields: const [
-        _FieldSpec('degree', 'Diplôme', AppIcons.star, required: true),
-        _FieldSpec('institution', 'École / Université', AppIcons.work,
+        _FieldSpec('diploma', 'Diplôme', AppIcons.star, required: true),
+        _FieldSpec('school', 'École / Université', AppIcons.work,
             required: true),
         _FieldSpec('location', 'Ville', AppIcons.location),
-        _FieldSpec('start_date', 'Début (ex : 2018)', AppIcons.calendar),
-        _FieldSpec('end_date', 'Fin (ex : 2021)', AppIcons.calendar),
-        _FieldSpec('field_of_study', 'Domaine', AppIcons.document),
+        _FieldSpec('from', 'Début (ex : 2018)', AppIcons.calendar),
+        _FieldSpec('year', 'Fin / année du diplôme (ex : 2021)',
+            AppIcons.calendar),
+        _FieldSpec('description', 'Domaine', AppIcons.document),
       ],
     );
     if (data != null) {

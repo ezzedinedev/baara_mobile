@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import 'package:baara/app/core/utils/user_facing_error.dart';
 import 'package:baara/app/core/widgets/common/app_toast.dart';
 
 import '../../data/repositories/cv_editor_repository.dart';
+import 'profile_controller.dart';
 
 /// Édite directement les expériences & formations du candidat (stockées dans
 /// le CV-builder), sans passer par le flux "Créer mon CV". Charge via
@@ -29,7 +32,13 @@ class ParcoursEditorController extends GetxController {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      final cv = await _repository.load();
+      // GET /cv-builder renvoie { cv: {...}, user: {...} } : les listes sont
+      // sous `cv`. Les lire à la racine les vidait, et l'ajout suivant
+      // écrasait alors tout le parcours déjà enregistré.
+      final data = await _repository.load();
+      final cv = data['cv'] is Map
+          ? Map<String, dynamic>.from(data['cv'] as Map)
+          : <String, dynamic>{};
       experiences.assignAll(_asMapList(cv['experiences']));
       educations.assignAll(_asMapList(cv['educations']));
     } catch (e) {
@@ -86,6 +95,11 @@ class ParcoursEditorController extends GetxController {
         'experiences': experiences.toList(),
         'educations': educations.toList(),
       });
+      // Le profil (pourcentage, « Sections à compléter ») lit les mêmes
+      // données : on le recharge pour qu'il soit à jour au retour.
+      if (Get.isRegistered<ProfileController>()) {
+        unawaited(Get.find<ProfileController>().fetchProfile());
+      }
       return true;
     } catch (e) {
       AppToast.error('Enregistrement impossible', userFacingError(e));
