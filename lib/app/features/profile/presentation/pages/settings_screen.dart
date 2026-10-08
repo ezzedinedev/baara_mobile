@@ -10,6 +10,7 @@ import 'package:baara/app/core/theme/app_dimens.dart';
 import 'package:baara/app/core/theme/app_motion.dart';
 import 'package:baara/app/core/theme/app_shapes.dart';
 import 'package:baara/app/core/theme/app_text_styles.dart';
+import 'package:baara/app/core/constants/api_constants.dart';
 import 'package:baara/app/core/services/biometric_service.dart';
 import 'package:baara/app/core/services/fcm_service.dart';
 import 'package:baara/app/core/services/offline_apply_queue.dart';
@@ -23,6 +24,7 @@ import 'package:baara/routes/app_routes.dart';
 import 'package:baara/app/features/offers/presentation/controllers/offer_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/settings_controller.dart';
+import '../widgets/change_password_sheet.dart';
 import '../widgets/delete_account_sheet.dart';
 
 /// Paramètres — liste groupée style iOS Réglages : en-tête simple, cartes
@@ -349,14 +351,7 @@ class SettingsBody extends StatelessWidget {
                 subtitle: 'Protégez l\'accès à votre compte',
                 onTap: () {
                   AppHaptics.tap();
-                  // Code envoyé à l'adresse du compte : pré-remplie.
-                  final email = Get.isRegistered<ProfileController>()
-                      ? Get.find<ProfileController>().profile.value?.email
-                      : null;
-                  Get.toNamed(
-                    AppRoutes.forgotPassword,
-                    arguments: (email ?? '').isEmpty ? null : {'email': email},
-                  );
+                  showChangePasswordSheet(context);
                 },
               ),
               _HeaderRow(
@@ -710,10 +705,12 @@ class SettingsBody extends StatelessWidget {
   /// Partage natif de l'application (feuille système iOS/Android).
   Future<void> _shareApp() async {
     AppHaptics.tap();
+    // Lien vers le site : il renvoie vers l'app et fonctionne pour tout le
+    // monde, contrairement à la fiche Play Store tant que l'app est en test.
     await Share.share(
-      'Découvre Baara — la plateforme emploi, formations et '
-      'opportunités d\'Afrique de l\'Ouest. Télécharge l\'app et trouve ta '
-      'prochaine opportunité !',
+      'Découvre Baara, la plateforme emploi, formations et opportunités '
+      'au Burkina Faso. Trouve ta prochaine opportunité : '
+      '${ApiConstants.productionBaseUrl}',
       subject: 'Baara',
     );
   }

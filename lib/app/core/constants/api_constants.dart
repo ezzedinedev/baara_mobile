@@ -181,6 +181,7 @@ class ApiConstants {
   static const String emailSendVerification = '/auth/email/send-verification';
   static const String emailVerify = '/auth/email/verify';
   static const String logoutAll = '/auth/logout-all';
+  static const String changePassword = '/auth/change-password';
 
   /// Versions de l'app (mise à jour proposée ou obligatoire), public.
   static const String appVersion = '/app/version';

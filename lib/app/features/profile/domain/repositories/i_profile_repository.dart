@@ -26,6 +26,13 @@ abstract class IProfileRepository {
 
   Future<void> logoutAll();
 
+  /// Nouveau mot de passe ; [current] est vide pour un compte Google.
+  Future<void> changePassword({
+    required String current,
+    required String password,
+    required String confirmation,
+  });
+
   /// Supprime définitivement le compte. [confirmation] = mot de passe, ou
   /// « SUPPRIMER » pour un compte créé avec Google (le serveur vérifie ce qui
   /// s'applique au compte).

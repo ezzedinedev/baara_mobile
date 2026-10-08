@@ -222,6 +222,25 @@ class ProfileController extends GetxController {
     Get.offAllNamed(AppRoutes.profileSelection);
   }
 
+  /// Change le mot de passe. Renvoie le message d'erreur à afficher, ou
+  /// null en cas de succès.
+  Future<String?> changePassword({
+    required String current,
+    required String password,
+    required String confirmation,
+  }) async {
+    try {
+      await _repository.changePassword(
+        current: current,
+        password: password,
+        confirmation: confirmation,
+      );
+      return null;
+    } catch (e) {
+      return userFacingError(e);
+    }
+  }
+
   /// Supprime le compte puis ferme la session locale. Renvoie le message
   /// d'erreur à afficher, ou null en cas de succès.
   Future<String?> deleteAccount(String confirmation) async {

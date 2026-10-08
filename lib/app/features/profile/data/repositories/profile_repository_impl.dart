@@ -113,6 +113,21 @@ class ProfileRepositoryImpl implements IProfileRepository {
   }
 
   @override
+  Future<void> changePassword({
+    required String current,
+    required String password,
+    required String confirmation,
+  }) async {
+    final response = await _apiProvider.postJson(ApiConstants.changePassword, {
+      if (current.isNotEmpty) 'current_password': current,
+      'password': password,
+      'password_confirmation': confirmation,
+    });
+    ApiResponse.ensureSuccess(response,
+        fallback: 'Impossible de changer le mot de passe.');
+  }
+
+  @override
   Future<void> deleteAccount(String confirmation) async {
     final response = await _apiProvider.deleteJson(
       ApiConstants.account,

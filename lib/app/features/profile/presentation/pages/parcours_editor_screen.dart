@@ -105,6 +105,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                           title: _str(e, ['title', 'job_title'], 'Expérience'),
                           subtitle: _str(e, ['company', 'company_name'], ''),
                           period: _period(e),
+                          onEdit: () => _showExperienceForm(context, index: i),
                           onDelete: () => controller.removeExperience(i),
                         ),
                       ),
@@ -132,6 +133,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
                           subtitle: _str(
                               e, ['school', 'institution', 'university'], ''),
                           period: _period(e),
+                          onEdit: () => _showEducationForm(context, index: i),
                           onDelete: () => controller.removeEducation(i),
                         ),
                       ),
@@ -165,44 +167,62 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
     return '$start${start.isNotEmpty && end.isNotEmpty ? ' – ' : ''}$end';
   }
 
-  Future<void> _showExperienceForm(BuildContext context) async {
+  Future<void> _showExperienceForm(BuildContext context, {int? index}) async {
+    final editing = index != null;
     final data = await _entryForm(
       context,
-      title: 'Nouvelle expérience',
+      title: editing ? "Modifier l'expérience" : 'Nouvelle expérience',
+      initial: editing ? controller.experiences[index] : null,
       fields: const [
-        _FieldSpec('title', 'Poste', AppIcons.work, required: true),
-        _FieldSpec('company', 'Entreprise', AppIcons.work, required: true),
+        _FieldSpec('title', 'Poste', AppIcons.work,
+            required: true, aliases: ['job_title']),
+        _FieldSpec('company', 'Entreprise', AppIcons.work,
+            required: true, aliases: ['company_name']),
         _FieldSpec('location', 'Ville', AppIcons.location),
-        _FieldSpec('from', 'Début (ex : 2020)', AppIcons.calendar),
-        _FieldSpec('to', 'Fin (ex : 2023 / Présent)', AppIcons.calendar),
+        _FieldSpec('from', 'Début', AppIcons.calendar,
+            kind: _FieldKind.date, aliases: ['start_date', 'start']),
+        _FieldSpec('to', 'Fin', AppIcons.calendar,
+            kind: _FieldKind.dateOrPresent, aliases: ['end_date', 'end']),
         _FieldSpec('description', 'Missions', AppIcons.document,
             multiline: true),
       ],
     );
-    if (data != null) {
-      final ok = await controller.addExperience(data);
-      if (ok) AppToast.success('Expérience ajoutée');
+    if (data == null) return;
+    final ok = editing
+        ? await controller.updateExperience(index, data)
+        : await controller.addExperience(data);
+    if (ok) {
+      AppToast.success(
+          editing ? 'Expérience mise à jour' : 'Expérience ajoutée');
     }
   }
 
-  Future<void> _showEducationForm(BuildContext context) async {
+  Future<void> _showEducationForm(BuildContext context, {int? index}) async {
+    final editing = index != null;
     final data = await _entryForm(
       context,
-      title: 'Nouvelle formation',
+      title: editing ? 'Modifier la formation' : 'Nouvelle formation',
+      initial: editing ? controller.educations[index] : null,
       fields: const [
-        _FieldSpec('diploma', 'Diplôme', AppIcons.star, required: true),
+        _FieldSpec('diploma', 'Diplôme', AppIcons.star,
+            required: true, aliases: ['degree']),
         _FieldSpec('school', 'École / Université', AppIcons.work,
-            required: true),
+            required: true, aliases: ['institution', 'university']),
         _FieldSpec('location', 'Ville', AppIcons.location),
-        _FieldSpec('from', 'Début (ex : 2018)', AppIcons.calendar),
-        _FieldSpec('year', 'Fin / année du diplôme (ex : 2021)',
-            AppIcons.calendar),
-        _FieldSpec('description', 'Domaine', AppIcons.document),
+        _FieldSpec('from', 'Début', AppIcons.calendar,
+            kind: _FieldKind.date, aliases: ['start_date', 'start']),
+        _FieldSpec('year', 'Fin / année du diplôme', AppIcons.calendar,
+            kind: _FieldKind.dateOrPresent, aliases: ['end_date', 'end', 'to']),
+        _FieldSpec('description', 'Domaine', AppIcons.document,
+            aliases: ['field_of_study']),
       ],
     );
-    if (data != null) {
-      final ok = await controller.addEducation(data);
-      if (ok) AppToast.success('Formation ajoutée');
+    if (data == null) return;
+    final ok = editing
+        ? await controller.updateEducation(index, data)
+        : await controller.addEducation(data);
+    if (ok) {
+      AppToast.success(editing ? 'Formation mise à jour' : 'Formation ajoutée');
     }
   }
 
@@ -210,6 +230,7 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
     BuildContext context, {
     required String title,
     required List<_FieldSpec> fields,
+    Map<String, dynamic>? initial,
   }) {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -220,25 +241,45 @@ class ParcoursEditorScreen extends GetView<ParcoursEditorController> {
           top: Radius.circular(AppRadius.xxl),
         ),
       ),
-      builder: (ctx) => _EntryFormSheet(title: title, fields: fields),
+      builder: (ctx) =>
+          _EntryFormSheet(title: title, fields: fields, initial: initial),
     );
   }
 }
 
+enum _FieldKind { text, date, dateOrPresent }
+
 class _FieldSpec {
-  const _FieldSpec(this.key, this.label, this.icon,
-      {this.required = false, this.multiline = false});
+  const _FieldSpec(
+    this.key,
+    this.label,
+    this.icon, {
+    this.required = false,
+    this.multiline = false,
+    this.kind = _FieldKind.text,
+    this.aliases = const [],
+  });
   final String key;
   final String label;
   final IconData icon;
   final bool required;
   final bool multiline;
+  final _FieldKind kind;
+
+  /// Anciennes clés (premières versions de l'app) lues pour pré-remplir ;
+  /// l'enregistrement les remplace par [key].
+  final List<String> aliases;
 }
 
 class _EntryFormSheet extends StatefulWidget {
-  const _EntryFormSheet({required this.title, required this.fields});
+  const _EntryFormSheet({
+    required this.title,
+    required this.fields,
+    this.initial,
+  });
   final String title;
   final List<_FieldSpec> fields;
+  final Map<String, dynamic>? initial;
 
   @override
   State<_EntryFormSheet> createState() => _EntryFormSheetState();
@@ -246,8 +287,34 @@ class _EntryFormSheet extends StatefulWidget {
 
 class _EntryFormSheetState extends State<_EntryFormSheet> {
   late final Map<String, TextEditingController> _ctrls = {
-    for (final f in widget.fields) f.key: TextEditingController(),
+    for (final f in widget.fields)
+      f.key: TextEditingController(text: _initialValue(f)),
   };
+
+  String _initialValue(_FieldSpec f) {
+    final source = widget.initial;
+    if (source == null) return '';
+    for (final k in [f.key, ...f.aliases]) {
+      final v = source[k];
+      if (v != null && v.toString().trim().isNotEmpty) {
+        return v.toString().trim();
+      }
+    }
+    return '';
+  }
+
+  Future<void> _pickDate(_FieldSpec f) async {
+    FocusScope.of(context).unfocus();
+    final picked = await showMonthYearPickerSheet(
+      context: context,
+      title: f.label,
+      initial: _ctrls[f.key]!.text,
+      allowPresent: f.kind == _FieldKind.dateOrPresent,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _ctrls[f.key]!.text = picked);
+  }
+
   String? _error;
 
   @override
@@ -294,14 +361,23 @@ class _EntryFormSheetState extends State<_EntryFormSheet> {
                       .copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
               for (final f in widget.fields) ...[
-                AuthTextField(
-                  label: f.label,
-                  controller: _ctrls[f.key]!,
-                  icon: f.icon,
-                  keyboardType: f.multiline
-                      ? TextInputType.multiline
-                      : TextInputType.text,
-                ),
+                if (f.kind == _FieldKind.text)
+                  AuthTextField(
+                    label: f.label,
+                    controller: _ctrls[f.key]!,
+                    icon: f.icon,
+                    maxLines: f.multiline ? 4 : 1,
+                    keyboardType: f.multiline
+                        ? TextInputType.multiline
+                        : TextInputType.text,
+                  )
+                else
+                  _DateField(
+                    label: f.label,
+                    icon: f.icon,
+                    value: _ctrls[f.key]!.text,
+                    onTap: () => _pickDate(f),
+                  ),
                 const SizedBox(height: 12),
               ],
               if (_error != null) ...[
@@ -357,58 +433,145 @@ class _EntryCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.period,
+    required this.onEdit,
     required this.onDelete,
   });
   final String title;
   final String subtitle;
   final String period;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-      decoration: ShapeDecoration(
-        color: AppColors.surfaceCard,
-        shape: AppShapes.cardBordered(AppColors.outlineVariant),
-        shadows: [
-          ...AppColors.lightShadow,
-        ],
+    return PressScale(
+      onTap: () {
+        AppHaptics.tap();
+        onEdit();
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+        decoration: ShapeDecoration(
+          color: AppColors.surfaceCard,
+          shape: AppShapes.cardBordered(AppColors.outlineVariant),
+          shadows: [
+            ...AppColors.lightShadow,
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTextStyles.titleMd
+                          .copyWith(fontWeight: FontWeight.w800)),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.bodyColor)),
+                  ],
+                  if (period.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(period,
+                        style: AppTextStyles.labelSm
+                            .copyWith(color: AppColors.hintColor)),
+                  ],
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Modifier',
+              icon: Icon(AppIcons.edit, color: AppColors.hintColor, size: 20),
+              onPressed: () {
+                AppHaptics.tap();
+                onEdit();
+              },
+            ),
+            IconButton(
+              tooltip: 'Supprimer',
+              icon: Icon(AppIcons.delete, color: AppColors.errorAccent),
+              onPressed: () {
+                AppHaptics.tap();
+                onDelete();
+              },
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: AppTextStyles.titleMd
-                        .copyWith(fontWeight: FontWeight.w800)),
-                if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.bodyColor)),
-                ],
-                if (period.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(period,
-                      style: AppTextStyles.labelSm
-                          .copyWith(color: AppColors.hintColor)),
-                ],
-              ],
+    );
+  }
+}
+
+/// Champ date : ouvre le sélecteur mois / année au lieu du clavier.
+class _DateField extends StatelessWidget {
+  const _DateField({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = value.trim().isEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.titleMd.copyWith(
+            color: AppColors.titleColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Material(
+          color: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            side: BorderSide(
+              color: AppColors.outlineVariant.withValues(alpha: 0.55),
             ),
           ),
-          IconButton(
-            icon: Icon(AppIcons.delete, color: AppColors.errorAccent),
-            onPressed: () {
-              AppHaptics.tap();
-              onDelete();
-            },
+          child: InkWell(
+            borderRadius: AppShapes.squircleRadius(AppRadius.lg),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(icon,
+                      size: 20,
+                      color: AppColors.primaryAccent.withValues(alpha: 0.85)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      empty ? 'Choisir' : value,
+                      style: empty
+                          ? AppTextStyles.bodyMd
+                              .copyWith(color: AppColors.hintColor)
+                          : AppTextStyles.bodyLg.copyWith(
+                              color: AppColors.titleColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                    ),
+                  ),
+                  Icon(Icons.expand_more_rounded, color: AppColors.hintColor),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

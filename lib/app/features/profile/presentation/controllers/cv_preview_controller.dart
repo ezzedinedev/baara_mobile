@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
+import 'package:baara/app/core/constants/app_features.dart';
 
 import '../../../../core/utils/user_facing_error.dart';
 import '../../data/repositories/cv_preview_repository.dart';
@@ -63,11 +64,21 @@ class CvPreviewController extends GetxController {
         _repository.loadTemplates(),
       ]);
       final data = results[0] as Map<String, dynamic>;
-      templates.assignAll(results[1] as List<CvTemplate>);
+      // Sans facturation Google Play, aucun contenu numérique ne se vend
+      // dans l'app (règle du Play Store) : les modèles premium non achetés
+      // n'y sont pas proposés. Ceux déjà achetés restent disponibles.
+      final all = results[1] as List<CvTemplate>;
+      templates.assignAll(
+        AppFeatures.inAppPurchases ? all : all.where((t) => !t.isLocked),
+      );
 
       final assistant = data['assistant_state'];
       if (assistant is Map && assistant['selected_template'] is String) {
         selectedTemplate.value = assistant['selected_template'] as String;
+      }
+      if (templates.isNotEmpty &&
+          !templates.any((t) => t.id == selectedTemplate.value)) {
+        selectedTemplate.value = templates.first.id;
       }
       completionPct.value = _asInt(data['completion_pct']);
       hasCvData.value = data['cv'] is Map && (data['cv'] as Map).isNotEmpty;

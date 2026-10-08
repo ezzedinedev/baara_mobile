@@ -72,6 +72,69 @@ class ParcoursEditorController extends GetxController {
     return ok;
   }
 
+  /// Clés remplacées par le formulaire (anciennes clés de l'app comprises),
+  /// retirées avant fusion pour ne pas laisser deux valeurs différentes.
+  static const _experienceKeys = [
+    'title',
+    'company',
+    'location',
+    'from',
+    'to',
+    'description',
+    'job_title',
+    'company_name',
+    'start_date',
+    'end_date',
+    'start',
+    'end',
+  ];
+  static const _educationKeys = [
+    'diploma',
+    'school',
+    'location',
+    'from',
+    'year',
+    'description',
+    'to',
+    'degree',
+    'institution',
+    'university',
+    'field_of_study',
+    'start_date',
+    'end_date',
+    'start',
+    'end',
+  ];
+
+  /// Garde les champs que le formulaire ne connaît pas (ex. mention saisie
+  /// sur le site) et remplace ceux qu'il édite.
+  Map<String, dynamic> _merge(
+    Map<String, dynamic> original,
+    Map<String, dynamic> edited,
+    List<String> formKeys,
+  ) =>
+      Map<String, dynamic>.from(original)
+        ..removeWhere((k, _) => formKeys.contains(k))
+        ..addAll(edited);
+
+  Future<bool> updateExperience(int index, Map<String, dynamic> exp) async {
+    if (index < 0 || index >= experiences.length) return false;
+    final old = experiences[index];
+    experiences[index] = _merge(old, exp, _experienceKeys);
+    final ok = await _save();
+    if (!ok) experiences[index] = old;
+    return ok;
+  }
+
+  Future<bool> updateEducation(int index, Map<String, dynamic> edu) async {
+    if (index < 0 || index >= educations.length) return false;
+    final old = educations[index];
+    educations[index] = _merge(old, edu, _educationKeys);
+    final ok = await _save();
+    if (!ok) educations[index] = old;
+    return ok;
+  }
+
   Future<void> removeExperience(int index) async {
     if (index < 0 || index >= experiences.length) return;
     final old = experiences[index];
