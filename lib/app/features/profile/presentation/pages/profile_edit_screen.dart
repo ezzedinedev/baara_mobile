@@ -30,21 +30,54 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late final TextEditingController cityController;
   late final TextEditingController bioController;
 
+  /// Le formulaire n'est affiché (et enregistrable) qu'une fois le profil
+  /// chargé : ouvert juste après l'inscription, il s'affichait vide alors
+  /// que les informations existaient, et l'enregistrer envoyait des champs
+  /// vides par-dessus.
+  bool _filled = false;
+  Worker? _profileWorker;
+
   @override
   void initState() {
     super.initState();
+    firstNameController = TextEditingController();
+    lastNameController = TextEditingController();
+    phoneController = TextEditingController();
+    emailController = TextEditingController();
+    jobController = TextEditingController();
+    cityController = TextEditingController();
+    bioController = TextEditingController();
+
+    if (_controller.profile.value != null) {
+      _fill();
+    } else {
+      _profileWorker = ever(_controller.profile, (_) {
+        if (_controller.profile.value != null && mounted && !_filled) {
+          setState(_fill);
+        }
+      });
+      if (!_controller.isLoadingProfile.value) {
+        _controller.fetchProfile();
+      }
+    }
+  }
+
+  void _fill() {
     final p = _controller.profile.value;
-    firstNameController = TextEditingController(text: p?.firstName ?? '');
-    lastNameController = TextEditingController(text: p?.lastName ?? '');
-    phoneController = TextEditingController(text: p?.phone ?? '');
-    emailController = TextEditingController(text: p?.email ?? '');
-    jobController = TextEditingController(text: p?.headline ?? '');
-    cityController = TextEditingController(text: p?.city ?? '');
-    bioController = TextEditingController(text: p?.bio ?? '');
+    if (p == null) return;
+    firstNameController.text = p.firstName;
+    lastNameController.text = p.lastName;
+    phoneController.text = p.phone;
+    emailController.text = p.email;
+    jobController.text = p.headline ?? '';
+    cityController.text = p.city;
+    bioController.text = p.bio ?? '';
+    _filled = true;
   }
 
   @override
   void dispose() {
+    _profileWorker?.dispose();
     firstNameController.dispose();
     lastNameController.dispose();
     phoneController.dispose();
@@ -56,6 +89,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _save() async {
+    if (!_filled) return;
     AppHaptics.tap();
     final ok = await _controller.updateProfile({
       'first_name': firstNameController.text.trim(),
@@ -82,6 +116,16 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         onBack: Get.back,
         body: LayoutBuilder(
           builder: (context, constraints) {
+            if (!_filled) {
+              return Obx(() => _controller.errorMessage.value != null &&
+                      !_controller.isLoadingProfile.value
+                  ? ErrorStateView(
+                      message: _controller.errorMessage.value!,
+                      illustration: const ErrorIllustration(),
+                      onRetry: _controller.fetchProfile,
+                    )
+                  : const Center(child: AppLoader()));
+            }
             final maxWidth =
                 constraints.maxWidth > 720 ? 640.0 : double.infinity;
             return SingleChildScrollView(

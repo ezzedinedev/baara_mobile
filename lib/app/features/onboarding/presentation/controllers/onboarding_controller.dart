@@ -1,19 +1,19 @@
 import 'package:get/get.dart';
 import 'package:baara/app/core/services/onboarding_service.dart';
 import 'package:baara/app/core/services/post_auth_bootstrap.dart';
-import 'package:baara/app/core/theme/app_colors.dart';
-import 'package:baara/app/core/theme/app_icons.dart';
-import 'package:baara/app/core/utils/onboarding_progress.dart';
-import 'package:baara/app/core/utils/user_facing_error.dart';
-import 'package:baara/app/core/widgets/widgets.dart';
 import 'package:baara/routes/app_routes.dart';
-import 'package:baara/app/features/profile/domain/repositories/i_profile_repository.dart';
 
+/// Présentation affichée juste après l'inscription.
+///
+/// Elle présente l'app, sans redemander d'informations : la personne vient
+/// de remplir le formulaire d'inscription. Ouvrir le formulaire de profil
+/// (puis insister avec « Profil incomplet ») donnait l'impression de tout
+/// ressaisir. Le profil se complète ensuite à son rythme, depuis la carte
+/// « Profil à X % » de l'accueil.
 class OnboardingController extends GetxController {
-  OnboardingController(this._onboarding, this._profileRepository);
+  OnboardingController(this._onboarding);
 
   final OnboardingService _onboarding;
-  final IProfileRepository _profileRepository;
 
   /// Profil, CV, opportunités, puis notifications (la demande système ne part
   /// qu'après avoir expliqué son intérêt, jamais à froid).
@@ -22,9 +22,6 @@ class OnboardingController extends GetxController {
   final currentStep = 0.obs;
   final isBusy = false.obs;
 
-  /// Message sous le corps de l'étape (ex. rappel « finir plus tard »).
-  final stepHint = RxnString();
-
   /// « Passer » / « Plus tard » : on termine sans ouvrir la demande de
   /// notifications (activable ensuite depuis les Réglages).
   Future<void> skip() => _finish(askPush: false);
@@ -32,91 +29,15 @@ class OnboardingController extends GetxController {
   Future<void> next({required bool isLast}) async {
     if (isBusy.value) return;
     if (isLast) {
-      await _finish(askPush: true);
+      isBusy.value = true;
+      try {
+        await _finish(askPush: true);
+      } finally {
+        isBusy.value = false;
+      }
       return;
     }
-
-    final step = currentStep.value;
-    try {
-      isBusy.value = true;
-      stepHint.value = null;
-
-      if (step == 0) {
-        await Get.toNamed<void>(AppRoutes.profileEdit);
-        if (!await _tryAdvanceProfileStep()) return;
-      } else if (step == 1) {
-        await Get.toNamed<void>(AppRoutes.profileCv);
-        if (!await _tryAdvanceCvStep()) return;
-      }
-
-      if (step < stepCount - 1) currentStep.value = step + 1;
-    } catch (e) {
-      AppToast.error('Erreur', userFacingError(e));
-    } finally {
-      isBusy.value = false;
-    }
-  }
-
-  Future<bool> _tryAdvanceProfileStep() async {
-    final profile = await _profileRepository.getProfile();
-    if (onboardingProfileStepDone(profile)) {
-      stepHint.value = 'Profil mis à jour, bravo !';
-      return true;
-    }
-    return _confirmSkipStep(
-      title: 'Profil incomplet',
-      message:
-          'Ajoutez au moins un titre, une bio, une photo ou une compétence. '
-          'Vous pourrez compléter depuis l\'onglet Profil à tout moment.',
-      onRetry: () async {
-        await Get.toNamed<void>(AppRoutes.profileEdit);
-      },
-    );
-  }
-
-  Future<bool> _tryAdvanceCvStep() async {
-    final profile = await _profileRepository.getProfile();
-    if (onboardingCvStepDone(profile)) {
-      stepHint.value = 'CV ou parcours enregistré, parfait !';
-      return true;
-    }
-    return _confirmSkipStep(
-      title: 'CV pas encore prêt',
-      message:
-          'Importez ou créez votre CV, ou ajoutez une expérience / formation. '
-          'Vous pourrez le faire plus tard depuis Profil → Mon CV.',
-      onRetry: () async {
-        await Get.toNamed<void>(AppRoutes.profileCv);
-      },
-    );
-  }
-
-  Future<bool> _confirmSkipStep({
-    required String title,
-    required String message,
-    required Future<void> Function() onRetry,
-  }) async {
-    stepHint.value = message;
-    final ctx = Get.context;
-    if (ctx == null) return false;
-    final choice = await showConfirmSheet(
-      context: ctx,
-      icon: AppIcons.info,
-      iconColor: AppColors.warningAccent,
-      title: title,
-      message: message,
-      confirmLabel: 'Compléter maintenant',
-      cancelLabel: 'Plus tard',
-    );
-    if (choice == true) {
-      await onRetry();
-      return false;
-    }
-    if (choice == false) {
-      AppToast.info('À votre rythme', 'Vous pourrez finir depuis votre profil.');
-      return true;
-    }
-    return false;
+    if (currentStep.value < stepCount - 1) currentStep.value++;
   }
 
   Future<void> _finish({required bool askPush}) async {

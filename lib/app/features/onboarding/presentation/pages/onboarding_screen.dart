@@ -24,23 +24,23 @@ class OnboardingScreen extends GetView<OnboardingController> {
     (
       icon: AppIcons.personFilled,
       title: 'Complétez votre profil',
-      body: 'Ajoutez votre photo, votre titre et vos compétences pour '
-          'attirer les recruteurs.',
-      cta: 'Voir mon profil',
+      body: "Ajoutez votre photo, votre titre et vos compétences depuis "
+          "l'onglet Profil pour attirer les recruteurs.",
+      cta: 'Suivant',
     ),
     (
       icon: AppIcons.document,
       title: 'Créez ou importez votre CV',
       body: 'Un CV à jour multiplie vos chances. Importez un PDF ou '
           'créez-le avec l\'assistant Baara.',
-      cta: 'Mon CV',
+      cta: 'Suivant',
     ),
     (
       icon: AppIcons.workFilled,
       title: 'Découvrez vos opportunités',
       body: 'Swipez les offres qui vous correspondent, postulez en un geste '
           'et suivez vos candidatures.',
-      cta: 'Continuer',
+      cta: 'Suivant',
     ),
     (
       icon: AppIcons.notificationFilled,
@@ -153,7 +153,6 @@ class OnboardingScreen extends GetView<OnboardingController> {
                             icon: data.icon,
                             title: data.title,
                             body: data.body,
-                            hint: controller.stepHint.value,
                           ),
                         ),
                       ),
@@ -209,13 +208,11 @@ class _StepBody extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.body,
-    required this.hint,
   });
 
   final IconData icon;
   final String title;
   final String body;
-  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -262,18 +259,6 @@ class _StepBody extends StatelessWidget {
             height: 1.5,
           ),
         ),
-        if (hint != null && hint!.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          Text(
-            hint!,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySm.copyWith(
-              color: BaaraMark.brandLime,
-              fontWeight: FontWeight.w700,
-              height: 1.4,
-            ),
-          ),
-        ],
       ],
     );
   }
