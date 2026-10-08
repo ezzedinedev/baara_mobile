@@ -576,7 +576,10 @@ class _LanguagesEditor extends StatelessWidget {
                   ],
                 ),
               )),
-        _LanguageAdder(onAdd: controller.addLanguage),
+        _LanguageAdder(
+          onAdd: controller.addLanguage,
+          existing: () => controller.languages.map((l) => l['name'] ?? ''),
+        ),
       ],
     );
   }
@@ -622,93 +625,44 @@ class _LanguageRow extends StatelessWidget {
   }
 }
 
-class _LanguageAdder extends StatefulWidget {
-  const _LanguageAdder({required this.onAdd});
+class _LanguageAdder extends StatelessWidget {
+  const _LanguageAdder({required this.onAdd, required this.existing});
   final void Function(String name, String level) onAdd;
+  final Iterable<String> Function() existing;
 
-  @override
-  State<_LanguageAdder> createState() => _LanguageAdderState();
-}
-
-class _LanguageAdderState extends State<_LanguageAdder> {
-  final _nameCtrl = TextEditingController();
-  static const _levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Natif'];
-  String _level = 'B2';
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final n = _nameCtrl.text.trim();
-    if (n.isEmpty) return;
+  Future<void> _pick(BuildContext context) async {
     AppHaptics.tap();
-    widget.onAdd(n, _level);
-    _nameCtrl.clear();
+    final picked = await showLanguagePickerSheet(
+      context: context,
+      exclude: existing(),
+    );
+    if (picked != null) onAdd(picked.name, picked.level);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _nameCtrl,
-            style: AppTextStyles.bodyMd,
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(
-              hintText: 'Langue (ex : Anglais)',
-              hintStyle:
-                  AppTextStyles.bodyMd.copyWith(color: AppColors.hintColor),
-              filled: true,
-              fillColor: AppColors.inputFill,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+    return PressScale(
+      onTap: () => _pick(context),
+      curve: AppMotion.spring,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.inputFill,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outlineVariant),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(AppIcons.add, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Ajouter une langue',
+              style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
             ),
-          ),
+          ],
         ),
-        const SizedBox(width: AppSpacing.sm),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.inputFill,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _level,
-                isDense: true,
-                style:
-                    AppTextStyles.bodyMd.copyWith(color: AppColors.titleColor),
-                dropdownColor: AppColors.surfaceCard,
-                items: _levels
-                    .map((l) => DropdownMenuItem(value: l, child: Text(l)))
-                    .toList(),
-                onChanged: (v) => setState(() => _level = v ?? _level),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        PressScale(
-          onTap: _submit,
-          curve: AppMotion.spring,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-                color: AppColors.primary, shape: BoxShape.circle),
-            child: const Icon(AppIcons.add, color: AppColors.onPrimary),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

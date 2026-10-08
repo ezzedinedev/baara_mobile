@@ -2,6 +2,7 @@ import 'package:baara/app/core/constants/app_features.dart';
 import 'package:flutter/material.dart';
 import 'package:baara/app/core/theme/app_icons.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:baara/app/core/theme/app_colors.dart';
@@ -30,6 +31,10 @@ import '../widgets/delete_account_sheet.dart';
 /// Règle d'affordance unifiée :
 /// - **chevron** → ouvre une page ou une feuille de choix ;
 /// - **interrupteur inline** → bascule binaire instantanée.
+/// Version réelle de l'app (pubspec), lue une seule fois.
+final Future<String> _appVersion =
+    PackageInfo.fromPlatform().then((info) => info.version);
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -159,12 +164,20 @@ class SettingsBody extends StatelessWidget {
                         : (granted ? 'Activées' : 'Désactivées'),
                     onTap: () async {
                       AppHaptics.tap();
-                      if (denied) {
+                      if (granted == true) {
                         await fcm.openNotificationSettings();
-                      } else if (granted != true) {
-                        await fcm.activateAfterLogin();
                       } else {
-                        await fcm.openNotificationSettings();
+                        // Android 13+ rapporte « refusé » tant qu'on n'a
+                        // jamais demandé : on tente d'abord la fenêtre
+                        // système, et les réglages seulement si Android ne
+                        // l'affiche plus (refus définitif).
+                        final asked = Stopwatch()..start();
+                        await fcm.activateAfterLogin();
+                        // Réponse instantanée = aucune fenêtre affichée.
+                        if (fcm.pushPermissionGranted.value != true &&
+                            asked.elapsedMilliseconds < 400) {
+                          await fcm.openNotificationSettings();
+                        }
                       }
                       await fcm.refreshPermissionStatus();
                     },
@@ -196,17 +209,8 @@ class SettingsBody extends StatelessWidget {
                   onTap: () => _pickAppearance(context, settings, theme),
                 ),
               ),
-              // Pas d'Obx : Get.locale n'est pas un observable .obs ; changer la
-              // langue déclenche déjà un rebuild global via GetMaterialApp.
-              _HeaderRow(
-                icon: AppIcons.message,
-                color: AppColors.primaryAccent,
-                title: 'Langue',
-                subtitle: 'Langue de l\'application',
-                valueLabel:
-                    Get.locale?.languageCode == 'en' ? 'English' : 'Français',
-                onTap: () => _pickLanguage(context, settings),
-              ),
+              // Pas de choix de langue : seul l'accueil est traduit en anglais,
+              // proposer « English » laissait le reste de l'app en français.
             ],
           ),
           const SectionLabel('Communauté & réseau'),
@@ -277,15 +281,37 @@ class SettingsBody extends StatelessWidget {
                 return _HeaderRow(
                   icon: Icons.fingerprint_rounded,
                   color: AppColors.primaryAccent,
-                  title: 'Verrou biométrique',
-                  subtitle: 'Déverrouiller l\'app au démarrage',
+                  title: 'Verrouillage de l\'app',
+                  subtitle: 'Empreinte, visage ou code à l\'ouverture',
                   trailing: Switch.adaptive(
                     value: bio.isEnabled.value,
                     activeThumbColor: AppColors.onPrimary,
                     activeTrackColor: AppColors.primaryMedium,
-                    onChanged: (v) {
+                    onChanged: (v) async {
                       AppHaptics.tap();
-                      bio.setEnabled(v);
+                      if (!v) {
+                        await bio.setEnabled(false);
+                        AppToast.info('Verrouillage désactivé');
+                        return;
+                      }
+                      final ok = await bio.enableWithConfirmation();
+                      if (ok) {
+                        AppToast.success(
+                          'Verrouillage activé',
+                          'Baara vous le demandera à chaque ouverture.',
+                        );
+                      } else if (bio.deviceHasNoLock) {
+                        AppToast.error(
+                          'Aucun verrouillage sur ce téléphone',
+                          'Ajoutez d\'abord un code, un schéma ou une '
+                              'empreinte dans les réglages du téléphone.',
+                        );
+                      } else {
+                        AppToast.error(
+                          'Verrouillage non activé',
+                          'L\'identification n\'a pas abouti.',
+                        );
+                      }
                     },
                   ),
                 );
@@ -323,7 +349,14 @@ class SettingsBody extends StatelessWidget {
                 subtitle: 'Protégez l\'accès à votre compte',
                 onTap: () {
                   AppHaptics.tap();
-                  Get.toNamed(AppRoutes.forgotPassword);
+                  // Code envoyé à l'adresse du compte : pré-remplie.
+                  final email = Get.isRegistered<ProfileController>()
+                      ? Get.find<ProfileController>().profile.value?.email
+                      : null;
+                  Get.toNamed(
+                    AppRoutes.forgotPassword,
+                    arguments: (email ?? '').isEmpty ? null : {'email': email},
+                  );
                 },
               ),
               _HeaderRow(
@@ -343,13 +376,16 @@ class SettingsBody extends StatelessWidget {
                   Get.toNamed(AppRoutes.iaChatbot);
                 },
               ),
-              _HeaderRow(
-                icon: AppIcons.info,
-                color: AppColors.primaryAccent,
-                title: 'À propos',
-                subtitle: 'Baara',
-                valueLabel: 'v1.0.0',
-                onTap: () => _showAbout(context),
+              FutureBuilder<String>(
+                future: _appVersion,
+                builder: (context, snap) => _HeaderRow(
+                  icon: AppIcons.info,
+                  color: AppColors.primaryAccent,
+                  title: 'À propos',
+                  subtitle: 'Baara',
+                  valueLabel: snap.hasData ? 'v${snap.data}' : null,
+                  onTap: () => _showAbout(context),
+                ),
               ),
             ],
           ),
@@ -537,57 +573,6 @@ class SettingsBody extends StatelessWidget {
     );
   }
 
-  Future<void> _pickLanguage(
-    BuildContext context,
-    SettingsController settings,
-  ) async {
-    AppHaptics.tap();
-    final current = Get.locale?.languageCode == 'en' ? 'en' : 'fr';
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xxl),
-        ),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SheetHandle(),
-            const SizedBox(height: AppSpacing.lg),
-            _sheetTitle('Langue'),
-            const SizedBox(height: AppSpacing.sm),
-            _choiceTile(
-              ctx,
-              icon: Icons.language_rounded,
-              label: 'Français',
-              selected: current == 'fr',
-              onTap: () {
-                settings.setLanguage('fr');
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _choiceTile(
-              ctx,
-              icon: Icons.language_rounded,
-              label: 'English',
-              selected: current == 'en',
-              onTap: () {
-                settings.setLanguage('en');
-                Navigator.of(ctx).pop();
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Feuille de choix de visibilité du profil communauté (Public / Mes
-  /// connexions) — même pattern que les autres sélecteurs de préférences.
   Future<void> _pickVisibility(
     BuildContext context,
     SettingsController settings,
@@ -740,13 +725,15 @@ class SettingsBody extends StatelessWidget {
 
   Future<void> _showAbout(BuildContext context) async {
     AppHaptics.tap();
+    final version = await _appVersion;
+    if (!context.mounted) return;
     await showConfirmSheet(
       context: context,
       icon: AppIcons.info,
       iconColor: AppColors.primaryAccent,
       title: 'Baara',
       message:
-          'Version 1.0.0\n\nLa plateforme emploi, formations et opportunités '
+          'Version $version\n\nLa plateforme emploi, formations et opportunités '
           'd\'Afrique de l\'Ouest.',
       confirmLabel: 'Fermer',
     );
