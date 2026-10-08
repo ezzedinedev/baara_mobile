@@ -7,6 +7,7 @@ import 'package:baara/app/core/theme/app_text_styles.dart';
 import 'package:baara/app/core/utils/haptics.dart';
 
 import 'auth/auth_cta_button.dart';
+import 'common/app_toast.dart';
 import 'baara_mark.dart';
 
 /// Écran plein affiché tant que l'app est verrouillée. Lance la demande
@@ -32,8 +33,21 @@ class _AppLockScreenState extends State<AppLockScreen> {
   Future<void> _unlock() async {
     if (_busy || !Get.isRegistered<BiometricService>()) return;
     setState(() => _busy = true);
-    final ok = await Get.find<BiometricService>().authenticate();
+    final bio = Get.find<BiometricService>();
+    final ok = await bio.authenticate();
     if (!mounted) return;
+    // Le téléphone n'a plus ni code ni empreinte : rien à vérifier. Sans
+    // cela, l'app resterait bloquée ici, avec la déconnexion pour seule issue.
+    if (!ok && bio.deviceHasNoLock) {
+      await bio.setEnabled(false);
+      if (!mounted) return;
+      AppToast.info(
+        'Verrouillage désactivé',
+        'Votre téléphone n\'a plus de code de verrouillage.',
+      );
+      Get.back(result: true);
+      return;
+    }
     if (ok) {
       AppHaptics.success();
       Get.back(result: true);

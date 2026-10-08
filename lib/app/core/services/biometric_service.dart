@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +24,7 @@ class BiometricService extends GetxService with WidgetsBindingObserver {
   static const _relockAfter = Duration(seconds: 30);
 
   final LocalAuthentication _auth = LocalAuthentication();
+  static const _security = MethodChannel('baara/device_security');
   final isEnabled = false.obs;
   final canUseBiometrics = false.obs;
 
@@ -116,10 +118,26 @@ class BiometricService extends GetxService with WidgetsBindingObserver {
     return ok;
   }
 
+  /// Le téléphone a-t-il un code, un schéma ou une empreinte ? Sur Android,
+  /// local_auth attend sans fin quand ce n'est pas le cas : on le demande
+  /// donc d'abord au système. iOS renvoie lui-même une erreur immédiate.
+  Future<bool> isDeviceSecure() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      return await _security.invokeMethod<bool>('isDeviceSecure') ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Fenêtre système d'authentification. `false` si annulée ou en échec.
   Future<bool> authenticate({String reason = 'Déverrouillez Baara'}) async {
-    _authInProgress = true;
     lastErrorCode = null;
+    if (!await isDeviceSecure()) {
+      lastErrorCode = 'PasscodeNotSet';
+      return false;
+    }
+    _authInProgress = true;
     try {
       return await _auth.authenticate(
         localizedReason: reason,
@@ -144,6 +162,12 @@ class BiometricService extends GetxService with WidgetsBindingObserver {
     await ready;
     if (!_active) return true;
     if (_lockShown) return true;
+    // Plus aucun verrouillage sur le téléphone : rien à vérifier, on ne
+    // bloque pas l'utilisateur derrière un écran impossible à franchir.
+    if (!await isDeviceSecure()) {
+      await setEnabled(false);
+      return true;
+    }
     _lockShown = true;
     try {
       final result = await Get.to<bool>(

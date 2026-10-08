@@ -1,5 +1,7 @@
 package com.stratetix.baara
 
+import android.app.KeyguardManager
+import android.content.Context
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -41,6 +43,22 @@ class MainActivity : FlutterFragmentActivity() {
                 // Android bloque la capture au lieu de la detecter : rien a
                 // signaler a posteriori, contrairement a iOS.
                 "isScreenshotDetectionSupported" -> result.success(false)
+                else -> result.notImplemented()
+            }
+        }
+
+        // Verrouillage de l'app : savoir si le téléphone a un code, un schéma
+        // ou une empreinte. Sans cela, local_auth attend indéfiniment quand
+        // l'appareil n'est pas protégé.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "baara/device_security"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isDeviceSecure" -> {
+                    val keyguard = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+                    result.success(keyguard?.isDeviceSecure ?: false)
+                }
                 else -> result.notImplemented()
             }
         }
